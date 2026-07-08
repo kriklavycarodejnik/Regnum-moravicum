@@ -1,0 +1,106 @@
+/* Regnum Moravicum v2.1 - Status Bar Styles */
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-hover) 100%);
+  border-bottom: 2px solid var(--accent-gold);
+  padding: 15px 20px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.leftSection,
+.centerSection,
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.yearTick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.value {
+  color: var(--accent-gold);
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.resources {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prestige,
+.religion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tickButton {
+  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-hover) 100%);
+  color: var(--accent-gold);
+  border: 2px solid var(--accent-gold);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.tickButton:hover {
+  background: linear-gradient(135deg, var(--bg-panel-hover) 0%, var(--border-color) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.tickButton:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+  }
+  
+  .leftSection,
+  .centerSection,
+  .rightSection {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .resources {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tickButton {
+    width: 100%;
+    padding: 12px;
+  }
+}

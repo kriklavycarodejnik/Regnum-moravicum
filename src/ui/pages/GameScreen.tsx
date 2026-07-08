@@ -1,0 +1,93 @@
+// Regnum Moravicum v2.1 - Game Screen Page
+import { useState } from 'react';
+import type { GameState } from '../../core/types/gameState';
+import { StatusBar } from '../components/StatusBar';
+import { MapView } from '../components/MapView';
+import { EventPanel } from '../components/EventPanel';
+import { DiplomacyPanel } from '../components/DiplomacyPanel';
+import { ArmyPanel } from '../components/ArmyPanel';
+import { BattleView } from '../components/BattleView';
+import styles from '../../styles/GameScreen.module.css';
+
+type ActivePanel = 'map' | 'events' | 'diplomacy' | 'army' | 'battle';
+
+interface GameScreenProps {
+  gameState: GameState;
+  onTick: () => void;
+  onBackToMenu: () => void;
+}
+
+export function GameScreen({ gameState, onTick, onBackToMenu }: GameScreenProps) {
+  const [activePanel, setActivePanel] = useState<ActivePanel>('map');
+
+  const renderPanel = () => {
+    switch (activePanel) {
+      case 'map':
+        return <MapView gameState={gameState} />;
+      case 'events':
+        return <EventPanel gameState={gameState} />;
+      case 'diplomacy':
+        return <DiplomacyPanel gameState={gameState} />;
+      case 'army':
+        return <ArmyPanel gameState={gameState} />;
+      case 'battle':
+        return <BattleView gameState={gameState} />;
+      default:
+        return <MapView gameState={gameState} />;
+    }
+  };
+
+  return (
+    <div className={styles.container}>
+      <StatusBar gameState={gameState} onTick={onTick} />
+      
+      <div className={styles.mainContent}>
+        <nav className={styles.sidebar}>
+          <button
+            className={`${styles.navButton} ${activePanel === 'map' ? styles.active : ''}`}
+            onClick={() => setActivePanel('map')}
+          >
+            Mapa
+          </button>
+          <button
+            className={`${styles.navButton} ${activePanel === 'events' ? styles.active : ''}`}
+            onClick={() => setActivePanel('events')}
+          >
+            Udalosti
+          </button>
+          <button
+            className={`${styles.navButton} ${activePanel === 'diplomacy' ? styles.active : ''}`}
+            onClick={() => setActivePanel('diplomacy')}
+          >
+            Diplomacia
+          </button>
+          <button
+            className={`${styles.navButton} ${activePanel === 'army' ? styles.active : ''}`}
+            onClick={() => setActivePanel('army')}
+          >
+            Armády
+          </button>
+          <button
+            className={`${styles.navButton} ${activePanel === 'battle' ? styles.active : ''}`}
+            onClick={() => setActivePanel('battle')}
+          >
+            Bitky
+          </button>
+        </nav>
+        
+        <div className={styles.content}>
+          {renderPanel()}
+        </div>
+      </div>
+
+      <button 
+        className={styles.backButton}
+        onClick={onBackToMenu}
+      >
+        Späť do menu
+      </button>
+    </div>
+  );
+}
+
+export default GameScreen;

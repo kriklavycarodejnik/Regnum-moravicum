@@ -1,0 +1,266 @@
+/* MapView.module.css */
+
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+  border: 2px solid var(--accent-gold);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.svgContainer {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.svgMap {
+  width: 100%;
+  height: 100%;
+}
+
+/* Zupa circles */
+.zupaCircle {
+  fill: var(--bg-panel);
+  stroke: var(--accent-gold);
+  stroke-width: 2;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.zupaCircle:hover {
+  fill: var(--bg-panel-hover);
+  stroke: var(--accent-gold-light);
+  stroke-width: 3;
+}
+
+.zupaCircle.selected {
+  fill: var(--accent-gold);
+  stroke: var(--accent-gold-light);
+  stroke-width: 3;
+}
+
+.zupaCircle.owned {
+  fill: var(--faction-primary);
+}
+
+.zupaCircle.owned:hover {
+  fill: var(--faction-primary-light);
+}
+
+/* Zupa text labels */
+.zupaText {
+  fill: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+.zupaText.selected {
+  fill: var(--text-dark);
+}
+
+/* Connection lines between zupas */
+.connection {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  stroke-opacity: 0.3;
+  stroke-dasharray: 5,3;
+}
+
+.connection.owned {
+  stroke: var(--faction-primary);
+  stroke-opacity: 0.5;
+}
+
+/* Army markers on map */
+.armyMarker {
+  fill: var(--faction-secondary);
+  stroke: var(--text-dark);
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.armyMarker:hover {
+  fill: var(--faction-secondary-light);
+}
+
+.armyMarker.owned {
+  fill: var(--faction-primary);
+}
+
+/* Battle markers */
+.battleMarker {
+  fill: var(--color-danger);
+  stroke: var(--text-dark);
+  stroke-width: 2;
+  cursor: pointer;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Details panel for selected zupa */
+.detailsPanel {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--accent-gold);
+  border-radius: 8px;
+  padding: 15px;
+  color: var(--text-primary);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.detailsPanel.hidden {
+  display: none;
+}
+
+.detailsPanel h3 {
+  margin: 0 0 10px 0;
+  color: var(--accent-gold);
+  font-size: 16px;
+}
+
+.detailsPanel .infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.detailsPanel .infoItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailsPanel .infoLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.detailsPanel .infoValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Loyalty bar */
+.loyaltyBar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-panel);
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.loyaltyFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-success), var(--color-warning), var(--color-danger));
+  transition: width 0.3s ease;
+}
+
+/* Prosperity bar */
+.prosperityBar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-panel);
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.prosperityFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-gold-dark), var(--accent-gold), var(--accent-gold-light));
+  transition: width 0.3s ease;
+}
+
+/* Garrison info */
+.garrisonInfo {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.garrisonTitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.garrisonUnits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.garrisonUnit {
+  background: var(--bg-panel);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* Tooltip for zupa info */
+.tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid var(--accent-gold);
+  border-radius: 6px;
+  padding: 10px;
+  color: var(--text-primary);
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 20;
+  min-width: 180px;
+}
+
+.tooltip.hidden {
+  display: none;
+}
+
+.tooltip h4 {
+  margin: 0 0 8px 0;
+  color: var(--accent-gold);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+}
+
+.tooltip p {
+  margin: 3px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .detailsPanel {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 10px;
+  }
+  
+  .zupaText {
+    font-size: 10px;
+  }
+  
+  .detailsPanel h3 {
+    font-size: 14px;
+  }
+}

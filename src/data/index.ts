@@ -1,7 +1,7 @@
-// Regnum Moravicum v2.1 - Data Module
-// This will contain game data definitions, constants, and lookup tables
+// Regnum Moravicum v2.1 - Data Module Exports
 
-export * from './constants';
-export * from './regions';
-export * from './factions';
-export * from './events';
+export * from './units';
+export * from './formations';
+export * from './terrains';
+export * from './initialState';
+export * from './historicalEvents';
