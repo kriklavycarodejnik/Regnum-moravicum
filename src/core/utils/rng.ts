@@ -1,13 +1,15 @@
 // Regnum Moravicum v2.1 - RNG Utility
 import seedrandom from 'seedrandom';
 
-let prng: seedrandom.PRNG | null = null;
+type RNGState = seedrandom.State.Arc4;
+
+let prng: seedrandom.StatefulPRNG<RNGState> | null = null;
 
 /**
  * Initialize RNG with a seed
  */
 export function initRNG(seed: string): void {
-  prng = seedrandom(seed);
+  prng = seedrandom(seed, { state: true });
 }
 
 /**
@@ -67,15 +69,15 @@ export function rngChance(probability: number): boolean {
 /**
  * Get the current RNG state for saving
  */
-export function getRNGState(): string | null {
-  return prng ? (prng as any).state : null;
+export function getRNGState(): RNGState | null {
+  return prng ? prng.state() : null;
 }
 
 /**
  * Restore RNG state from a saved state
  */
-export function setRNGState(state: string): void {
-  prng = seedrandom(state);
+export function setRNGState(state: RNGState): void {
+  prng = seedrandom('', { state });
 }
 
 export default {

@@ -158,7 +158,7 @@ describe('RNG Utilities', () => {
       rng(0, 100);
       
       // Restore state
-      setRNGState(beforeState);
+      setRNGState(beforeState!);
       
       // Should get same values
       expect(rng(0, 100)).toBe(value1);

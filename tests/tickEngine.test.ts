@@ -9,7 +9,7 @@ describe('Tick Engine', () => {
 
   beforeEach(() => {
     initRNG('tick-test-seed');
-    initialState = generateInitialState('tick-test-seed', 'standard');
+    initialState = generateInitialState('prežitie', 'tick-test-seed');
   });
 
   describe('processTick', () => {
@@ -18,326 +18,304 @@ describe('Tick Engine', () => {
       expect(newState.tick).toBe(initialState.tick + 1);
     });
 
-    it('should increment month correctly', () => {
-      const newState = processTick(initialState);
-      expect(newState.month).toBe(initialState.month + 1);
-    });
-
-    it('should reset month to 1 and increment year when month exceeds 12', () => {
-      // Create a state with month 12
-      const decemberState: GameState = {
-        ...initialState,
-        month: 12,
-        year: 902
-      };
-      
-      const newState = processTick(decemberState);
-      expect(newState.month).toBe(1);
-      expect(newState.year).toBe(903);
-    });
-
-    it('should not increment year when month is less than 12', () => {
+    it('should not increment year until 12 ticks have passed', () => {
       const newState = processTick(initialState);
       expect(newState.year).toBe(initialState.year);
     });
 
-    it('should age nobles by 1 month', () => {
-      const newState = processTick(initialState);
-      
-      initialState.nobles.forEach((noble, index) => {
-        const newNoble = newState.nobles.find(n => n.id === noble.id);
-        expect(newNoble).toBeDefined();
-        if (newNoble) {
-          expect(newNoble.age).toBe(noble.age + 1);
-        }
-      });
+    it('should increment year exactly every 12th tick', () => {
+      const stateAtMonth11: GameState = { ...initialState, tick: 11, year: 902 };
+
+      const newState = processTick(stateAtMonth11);
+      expect(newState.tick).toBe(12);
+      expect(newState.year).toBe(903);
+    });
+
+    it('should keep tick monotonically increasing across year boundaries', () => {
+      let state: GameState = { ...initialState, tick: 10, year: 902 };
+      for (let i = 0; i < 5; i++) {
+        state = processTick(state);
+      }
+      // 10 -> 11 -> 12 -> 13 -> 14 -> 15, never resets to 0
+      expect(state.tick).toBe(15);
+      expect(state.year).toBe(903);
+    });
+
+    it('should age nobles only when a year passes', () => {
+      const stateAtMonth11: GameState = { ...initialState, tick: 11 };
+      const ageBefore = stateAtMonth11.nobles[0].age;
+
+      const newState = processTick(stateAtMonth11);
+      const aged = newState.nobles.find(n => n.id === stateAtMonth11.nobles[0].id);
+
+      expect(aged?.age).toBe(ageBefore + 1);
+    });
+
+    it('should not age nobles mid-year', () => {
+      const stateAtMonth0: GameState = { ...initialState, tick: 0 };
+      const ageBefore = stateAtMonth0.nobles[0].age;
+
+      const newState = processTick(stateAtMonth0);
+      const notAged = newState.nobles.find(n => n.id === stateAtMonth0.nobles[0].id);
+
+      expect(notAged?.age).toBe(ageBefore);
     });
 
     it('should not age dead nobles', () => {
-      // Create a state with a dead noble
       const stateWithDeadNoble: GameState = {
         ...initialState,
+        tick: 11,
         nobles: [
           ...initialState.nobles,
           {
             id: 'dead-noble',
             name: 'Dead Noble',
-            familyId: 'Mojmírovci',
-            gender: 'male',
-            age: 50,
-            attributes: { strength: 10, intelligence: 10, charisma: 10, piety: 10, luck: 10 },
-            traits: [],
-            alive: false,
-            health: 0,
-            isRuler: false
+            familyId: initialState.families[0].id,
+            title: 'Magnát',
+            attributes: { combat: 5, diplomacy: 5, intelligence: 5, piety: 5, charisma: 5 },
+            loyalty: 50,
+            location: Object.keys(initialState.zupy)[0],
+            armyIds: [],
+            children: [],
+            coatOfArms: '',
+            age: 90,
+            status: 'dead',
+            birthTick: 0,
+            deathTick: 5
           }
         ]
       };
-      
+
       const newState = processTick(stateWithDeadNoble);
       const deadNoble = newState.nobles.find(n => n.id === 'dead-noble');
-      expect(deadNoble).toBeDefined();
-      expect(deadNoble?.age).toBe(50); // Age should not increase
+      expect(deadNoble?.age).toBe(90);
     });
 
-    it('should decay faction moods', () => {
-      // Create a state with a faction that has high relation
-      const stateWithHighRelation: GameState = {
+    it('should decay faction moods towards 50', () => {
+      const stateWithExtremeMood: GameState = {
         ...initialState,
-        factions: initialState.factions.map(f => 
-          f.id === 'player' ? { ...f, relationToPlayer: 100 } : f
+        factions: initialState.factions.map((f, i) =>
+          i === 0 ? { ...f, moods: { loyalty: 100, fear: 100, trust: 100, anger: 100 } } : f
         )
       };
-      
-      const newState = processTick(stateWithHighRelation);
-      const playerFaction = newState.factions.find(f => f.id === 'player');
-      
-      expect(playerFaction).toBeDefined();
-      // Mood should decay (decrease) slightly
-      expect(playerFaction!.relationToPlayer).toBeLessThan(100);
+
+      const newState = processTick(stateWithExtremeMood);
+      const faction = newState.factions[0];
+
+      expect(faction.moods.loyalty).toBeLessThan(100);
+      expect(faction.moods.fear).toBeLessThan(100);
+      expect(faction.moods.trust).toBeLessThan(100);
+      expect(faction.moods.anger).toBeLessThan(100);
     });
 
-    it('should grow zupa prosperity', () => {
-      // Create a state with a zupa that has low prosperity
-      const stateWithLowProsperity: GameState = {
+    it('should grow zupa prosperity when food is sufficient', () => {
+      const firstZupaId = Object.keys(initialState.zupy)[0];
+      const stateWithFood: GameState = {
         ...initialState,
-        zupas: initialState.zupas.map(z => 
-          z.id === 'Nitra' ? { ...z, prosperity: 10 } : z
-        )
+        zupy: {
+          ...initialState.zupy,
+          [firstZupaId]: { ...initialState.zupy[firstZupaId], prosperity: 10, food: 100 }
+        }
       };
-      
-      const newState = processTick(stateWithLowProsperity);
-      const nitra = newState.zupas.find(z => z.id === 'Nitra');
-      
-      expect(nitra).toBeDefined();
-      // Prosperity should grow (increase) slightly
-      expect(nitra!.prosperity).toBeGreaterThan(10);
+
+      const newState = processTick(stateWithFood);
+      expect(newState.zupy[firstZupaId].prosperity).toBeGreaterThan(10);
+    });
+
+    it('should shrink zupa prosperity when food is insufficient', () => {
+      const firstZupaId = Object.keys(initialState.zupy)[0];
+      const stateWithoutFood: GameState = {
+        ...initialState,
+        zupy: {
+          ...initialState.zupy,
+          [firstZupaId]: { ...initialState.zupy[firstZupaId], prosperity: 50, food: 0 }
+        }
+      };
+
+      const newState = processTick(stateWithoutFood);
+      expect(newState.zupy[firstZupaId].prosperity).toBeLessThan(50);
     });
 
     it('should cap prosperity at 100', () => {
-      // Create a state with a zupa that has max prosperity
+      const firstZupaId = Object.keys(initialState.zupy)[0];
       const stateWithMaxProsperity: GameState = {
         ...initialState,
-        zupas: initialState.zupas.map(z => 
-          z.id === 'Nitra' ? { ...z, prosperity: 100 } : z
-        )
+        zupy: {
+          ...initialState.zupy,
+          [firstZupaId]: { ...initialState.zupy[firstZupaId], prosperity: 100, food: 1000 }
+        }
       };
-      
+
       const newState = processTick(stateWithMaxProsperity);
-      const nitra = newState.zupas.find(z => z.id === 'Nitra');
-      
-      expect(nitra).toBeDefined();
-      // Prosperity should not exceed 100
-      expect(nitra!.prosperity).toBeLessThanOrEqual(100);
+      expect(newState.zupy[firstZupaId].prosperity).toBeLessThanOrEqual(100);
     });
 
-    it('should add recruitment pool to zupas', () => {
+    it('should add 5 to the recruitment pool of every zupa', () => {
       const newState = processTick(initialState);
-      
-      initialState.zupas.forEach((zupa, index) => {
-        const newZupa = newState.zupas.find(z => z.id === zupa.id);
-        expect(newZupa).toBeDefined();
-        if (newZupa) {
-          // Recruitment pool should increase
-          expect(newZupa.recruitmentPool).toBeGreaterThanOrEqual(zupa.recruitmentPool);
-        }
+
+      Object.keys(initialState.zupy).forEach(zupaId => {
+        expect(newState.zupy[zupaId].recruitmentPool).toBe(initialState.zupy[zupaId].recruitmentPool + 5);
       });
     });
 
-    it('should pay upkeep for armies', () => {
-      // Create a state with an army
-      const stateWithArmy: GameState = {
-        ...initialState,
-        armies: [
-          {
-            id: 'army-1',
-            name: 'Test Army',
-            factionId: 'player',
-            zupaId: 'Nitra',
-            status: 'active',
-            units: [
-              { type: 'peasant', count: 100, experience: 0 }
-            ],
-            morale: 100,
-            experience: 0,
-            formation: 'shieldWall',
-            commanderId: initialState.nobles[0].id
-          }
-        ]
-      };
-      
-      const initialGold = stateWithArmy.resources.gold;
-      const newState = processTick(stateWithArmy);
-      
-      // Gold should decrease due to upkeep
+    it('should pay upkeep for armies from gold', () => {
+      const initialGold = initialState.resources.gold;
+      expect(initialState.armies.length).toBeGreaterThan(0);
+
+      const newState = processTick(initialState);
+
       expect(newState.resources.gold).toBeLessThan(initialGold);
     });
 
-    it('should check for rebellions', () => {
-      // Create a state with a zupa that has very low loyalty
+    it('should check for rebellions without crashing', () => {
+      const firstZupaId = Object.keys(initialState.zupy)[0];
       const stateWithLowLoyalty: GameState = {
         ...initialState,
-        zupas: initialState.zupas.map(z => 
-          z.id === 'Nitra' ? { ...z, loyalty: 10 } : z
-        )
+        zupy: {
+          ...initialState.zupy,
+          [firstZupaId]: { ...initialState.zupy[firstZupaId], loyalty: 10 }
+        }
       };
-      
+
       const newState = processTick(stateWithLowLoyalty);
-      
-      // The engine should process rebellion checks
-      // (The actual rebellion logic is probabilistic, so we just verify the state is valid)
       expect(newState).toBeDefined();
-      expect(newState.zupas.length).toBe(initialState.zupas.length);
+      expect(Object.keys(newState.zupy).length).toBe(Object.keys(initialState.zupy).length);
     });
 
-    it('should not modify original state', () => {
+    it('should not mutate the original state', () => {
       const originalTick = initialState.tick;
-      const originalMonth = initialState.month;
       const originalYear = initialState.year;
-      
+      const originalGold = initialState.resources.gold;
+
       processTick(initialState);
-      
-      // Original state should be unchanged
+
       expect(initialState.tick).toBe(originalTick);
-      expect(initialState.month).toBe(originalMonth);
       expect(initialState.year).toBe(originalYear);
+      expect(initialState.resources.gold).toBe(originalGold);
     });
 
-    it('should handle multiple ticks correctly', () => {
+    it('should handle 12 ticks (1 year) correctly', () => {
       let state = initialState;
-      
+
       for (let i = 0; i < 12; i++) {
         state = processTick(state);
       }
-      
+
       expect(state.tick).toBe(12);
-      expect(state.month).toBe(1);
-      expect(state.year).toBe(903); // 902 + 1 year
+      expect(state.year).toBe(903);
     });
 
     it('should handle 24 ticks (2 years) correctly', () => {
       let state = initialState;
-      
+
       for (let i = 0; i < 24; i++) {
         state = processTick(state);
       }
-      
+
       expect(state.tick).toBe(24);
-      expect(state.month).toBe(1);
-      expect(state.year).toBe(904); // 902 + 2 years
+      expect(state.year).toBe(904);
     });
 
-    it('should maintain all game state properties', () => {
+    it('should maintain all top-level GameState properties', () => {
       const newState = processTick(initialState);
-      
-      // All top-level properties should be present
-      expect(newState).toHaveProperty('version');
-      expect(newState).toHaveProperty('seed');
+
       expect(newState).toHaveProperty('tick');
       expect(newState).toHaveProperty('year');
-      expect(newState).toHaveProperty('month');
+      expect(newState).toHaveProperty('seed');
+      expect(newState).toHaveProperty('scenario');
       expect(newState).toHaveProperty('player');
       expect(newState).toHaveProperty('nobles');
       expect(newState).toHaveProperty('families');
       expect(newState).toHaveProperty('factions');
-      expect(newState).toHaveProperty('zupas');
+      expect(newState).toHaveProperty('zupy');
       expect(newState).toHaveProperty('armies');
       expect(newState).toHaveProperty('wars');
       expect(newState).toHaveProperty('treaties');
       expect(newState).toHaveProperty('events');
       expect(newState).toHaveProperty('resources');
-      expect(newState).toHaveProperty('religionAxis');
-      expect(newState).toHaveProperty('scenario');
+      expect(newState).toHaveProperty('religion');
+      expect(newState).toHaveProperty('gameOver');
+      expect(newState).toHaveProperty('saveVersion');
     });
 
-    it('should be deterministic with same seed', () => {
-      initRNG('deterministic-tick');
-      const state1 = generateInitialState('deterministic-tick', 'standard');
-      
-      initRNG('deterministic-tick');
-      const state2 = generateInitialState('deterministic-tick', 'standard');
-      
-      const newState1 = processTick(state1);
-      
-      initRNG('deterministic-tick');
-      const newState2 = processTick(state2);
-      
-      // The states should be identical
+    it('should be a pure function: same input always yields the same output', () => {
+      const newState1 = processTick(initialState);
+      const newState2 = processTick(initialState);
+
       expect(newState1.tick).toBe(newState2.tick);
-      expect(newState1.month).toBe(newState2.month);
       expect(newState1.year).toBe(newState2.year);
+      expect(newState1.resources).toEqual(newState2.resources);
     });
   });
 
   describe('Edge Cases', () => {
-    it('should handle empty armies array', () => {
-      const stateWithNoArmies: GameState = {
-        ...initialState,
-        armies: []
-      };
-      
+    it('should handle an empty armies array', () => {
+      const stateWithNoArmies: GameState = { ...initialState, armies: [] };
       const newState = processTick(stateWithNoArmies);
       expect(newState.armies).toEqual([]);
     });
 
-    it('should handle empty nobles array', () => {
-      const stateWithNoNobles: GameState = {
-        ...initialState,
-        nobles: []
-      };
-      
+    it('should handle an empty nobles array', () => {
+      const stateWithNoNobles: GameState = { ...initialState, nobles: [] };
       const newState = processTick(stateWithNoNobles);
       expect(newState.nobles).toEqual([]);
     });
 
-    it('should handle empty zupas array', () => {
-      const stateWithNoZupas: GameState = {
-        ...initialState,
-        zupas: []
-      };
-      
-      const newState = processTick(stateWithNoZupas);
-      expect(newState.zupas).toEqual([]);
+    it('should handle an empty zupy map', () => {
+      const stateWithNoZupy: GameState = { ...initialState, zupy: {} };
+      const newState = processTick(stateWithNoZupy);
+      expect(newState.zupy).toEqual({});
     });
 
-    it('should handle negative resources gracefully', () => {
-      const stateWithNegativeResources: GameState = {
+    it('should not go below zero gold when upkeep exceeds funds', () => {
+      const stateWithNoGold: GameState = {
         ...initialState,
-        resources: {
-          ...initialState.resources,
-          gold: -100
-        }
+        resources: { ...initialState.resources, gold: 0 }
       };
-      
-      const newState = processTick(stateWithNegativeResources);
-      // Should not crash, resources might be more negative due to upkeep
-      expect(newState.resources.gold).toBeLessThanOrEqual(-100);
+
+      const newState = processTick(stateWithNoGold);
+      expect(newState.resources.gold).toBeGreaterThanOrEqual(0);
     });
 
-    it('should handle very old nobles', () => {
+    it('should reduce army morale when upkeep cannot be fully paid', () => {
+      const stateWithNoGold: GameState = {
+        ...initialState,
+        resources: { ...initialState.resources, gold: 0 }
+      };
+      const moraleBefore = stateWithNoGold.armies[0].morale;
+
+      const newState = processTick(stateWithNoGold);
+      expect(newState.armies[0].morale).toBeLessThan(moraleBefore);
+    });
+
+    it('should handle a noble at the death-check age threshold without crashing', () => {
       const stateWithOldNoble: GameState = {
         ...initialState,
+        tick: 11,
         nobles: [
           ...initialState.nobles,
           {
             id: 'old-noble',
             name: 'Old Noble',
-            familyId: 'Mojmírovci',
-            gender: 'male',
-            age: 150, // Very old
-            attributes: { strength: 1, intelligence: 1, charisma: 1, piety: 1, luck: 1 },
-            traits: [],
-            alive: true,
-            health: 10,
-            isRuler: false
+            familyId: initialState.families[0].id,
+            title: 'Magnát',
+            attributes: { combat: 1, diplomacy: 1, intelligence: 1, piety: 1, charisma: 1 },
+            loyalty: 50,
+            location: Object.keys(initialState.zupy)[0],
+            armyIds: [],
+            children: [],
+            coatOfArms: '',
+            age: 80,
+            status: 'alive',
+            birthTick: 0
           }
         ]
       };
-      
+
       const newState = processTick(stateWithOldNoble);
       const oldNoble = newState.nobles.find(n => n.id === 'old-noble');
       expect(oldNoble).toBeDefined();
-      expect(oldNoble?.age).toBe(151);
+      expect(['alive', 'dead']).toContain(oldNoble?.status);
     });
   });
 });

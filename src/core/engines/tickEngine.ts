@@ -7,14 +7,13 @@ import { rngChance } from '../utils/rng';
  */
 export function incrementYear(state: GameState): GameState {
   const newState = { ...state };
-  const newYear = state.year + Math.floor((state.tick + 1) / 12);
-  const newTick = (state.tick + 1) % 12;
-  
-  if (newTick === 0) {
-    newState.year = newYear;
-  }
+  const newTick = state.tick + 1;
+
   newState.tick = newTick;
-  
+  if (newTick % 12 === 0) {
+    newState.year = state.year + 1;
+  }
+
   return newState;
 }
 
@@ -23,25 +22,30 @@ export function incrementYear(state: GameState): GameState {
  */
 export function ageNobles(state: GameState): GameState {
   const newState = { ...state };
-  
-  // Check if year changed (every 12 ticks)
-  const yearChanged = (state.tick + 1) % 12 === 0;
-  
+
+  // This runs after incrementYear, so state.tick is already the post-increment
+  // tick; a year just elapsed exactly when it lands on a multiple of 12.
+  const yearChanged = state.tick % 12 === 0;
+
   if (yearChanged) {
     newState.nobles = state.nobles.map(noble => {
+      if (noble.status !== 'alive') {
+        return noble;
+      }
+
       const newNoble = { ...noble };
       newNoble.age += 1;
-      
+
       // Death check: 10% chance if age >= 80
-      if (noble.age >= 80 && noble.status === 'alive' && rngChance(0.1)) {
+      if (newNoble.age >= 80 && rngChance(0.1)) {
         newNoble.status = 'dead';
-        newNoble.deathTick = state.tick + 1;
+        newNoble.deathTick = state.tick;
       }
-      
+
       return newNoble;
     });
   }
-  
+
   return newState;
 }
 

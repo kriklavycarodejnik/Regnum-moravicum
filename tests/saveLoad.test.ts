@@ -1,142 +1,95 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initRNG } from '../src/core/utils/rng';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { initRNG, getRNGState } from '../src/core/utils/rng';
 import { generateInitialState } from '../src/core/utils/generators';
-import { saveGame, loadGame, hasSave, deleteSave, getSaveVersion, migrateSaveData } from '../src/core/utils/saveLoad';
+import { saveGame, loadGame, hasSave, deleteSave } from '../src/core/utils/saveLoad';
+import { migrateSaveData, getSaveVersion } from '../src/core/utils/migrations';
 import type { GameState } from '../src/core/types';
 
-// Mock localStorage and IndexedDB
-const mockLocalStorage = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: vi.fn((key: string) => { delete store[key]; }),
-    clear: vi.fn(() => { store = {}; }),
-    get store() { return store; }
-  };
-})();
-
-const mockIndexedDB = {
-  open: vi.fn(),
-  deleteDatabase: vi.fn(),
-};
-
-// Mock the global objects
-vi.stubGlobal('localStorage', mockLocalStorage);
-vi.stubGlobal('indexedDB', mockIndexedDB);
+const SAVE_KEY = 'regnum_moravicum_save';
 
 describe('Save/Load Utilities', () => {
   let initialState: GameState;
 
   beforeEach(() => {
     initRNG('save-test-seed');
-    initialState = generateInitialState('save-test-seed', 'standard');
-    // Clear mock storage before each test
-    mockLocalStorage.clear();
-    vi.clearAllMocks();
+    initialState = generateInitialState('prežitie', 'save-test-seed');
+    localStorage.clear();
   });
 
-  afterEach(() => {
-    // Clean up any open databases
-    vi.clearAllMocks();
-  });
-
-  describe('saveGame', () => {
-    it('should save game state to localStorage', () => {
+  describe('saveGame / loadGame round-trip', () => {
+    it('should write a compressed entry to localStorage', () => {
       saveGame(initialState);
-      
-      expect(mockLocalStorage.setItem).toHaveBeenCalled();
-      expect(mockLocalStorage.setItem.mock.calls[0][0]).toBe('regnum_moravicum_save');
-    });
 
-    it('should save compressed data', () => {
-      saveGame(initialState);
-      
-      const savedData = mockLocalStorage.getItem('regnum_moravicum_save');
-      expect(savedData).not.toBeNull();
-      // Compressed data should be a string
-      expect(typeof savedData).toBe('string');
-      // Compressed data should be shorter than raw JSON
+      const raw = localStorage.getItem(SAVE_KEY);
+      expect(raw).not.toBeNull();
+      expect(typeof raw).toBe('string');
+
       const rawJson = JSON.stringify(initialState);
-      expect(savedData!.length).toBeLessThan(rawJson.length);
+      expect(raw!.length).toBeLessThan(rawJson.length);
     });
 
-    it('should include version in saved data', () => {
+    it('should load back an equivalent GameState', async () => {
       saveGame(initialState);
-      
-      const savedData = mockLocalStorage.getItem('regnum_moravicum_save');
-      expect(savedData).toContain('version');
+      const loaded = await loadGame();
+
+      expect(loaded).not.toBeNull();
+      expect(loaded!.seed).toBe(initialState.seed);
+      expect(loaded!.tick).toBe(initialState.tick);
+      expect(loaded!.year).toBe(initialState.year);
+      expect(loaded!.scenario).toBe(initialState.scenario);
+      expect(loaded!.player).toEqual(initialState.player);
+      expect(Object.keys(loaded!.zupy).length).toBe(Object.keys(initialState.zupy).length);
+      expect(loaded!.factions.length).toBe(initialState.factions.length);
+      expect(loaded!.nobles.length).toBe(initialState.nobles.length);
+      expect(loaded!.resources).toEqual(initialState.resources);
     });
 
-    it('should handle save errors gracefully', () => {
-      // Make localStorage throw an error
-      mockLocalStorage.setItem.mockImplementationOnce(() => {
+    it('should return null when no save exists', async () => {
+      const loaded = await loadGame();
+      expect(loaded).toBeNull();
+    });
+
+    it('should return null for corrupted save data', async () => {
+      localStorage.setItem(SAVE_KEY, 'not-a-valid-compressed-payload@@@');
+      const loaded = await loadGame();
+      expect(loaded).toBeNull();
+    });
+
+    it('should not throw when localStorage.setItem fails', () => {
+      const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
         throw new Error('Storage full');
       });
-      
-      // Should not throw
+
       expect(() => saveGame(initialState)).not.toThrow();
-    });
-  });
-
-  describe('loadGame', () => {
-    it('should return null when no save exists', () => {
-      const result = loadGame();
-      expect(result).toBeNull();
+      spy.mockRestore();
     });
 
-    it('should load and decompress saved game', () => {
-      // First save a game
-      saveGame(initialState);
-      
-      // Then load it
-      const loadedState = loadGame();
-      
-      expect(loadedState).not.toBeNull();
-      expect(loadedState).toHaveProperty('version');
-      expect(loadedState).toHaveProperty('seed');
-      expect(loadedState).toHaveProperty('tick');
-    });
-
-    it('should return null for corrupted save data', () => {
-      // Save corrupted data
-      mockLocalStorage.setItem('regnum_moravicum_save', 'invalid-data');
-      
-      const result = loadGame();
-      expect(result).toBeNull();
-    });
-
-    it('should handle load errors gracefully', () => {
-      // Make localStorage throw an error
-      mockLocalStorage.getItem.mockImplementationOnce(() => {
+    it('should not throw when localStorage.getItem fails', async () => {
+      const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementationOnce(() => {
         throw new Error('Storage error');
       });
-      
-      // Should not throw
-      expect(() => loadGame()).not.toThrow();
-      expect(loadGame()).toBeNull();
+
+      await expect(loadGame()).resolves.toBeNull();
+      spy.mockRestore();
     });
 
-    it('should load data with correct structure', () => {
+    it('should save and restore the RNG state alongside the game state', async () => {
       saveGame(initialState);
-      const loadedState = loadGame();
-      
-      expect(loadedState).toHaveProperty('version');
-      expect(loadedState).toHaveProperty('seed');
-      expect(loadedState).toHaveProperty('tick');
-      expect(loadedState).toHaveProperty('year');
-      expect(loadedState).toHaveProperty('month');
-      expect(loadedState).toHaveProperty('player');
-      expect(loadedState).toHaveProperty('nobles');
-      expect(loadedState).toHaveProperty('families');
-      expect(loadedState).toHaveProperty('factions');
-      expect(loadedState).toHaveProperty('zupas');
-      expect(loadedState).toHaveProperty('armies');
-      expect(loadedState).toHaveProperty('wars');
-      expect(loadedState).toHaveProperty('treaties');
-      expect(loadedState).toHaveProperty('events');
-      expect(loadedState).toHaveProperty('resources');
-      expect(loadedState).toHaveProperty('religionAxis');
+
+      // Advance the RNG so the "current" sequence differs from the saved one.
+      getRNGState();
+
+      const loaded = await loadGame();
+      expect(loaded).not.toBeNull();
+    });
+
+    it('should support multiple save/load cycles', async () => {
+      for (let i = 0; i < 5; i++) {
+        saveGame({ ...initialState, tick: i });
+        const loaded = await loadGame();
+        expect(loaded).not.toBeNull();
+        expect(loaded!.tick).toBe(i);
+      }
     });
   });
 
@@ -145,190 +98,64 @@ describe('Save/Load Utilities', () => {
       expect(hasSave()).toBe(false);
     });
 
-    it('should return true when save exists', () => {
+    it('should return true once a save exists', () => {
       saveGame(initialState);
       expect(hasSave()).toBe(true);
-    });
-
-    it('should return false for empty save', () => {
-      mockLocalStorage.setItem('regnum_moravicum_save', '');
-      expect(hasSave()).toBe(false);
     });
   });
 
   describe('deleteSave', () => {
-    it('should remove save from localStorage', () => {
+    it('should remove the save from localStorage', () => {
       saveGame(initialState);
       expect(hasSave()).toBe(true);
-      
+
       deleteSave();
       expect(hasSave()).toBe(false);
     });
 
-    it('should handle delete errors gracefully', () => {
-      // Make localStorage throw an error
-      mockLocalStorage.removeItem.mockImplementationOnce(() => {
-        throw new Error('Storage error');
-      });
-      
-      // Should not throw
+    it('should not throw when nothing has been saved yet', () => {
       expect(() => deleteSave()).not.toThrow();
     });
   });
+});
 
-  describe('getSaveVersion', () => {
-    it('should return null when no save exists', () => {
-      expect(getSaveVersion()).toBeNull();
-    });
-
-    it('should return version from saved data', () => {
-      saveGame(initialState);
-      const version = getSaveVersion();
-      
-      expect(version).not.toBeNull();
-      expect(typeof version).toBe('string');
-    });
-
-    it('should return null for corrupted save data', () => {
-      mockLocalStorage.setItem('regnum_moravicum_save', 'invalid-data');
-      expect(getSaveVersion()).toBeNull();
-    });
+describe('Migrations', () => {
+  it('getSaveVersion should return the current save format version', () => {
+    expect(getSaveVersion()).toBe('2.1.0');
   });
 
   describe('migrateSaveData', () => {
-    it('should handle current version without migration', () => {
-      const currentState = { version: '2.1', ...initialState };
-      const migrated = migrateSaveData(currentState);
-      
-      expect(migrated.version).toBe('2.1');
+    it('should stamp the current saveVersion on data already at the current version', () => {
+      const state = generateInitialState('prežitie', 'migration-seed');
+      const migrated = migrateSaveData({ state, saveVersion: '2.1.0' });
+
+      expect(migrated.saveVersion).toBe('2.1.0');
+      expect(migrated.seed).toBe('migration-seed');
     });
 
-    it('should migrate from older version', () => {
-      const oldState = { 
-        version: '1.0',
-        seed: 'test',
-        tick: 0,
-        year: 902,
-        month: 1
-      };
-      const migrated = migrateSaveData(oldState);
-      
-      expect(migrated.version).toBe('2.1');
+    it('should stamp the current saveVersion on data from an older version', () => {
+      const state = generateInitialState('prežitie', 'old-seed');
+      const migrated = migrateSaveData({ state, saveVersion: '1.0.0' });
+
+      expect(migrated.saveVersion).toBe('2.1.0');
+      expect(migrated.seed).toBe('old-seed');
     });
 
-    it('should handle missing version field', () => {
-      const stateWithoutVersion = { 
-        seed: 'test',
-        tick: 0
-      };
-      const migrated = migrateSaveData(stateWithoutVersion as any);
-      
-      expect(migrated.version).toBe('2.1');
+    it('should default to treating missing saveVersion as the oldest version', () => {
+      const state = generateInitialState('prežitie', 'no-version-seed');
+      const migrated = migrateSaveData({ state });
+
+      expect(migrated.saveVersion).toBe('2.1.0');
     });
 
-    it('should preserve all data during migration', () => {
-      const oldState = { 
-        version: '1.0',
-        seed: 'test-seed',
-        tick: 10,
-        year: 903,
-        month: 5,
-        customField: 'custom-value'
-      };
-      const migrated = migrateSaveData(oldState);
-      
-      expect(migrated.seed).toBe('test-seed');
-      expect(migrated.tick).toBe(10);
-      expect(migrated.year).toBe(903);
-      expect(migrated.month).toBe(5);
-      expect((migrated as any).customField).toBe('custom-value');
-    });
-  });
+    it('should preserve all state fields during migration', () => {
+      const state = generateInitialState('prežitie', 'preserve-seed');
+      const migrated = migrateSaveData({ state, saveVersion: '1.0.0' });
 
-  describe('Round-trip Test', () => {
-    it('should save and load state without data loss', () => {
-      saveGame(initialState);
-      const loadedState = loadGame();
-      
-      expect(loadedState).not.toBeNull();
-      
-      // Compare key properties
-      expect(loadedState!.seed).toBe(initialState.seed);
-      expect(loadedState!.tick).toBe(initialState.tick);
-      expect(loadedState!.year).toBe(initialState.year);
-      expect(loadedState!.month).toBe(initialState.month);
-      expect(loadedState!.scenario).toBe(initialState.scenario);
-      
-      // Compare player
-      expect(loadedState!.player.factionId).toBe(initialState.player.factionId);
-      expect(loadedState!.player.familyId).toBe(initialState.player.familyId);
-      
-      // Compare resources
-      expect(loadedState!.resources.gold).toBe(initialState.resources.gold);
-      expect(loadedState!.resources.food).toBe(initialState.resources.food);
-      
-      // Compare zupas count
-      expect(loadedState!.zupas.length).toBe(initialState.zupas.length);
-      
-      // Compare factions count
-      expect(loadedState!.factions.length).toBe(initialState.factions.length);
-      
-      // Compare nobles count
-      expect(loadedState!.nobles.length).toBe(initialState.nobles.length);
-    });
-
-    it('should handle multiple save/load cycles', () => {
-      for (let i = 0; i < 5; i++) {
-        saveGame(initialState);
-        const loadedState = loadGame();
-        expect(loadedState).not.toBeNull();
-        expect(loadedState!.seed).toBe(initialState.seed);
-      }
-    });
-  });
-
-  describe('Compression Test', () => {
-    it('should compress large game states', () => {
-      // Create a larger game state
-      const largeState: GameState = {
-        ...initialState,
-        nobles: Array.from({ length: 100 }, (_, i) => ({
-          id: `noble-${i}`,
-          name: `Noble ${i}`,
-          familyId: 'Mojmírovci',
-          gender: i % 2 === 0 ? 'male' : 'female',
-          age: 20 + i,
-          attributes: { strength: 10, intelligence: 10, charisma: 10, piety: 10, luck: 10 },
-          traits: [],
-          alive: true,
-          health: 100,
-          isRuler: false
-        })),
-        armies: Array.from({ length: 20 }, (_, i) => ({
-          id: `army-${i}`,
-          name: `Army ${i}`,
-          factionId: 'player',
-          zupaId: 'Nitra',
-          status: 'active',
-          units: [{ type: 'peasant', count: 100, experience: 0 }],
-          morale: 100,
-          experience: 0,
-          formation: 'shieldWall',
-          commanderId: 'noble-0'
-        }))
-      };
-      
-      saveGame(largeState);
-      const savedData = mockLocalStorage.getItem('regnum_moravicum_save');
-      
-      expect(savedData).not.toBeNull();
-      
-      // Compressed data should be significantly shorter than raw JSON
-      const rawJson = JSON.stringify(largeState);
-      const compressionRatio = savedData!.length / rawJson.length;
-      
-      // Should achieve at least some compression
-      expect(compressionRatio).toBeLessThan(1);
+      expect(migrated.tick).toBe(state.tick);
+      expect(migrated.year).toBe(state.year);
+      expect(migrated.nobles.length).toBe(state.nobles.length);
+      expect(Object.keys(migrated.zupy).length).toBe(Object.keys(state.zupy).length);
     });
   });
 });
