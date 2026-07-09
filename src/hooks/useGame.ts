@@ -12,6 +12,7 @@ import {
   autoResolveBattleOnFront,
   type BattleFront,
 } from '../core/engines/warCampaign';
+import { resolveEventChoice } from '../core/engines/eventEngine';
 import type { BattleAction } from '../battle/types';
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -29,6 +30,7 @@ interface UseGameReturn {
   startBattle: (front: BattleFront) => void;
   playBattlePhase: (action: BattleAction) => void;
   autoResolveBattle: (front: BattleFront) => void;
+  resolveEvent: (eventId: string, choiceIndex: number) => void;
 }
 
 export function useGame(): UseGameReturn {
@@ -147,6 +149,15 @@ export function useGame(): UseGameReturn {
     }
   }, [gameState]);
 
+  const resolveEvent = useCallback((eventId: string, choiceIndex: number) => {
+    if (!gameState) return;
+    try {
+      setGameState(resolveEventChoice(gameState, eventId, choiceIndex));
+    } catch (err) {
+      setError(`Error resolving event: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [gameState]);
+
   return {
     gameState,
     isLoading,
@@ -159,7 +170,8 @@ export function useGame(): UseGameReturn {
     startWar,
     startBattle,
     playBattlePhase,
-    autoResolveBattle
+    autoResolveBattle,
+    resolveEvent
   };
 }
 

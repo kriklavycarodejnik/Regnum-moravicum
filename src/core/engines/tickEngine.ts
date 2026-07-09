@@ -2,6 +2,7 @@
 import type { GameState } from '../types/gameState';
 import { rngChance } from '../utils/rng';
 import { processWarCampaignTick } from './warCampaign';
+import { processEvents } from './eventEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -224,11 +225,11 @@ export function processWarsPhase(state: GameState): GameState {
 }
 
 /**
- * Process events (Phase 3)
+ * Process events: spawn newly-due historical events and roll for random
+ * flavor events, per src/core/engines/eventEngine.ts.
  */
 export function processEventsPhase(state: GameState): GameState {
-  // Stub for Phase 3
-  return { ...state };
+  return processEvents(state);
 }
 
 /**
@@ -265,10 +266,10 @@ export function processTick(state: GameState): GameState {
   // Phase 9: Process diplomacy (stub)
   newState = processDiplomacyPhase(newState);
   
-  // Phase 10: Process wars (stub)
+  // Phase 10: Process wars
   newState = processWarsPhase(newState);
-  
-  // Phase 11: Process events (stub)
+
+  // Phase 11: Process events
   newState = processEventsPhase(newState);
   
   return newState;
