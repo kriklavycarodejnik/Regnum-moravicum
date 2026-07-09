@@ -9,14 +9,18 @@ import styles from './styles/App.module.css';
 type AppState = 'loading' | 'menu' | 'game';
 
 export function App() {
-  const { 
-    gameState, 
-    isLoading, 
-    error, 
-    tick, 
-    newGame, 
+  const {
+    gameState,
+    isLoading,
+    error,
+    tick,
+    newGame,
     loadSavedGame,
-    hasSavedGame 
+    hasSavedGame,
+    startWar,
+    startBattle,
+    playBattlePhase,
+    autoResolveBattle
   } = useGame();
   
   const [appState, setAppState] = useState<AppState>('loading');
@@ -78,6 +82,10 @@ export function App() {
         gameState={gameState}
         onTick={tick}
         onBackToMenu={handleBackToMenu}
+        onStartWar={startWar}
+        onStartBattle={startBattle}
+        onPlayBattlePhase={playBattlePhase}
+        onAutoResolveBattle={autoResolveBattle}
       />
     );
   }

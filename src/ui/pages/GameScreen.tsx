@@ -1,6 +1,8 @@
 // Regnum Moravicum v2.1 - Game Screen Page
 import { useState } from 'react';
 import type { GameState } from '../../core/types/gameState';
+import type { BattleAction } from '../../battle/types';
+import type { BattleFront } from '../../core/engines/warCampaign';
 import { StatusBar } from '../components/StatusBar';
 import { MapView } from '../components/MapView';
 import { EventPanel } from '../components/EventPanel';
@@ -15,9 +17,21 @@ interface GameScreenProps {
   gameState: GameState;
   onTick: () => void;
   onBackToMenu: () => void;
+  onStartWar: () => void;
+  onStartBattle: (front: BattleFront) => void;
+  onPlayBattlePhase: (action: BattleAction) => void;
+  onAutoResolveBattle: (front: BattleFront) => void;
 }
 
-export function GameScreen({ gameState, onTick, onBackToMenu }: GameScreenProps) {
+export function GameScreen({
+  gameState,
+  onTick,
+  onBackToMenu,
+  onStartWar,
+  onStartBattle,
+  onPlayBattlePhase,
+  onAutoResolveBattle,
+}: GameScreenProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel>('map');
 
   const renderPanel = () => {
@@ -31,7 +45,15 @@ export function GameScreen({ gameState, onTick, onBackToMenu }: GameScreenProps)
       case 'army':
         return <ArmyPanel gameState={gameState} />;
       case 'battle':
-        return <BattleView gameState={gameState} />;
+        return (
+          <BattleView
+            gameState={gameState}
+            onStartWar={onStartWar}
+            onStartBattle={onStartBattle}
+            onPlayBattlePhase={onPlayBattlePhase}
+            onAutoResolveBattle={onAutoResolveBattle}
+          />
+        );
       default:
         return <MapView gameState={gameState} />;
     }

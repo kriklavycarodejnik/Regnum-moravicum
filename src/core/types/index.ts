@@ -3,3 +3,4 @@
 export * from './entities';
 export * from './gameState';
 export * from './events';
+export * from './warCampaign';

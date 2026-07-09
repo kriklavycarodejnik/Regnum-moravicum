@@ -1,6 +1,7 @@
 // Regnum Moravicum v2.1 - Tick Engine
 import type { GameState } from '../types/gameState';
 import { rngChance } from '../utils/rng';
+import { processWarCampaignTick } from './warCampaign';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -214,11 +215,12 @@ export function processDiplomacyPhase(state: GameState): GameState {
 }
 
 /**
- * Process wars (Phase 2)
+ * Process wars: scripted war campaign events (raids, reinforcements,
+ * occupation looting, liberation/war-end checks). Battles themselves are
+ * player-triggered from the UI, not auto-run during the tick.
  */
 export function processWarsPhase(state: GameState): GameState {
-  // Stub for Phase 2
-  return { ...state };
+  return processWarCampaignTick(state);
 }
 
 /**
