@@ -118,6 +118,7 @@ export function processWarCampaignTick(state: GameState): GameState {
   // Occupation looting (9.3): -1 loyalty / -50 gold per tick per occupied objective zupa
   let zupy = state.zupy;
   let resources = state.resources;
+  let prestigeDelta = 0;
   for (const zs of engine.getAllZupaWarStates()) {
     if (zs.occupierFactionId === FACTION_IDS.hungarian && zupy[zs.zupaId]) {
       zupy = {
@@ -142,6 +143,7 @@ export function processWarCampaignTick(state: GameState): GameState {
         gold: resources.gold + reward.gold,
         prestige: resources.prestige + reward.prestige,
       };
+      prestigeDelta += reward.prestige;
       if (zupy[objective.zupaId]) {
         zupy = {
           ...zupy,
@@ -163,6 +165,7 @@ export function processWarCampaignTick(state: GameState): GameState {
       gold: Math.max(0, resources.gold + SCENARIO_REWARDS.warDefeat.gold),
       prestige: resources.prestige + SCENARIO_REWARDS.warDefeat.prestige,
     };
+    prestigeDelta += SCENARIO_REWARDS.warDefeat.prestige;
     log.push('Vojna s Maďarmi je prehratá - Nitra padla.');
   } else if (endCheck.ended && endCheck.result === 'victory') {
     log.push('Víťazstvo! Maďari boli vyhnaní z Moravy natrvalo.');
@@ -171,7 +174,9 @@ export function processWarCampaignTick(state: GameState): GameState {
   const warCampaign = extractCampaign(engine, { ...wc, appliedEventTicks });
   warCampaign.log = [...wc.log, ...log];
 
-  return { ...state, zupy, resources, warCampaign };
+  const player = prestigeDelta !== 0 ? { ...state.player, prestige: state.player.prestige + prestigeDelta } : state.player;
+
+  return { ...state, zupy, resources, player, warCampaign };
 }
 
 /** Player triggers a battle on one of the available fronts. */
@@ -335,6 +340,7 @@ function concludeBattle(
 
   let resources = state.resources;
   let zupy = state.zupy;
+  let prestigeDelta = 0;
   const log = [...wc.log, ...narrationLog];
 
   const war = engine.getWar(wc.war.id)!;
@@ -344,6 +350,7 @@ function concludeBattle(
     if (alreadyRewarded) continue;
     const reward = objective.zupaId === ZUPA_IDS.devin ? SCENARIO_REWARDS.liberatedDevin : SCENARIO_REWARDS.liberatedNitra;
     resources = { ...resources, gold: resources.gold + reward.gold, prestige: resources.prestige + reward.prestige };
+    prestigeDelta += reward.prestige;
     if (zupy[objective.zupaId]) {
       zupy = { ...zupy, [objective.zupaId]: { ...zupy[objective.zupaId], loyalty: Math.min(100, zupy[objective.zupaId].loyalty + reward.loyaltyBonus) } };
     }
@@ -352,6 +359,7 @@ function concludeBattle(
 
   if (endCheck.ended && endCheck.result === 'defeat') {
     resources = { ...resources, gold: Math.max(0, resources.gold + SCENARIO_REWARDS.warDefeat.gold), prestige: resources.prestige + SCENARIO_REWARDS.warDefeat.prestige };
+    prestigeDelta += SCENARIO_REWARDS.warDefeat.prestige;
     log.push('Vojna s Maďarmi je prehratá.');
   } else if (endCheck.ended && endCheck.result === 'victory') {
     log.push('Víťazstvo nad Maďarmi!');
@@ -366,7 +374,9 @@ function concludeBattle(
     log,
   };
 
-  return { ...state, resources, zupy, warCampaign };
+  const player = prestigeDelta !== 0 ? { ...state.player, prestige: state.player.prestige + prestigeDelta } : state.player;
+
+  return { ...state, resources, zupy, player, warCampaign };
 }
 
 export { shouldAutoResolve };

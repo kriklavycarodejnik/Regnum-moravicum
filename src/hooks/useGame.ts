@@ -70,8 +70,8 @@ export function useGame(): UseGameReturn {
   }, [gameState]);
   
   const tick = useCallback(() => {
-    if (!gameState) return;
-    
+    if (!gameState || gameState.gameOver) return;
+
     try {
       const newState = processTick({ ...gameState });
       setGameState(newState);

@@ -1,0 +1,79 @@
+/* GameOverScreen.module.css */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+}
+
+.content {
+  text-align: center;
+  padding: 40px;
+  max-width: 480px;
+}
+
+.content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+
+.victory .content h1 {
+  color: var(--accent-gold);
+}
+
+.defeat .content h1 {
+  color: var(--color-danger);
+}
+
+.reason {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin-bottom: 30px;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin-bottom: 35px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat .label {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.stat .value {
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.menuButton {
+  padding: 12px 30px;
+  background: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  border-radius: 4px;
+  color: var(--text-dark);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.menuButton:hover {
+  background: var(--accent-gold-light);
+  border-color: var(--accent-gold-light);
+}

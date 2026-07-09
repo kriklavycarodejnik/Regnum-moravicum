@@ -4,6 +4,7 @@ import { useGame } from './hooks/useGame';
 import { MainMenu } from './ui/pages/MainMenu';
 import { GameScreen } from './ui/pages/GameScreen';
 import { LoadingScreen } from './ui/pages/LoadingScreen';
+import { GameOverScreen } from './ui/pages/GameOverScreen';
 import styles from './styles/App.module.css';
 
 type AppState = 'loading' | 'menu' | 'game';
@@ -79,6 +80,10 @@ export function App() {
 
   // Show game
   if (appState === 'game' && gameState) {
+    if (gameState.gameOver) {
+      return <GameOverScreen gameState={gameState} onBackToMenu={handleBackToMenu} />;
+    }
+
     return (
       <GameScreen
         gameState={gameState}

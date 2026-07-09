@@ -49,6 +49,7 @@ export interface GameState {
   religion: ReligionAxis;
   gameOver: boolean;
   gameOverReason?: string;
+  gameOverVictory?: boolean;
   saveVersion: string;
   warCampaign: WarCampaignState | null;
 }

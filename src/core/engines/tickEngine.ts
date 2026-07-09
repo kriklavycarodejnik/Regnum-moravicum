@@ -4,6 +4,7 @@ import { rngChance } from '../utils/rng';
 import { processWarCampaignTick } from './warCampaign';
 import { processEvents } from './eventEngine';
 import { processDiplomacy } from './diplomacyEngine';
+import { decayReligionAxis, growPrestige, checkVictoryConditions } from './victoryEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -160,16 +161,17 @@ export function payUpkeep(state: GameState): GameState {
  */
 export function checkRebellions(state: GameState): GameState {
   const newState = { ...state };
-  
+
   newState.zupy = { ...state.zupy };
-  
+  newState.events = [...state.events];
+
   Object.entries(state.zupy).forEach(([zupaId, zupa]) => {
     if (zupa.loyalty < 20 && rngChance(0.3)) {
       const newZupa = { ...zupa };
       newZupa.prosperity = Math.max(0, zupa.prosperity - 10);
       newZupa.loyalty = Math.min(100, zupa.loyalty + 5); // Rebellion suppressed for now
       newState.zupy[zupaId] = newZupa;
-      
+
       // Add rebellion event to state
       newState.events.push({
         id: `rebellion_${state.tick}_${zupaId}`,
@@ -193,7 +195,7 @@ export function checkRebellions(state: GameState): GameState {
       });
     }
   });
-  
+
   return newState;
 }
 
@@ -248,9 +250,15 @@ export function processTick(state: GameState): GameState {
   
   // Phase 3: Decay moods and morale
   newState = decayMoods(newState);
-  
+
+  // Phase 3b: Decay religion axis toward neutral
+  newState = decayReligionAxis(newState);
+
   // Phase 4: Grow prosperity
   newState = growProsperity(newState);
+
+  // Phase 4b: Passive prestige trickle from good governance
+  newState = growPrestige(newState);
   
   // Phase 5: Add recruitment pool
   newState = addRecruitmentPool(newState);
@@ -272,7 +280,10 @@ export function processTick(state: GameState): GameState {
 
   // Phase 11: Process events
   newState = processEventsPhase(newState);
-  
+
+  // Phase 12: Check victory/defeat conditions
+  newState = checkVictoryConditions(newState);
+
   return newState;
 }
 

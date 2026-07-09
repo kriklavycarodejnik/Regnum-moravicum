@@ -3,3 +3,4 @@
 export { default as MainMenu } from './MainMenu';
 export { default as GameScreen } from './GameScreen';
 export { default as LoadingScreen } from './LoadingScreen';
+export { default as GameOverScreen } from './GameOverScreen';
