@@ -1,0 +1,46 @@
+[
+  { "id": "action_melee_attacker_wins_1", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "attacker_wins" }, "text": "Muži {attackerName} sa vrhli do priameho stretu a svojou silou a odhodlaním zvrhli nepriateľské rady.", "weight": 1 },
+  { "id": "action_melee_attacker_wins_2", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "attacker_wins" }, "text": "V zovretí mečov a štítov si {attackerName} vydobyli prevahu, kým rady {defenderName} sa pod náporom lámali.", "weight": 1 },
+  { "id": "action_melee_attacker_wins_3", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "attacker_wins" }, "text": "Krik a rinčanie kovu splynuli do jedného, no z toho zmätku vyšli víťazne muži {attackerName}.", "weight": 1 },
+  { "id": "action_melee_attacker_wins_4", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "attacker_wins" }, "text": "Telo na telo, meč na meč - a napokon to boli bojovníci {attackerName}, ktorí zatlačili nepriateľa nazad.", "weight": 1 },
+
+  { "id": "action_melee_defender_wins_1", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "defender_wins" }, "text": "{defenderName} pevne zovreli rady a útok mužov {attackerName} sa rozbil o ich štíty ako vlna o skalu.", "weight": 1 },
+  { "id": "action_melee_defender_wins_2", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "defender_wins" }, "text": "Napriek náporu sa obrancovia {defenderName} nepohli z miesta a útočníci museli s krvavými stratami ustúpiť.", "weight": 1 },
+  { "id": "action_melee_defender_wins_3", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "defender_wins" }, "text": "Meče {attackerName} narazili na múr štítov {defenderName}, ktorý sa neroztrhol.", "weight": 1 },
+  { "id": "action_melee_defender_wins_4", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "defender_wins" }, "text": "Zoradení {defenderName} vydržali najprudší náraz a odrazili útočiace šíky späť.", "weight": 1 },
+
+  { "id": "action_melee_draw_1", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "draw" }, "text": "Boj muža proti mužovi sa vliekol bez jasného víťaza, kým únava zovrela obe strany rovnako.", "weight": 1 },
+  { "id": "action_melee_draw_2", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "draw" }, "text": "Rady oboch vojsk sa zaborili do seba a žiadna sa nedokázala presadiť.", "weight": 1 },
+  { "id": "action_melee_draw_3", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "draw" }, "text": "Kov narážal na kov dlho a márne - ani {attackerName}, ani {defenderName} nezískali prevahu.", "weight": 1 },
+  { "id": "action_melee_draw_4", "slot": "action", "conditions": { "attackerAction": "melee", "outcome": "draw" }, "text": "Stret utíchol vo vzájomnom vyčerpaní, hranica medzi šíkmi sa takmer nepohla.", "weight": 1 },
+
+  { "id": "action_ranged_attacker_wins_1", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "attacker_wins" }, "text": "Šíp za šípom dopadal do radov {defenderName}, kým lukostrelci {attackerName} nezlomili ich odhodlanie.", "weight": 1 },
+  { "id": "action_ranged_attacker_wins_2", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "attacker_wins" }, "text": "Oblohu zatienil dážď šípov od mužov {attackerName} a nepriateľ sa pod ním prehýbal.", "weight": 1 },
+  { "id": "action_ranged_attacker_wins_3", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "attacker_wins" }, "text": "Skôr než sa {defenderName} priblížili, ich rady preriedila prihustá streľba {attackerName}.", "weight": 1 },
+  { "id": "action_ranged_attacker_wins_4", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "attacker_wins" }, "text": "Tetivy spievali svoju pieseň smrti a {defenderName} platili za každý krok vpred.", "weight": 1 },
+
+  { "id": "action_ranged_defender_wins_1", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "defender_wins" }, "text": "{defenderName} sa ukryli za štítmi a šípy mužov {attackerName} sa neškodne strácali v dreve a koži.", "weight": 1 },
+  { "id": "action_ranged_defender_wins_2", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "defender_wins" }, "text": "Streľba {attackerName} vyšla nazmar, kým obrancovia {defenderName} vydržali za svojím krytím.", "weight": 1 },
+  { "id": "action_ranged_defender_wins_3", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "defender_wins" }, "text": "Zbroj a štíty {defenderName} pohltili väčšinu šípov a útočníci nezískali žiadanú výhodu.", "weight": 1 },
+  { "id": "action_ranged_defender_wins_4", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "defender_wins" }, "text": "Napriek dažďu striel neochabla vôľa mužov {defenderName} - útok lukostrelcov {attackerName} sa minul účinku.", "weight": 1 },
+
+  { "id": "action_ranged_draw_1", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "draw" }, "text": "Šípy lietali oboma smermi a straty na oboch stranách rástli rovnako pomaly.", "weight": 1 },
+  { "id": "action_ranged_draw_2", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "draw" }, "text": "Ani {attackerName}, ani {defenderName} nedokázali svojou streľbou zlomiť odhodlanie druhej strany.", "weight": 1 },
+  { "id": "action_ranged_draw_3", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "draw" }, "text": "Vzduch bol plný šípov, no bojová línia zostala takmer nezmenená.", "weight": 1 },
+  { "id": "action_ranged_draw_4", "slot": "action", "conditions": { "attackerAction": "ranged", "outcome": "draw" }, "text": "Výmena striel trvala dlho, bez toho, aby priniesla rozhodnutie.", "weight": 1 },
+
+  { "id": "action_flank_attacker_wins_1", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "attacker_wins" }, "text": "Jazda {attackerName} obišla bok nepriateľa a rady {defenderName} sa v zmätku rozpadli.", "weight": 1 },
+  { "id": "action_flank_attacker_wins_2", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "attacker_wins" }, "text": "Prekvapivý úder zboku zaskočil mužov {defenderName} skôr, než stihli zovrieť rady.", "weight": 1 },
+  { "id": "action_flank_attacker_wins_3", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "attacker_wins" }, "text": "{attackerName} udreli tam, kde to {defenderName} nečakali, a nepriateľské krídlo sa dalo na útek.", "weight": 1 },
+  { "id": "action_flank_attacker_wins_4", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "attacker_wins" }, "text": "Obchvat sa vydaril - {defenderName} sa ocitli obkľúčení a ich odpor sa rozpadol.", "weight": 1 },
+
+  { "id": "action_flank_defender_wins_1", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "defender_wins" }, "text": "{defenderName} včas postrehli pohyb po boku a otočili rady, aby odrazili nájazd.", "weight": 1 },
+  { "id": "action_flank_defender_wins_2", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "defender_wins" }, "text": "Pokus {attackerName} o obchvat narazil na pripravenú obranu {defenderName} a stroskotal.", "weight": 1 },
+  { "id": "action_flank_defender_wins_3", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "defender_wins" }, "text": "Jazda {attackerName} sa vrhla do boku, no {defenderName} ju privítali kopijami a štítmi.", "weight": 1 },
+  { "id": "action_flank_defender_wins_4", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "defender_wins" }, "text": "Bočný úder mužov {attackerName} sa minul cieľa - {defenderName} boli pripravení.", "weight": 1 },
+
+  { "id": "action_flank_draw_1", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "draw" }, "text": "Obchvat sa podaril len čiastočne, obe strany sa preskupili bez jasnej výhody.", "weight": 1 },
+  { "id": "action_flank_draw_2", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "draw" }, "text": "Bok síce zakolísal, no rady {defenderName} sa opäť zomkli skôr, než utrpeli väčšie škody.", "weight": 1 },
+  { "id": "action_flank_draw_3", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "draw" }, "text": "Manéver {attackerName} vniesol do bitky zmätok, no rozhodnutie nepriniesol.", "weight": 1 },
+  { "id": "action_flank_draw_4", "slot": "action", "conditions": { "attackerAction": "flank", "outcome": "draw" }, "text": "Krídla oboch vojsk sa preskupovali v neistote, bez toho, aby niekto získal prevahu.", "weight": 1 }
+]

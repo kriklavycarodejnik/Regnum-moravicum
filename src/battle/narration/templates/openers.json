@@ -1,0 +1,128 @@
+[
+  {
+    "id": "opener_attack_1",
+    "slot": "opener",
+    "conditions": { "phase": "attack" },
+    "text": "Bitka sa rozhorela na poli {zupaName}, kde sa stretli vojská {attackerName} pod velením {attackerCommander} s armádou {defenderName} vedenej {defenderCommander}.",
+    "weight": 1
+  },
+  {
+    "id": "opener_attack_2",
+    "slot": "opener",
+    "conditions": { "phase": "attack" },
+    "text": "S prvými lúčmi slnka sa ozval bojný pokrik a zvon zbrání, keď sa {attackerName} vrhli do útoku proti obrancom z {defenderName}.",
+    "weight": 1
+  },
+  {
+    "id": "opener_attack_3",
+    "slot": "opener",
+    "conditions": { "phase": "attack" },
+    "text": "Zem pod nohami vojakov {attackerCommander} sa chvela, keď sa ich rady priblížili k pozíciám nepriateľa.",
+    "weight": 1
+  },
+  {
+    "id": "opener_attack_4",
+    "slot": "opener",
+    "conditions": { "phase": "attack" },
+    "text": "Dym z vypálených dedín štípal oči, keď sa {attackerName} pripravovali na útok proti {defenderName}.",
+    "weight": 1
+  },
+  {
+    "id": "opener_attack_5",
+    "slot": "opener",
+    "conditions": { "phase": "attack" },
+    "text": "Podkovy duneli po zamrznutej zemi, keď sa jazda {attackerName} rozbehla proti nepriateľským líniám.",
+    "weight": 1
+  },
+  {
+    "id": "opener_attack_6",
+    "slot": "opener",
+    "conditions": { "phase": "attack" },
+    "text": "Vzduch bol naplnený napätím, keď sa obidve armády priblížili k osudnému stretnutiu na poli {zupaName}.",
+    "weight": 1
+  },
+  {
+    "id": "opener_counterattack_1",
+    "slot": "opener",
+    "conditions": { "phase": "counterattack" },
+    "text": "Obrancovia z {defenderName} sa zoskupili a prešli do protiútoku, rozhodnutí zvrátiť osud bitky.",
+    "weight": 1
+  },
+  {
+    "id": "opener_counterattack_2",
+    "slot": "opener",
+    "conditions": { "phase": "counterattack" },
+    "text": "Keď sa prach po prvom útoku usadil, {defenderCommander} dal signál k protiútoku.",
+    "weight": 1
+  },
+  {
+    "id": "opener_counterattack_3",
+    "slot": "opener",
+    "conditions": { "phase": "counterattack" },
+    "text": "Nepriateľ sa domnieval, že má bitku vyhranú, ale {defenderName} sa ešte nevzdali.",
+    "weight": 1
+  },
+  {
+    "id": "opener_counterattack_4",
+    "slot": "opener",
+    "conditions": { "phase": "counterattack" },
+    "text": "Z radov {defenderName} sa ozval bojný pokrik, keď sa ich vojaci obrátili proti útočníkom.",
+    "weight": 1
+  },
+  {
+    "id": "opener_counterattack_5",
+    "slot": "opener",
+    "conditions": { "phase": "counterattack" },
+    "text": "Krvavá zem sa stala svedkom odhodlania obrancov, ktorí prešli do protiútoku.",
+    "weight": 1
+  },
+  {
+    "id": "opener_counterattack_6",
+    "slot": "opener",
+    "conditions": { "phase": "counterattack" },
+    "text": "Vojaci {defenderCommander} sa zoskupili a s novou silou zaútočili na nepriateľa.",
+    "weight": 1
+  },
+  {
+    "id": "opener_decision_1",
+    "slot": "opener",
+    "conditions": { "phase": "decision" },
+    "text": "Bitka sa blížila k svojmu vrcholu, keď sa obidve strany pripravovali na rozhodujúci úder.",
+    "weight": 1
+  },
+  {
+    "id": "opener_decision_2",
+    "slot": "opener",
+    "conditions": { "phase": "decision" },
+    "text": "Osud bitky sa mal rozhodnúť v posledných chvíľach, keď sa obidve armády postavili tvárou v tvár.",
+    "weight": 1
+  },
+  {
+    "id": "opener_decision_3",
+    "slot": "opener",
+    "conditions": { "phase": "decision" },
+    "text": "Zem sa chvela pod nohami vojakov, keď sa priblížil moment rozhodnutia.",
+    "weight": 1
+  },
+  {
+    "id": "opener_decision_4",
+    "slot": "opener",
+    "conditions": { "phase": "decision" },
+    "text": "Vzduch bol naplnený napätím, keď sa {attackerName} a {defenderName} pripravovali na finálny súboj.",
+    "weight": 1
+  },
+  {
+    "id": "opener_decision_5",
+    "slot": "opener",
+    "conditions": { "phase": "decision" },
+    "text": "Slnko sa blížilo k obzoru, keď sa bitka priblížila k svojmu koncu.",
+    "weight": 1
+  },
+  {
+    "id": "opener_decision_6",
+    "slot": "opener",
+    "conditions": { "phase": "decision" },
+    "text": "Posledné síly, posledné nadeje - bitka sa mala rozhodnúť teraz.",
+    "weight": 1
+  }
+]
