@@ -20,43 +20,49 @@ import { rng, rngChance, initRNG } from './rng';
 
 export const SAVE_VERSION = '2.1.0';
 
-// Attribute point budgets by title
+// Attribute point budgets by title (0-100 scale, ×10 oproti pôvodnej 1-10 škále)
 const ATTRIBUTE_BUDGETS: Record<NobleTitle, { min: number; max: number }> = {
-  'Župan': { min: 15, max: 20 },
-  'Magnát': { min: 20, max: 28 },
-  'Palatín': { min: 28, max: 38 },
-  'Kráľ': { min: 40, max: 50 },
-  'Regent': { min: 30, max: 40 }
+  'Župan': { min: 150, max: 200 },
+  'Magnát': { min: 200, max: 280 },
+  'Palatín': { min: 280, max: 380 },
+  'Kráľ': { min: 400, max: 500 },
+  'Regent': { min: 300, max: 400 }
 };
 
-const ATTRIBUTE_NAMES: (keyof Attributes)[] = ['combat', 'diplomacy', 'intelligence', 'piety', 'charisma'];
+const CORE_ATTRIBUTE_NAMES: (keyof Pick<Attributes, 'combat' | 'diplomacy' | 'intelligence' | 'piety' | 'charisma'>)[] =
+  ['combat', 'diplomacy', 'intelligence', 'piety', 'charisma'];
 
 /**
- * Generate attributes for a noble based on title
+ * Generate attributes for a noble based on title.
+ * combat/diplomacy/intelligence/piety/charisma sú viazané na bodový rozpočet titulu.
+ * ambition/education/reputation sa generujú nezávisle od titulu (kánon v1.1).
  */
 export function generateAttributes(title: NobleTitle): Attributes {
   const budget = rng(ATTRIBUTE_BUDGETS[title].min, ATTRIBUTE_BUDGETS[title].max);
   const attributes: Attributes = {
-    combat: 1,
-    diplomacy: 1,
-    intelligence: 1,
-    piety: 1,
-    charisma: 1
+    combat: 10,
+    diplomacy: 10,
+    intelligence: 10,
+    piety: 10,
+    charisma: 10,
+    ambition: rng(20, 80),
+    education: rng(20, 80),
+    reputation: rng(20, 80)
   };
-  
-  let remaining = budget - 5; // Start with 1 in each attribute
-  
+
+  let remaining = budget - 50; // Start with 10 in each of the 5 core attributes
+
   // Distribute remaining points randomly
   while (remaining > 0) {
-    const attrIndex = rng(0, ATTRIBUTE_NAMES.length - 1);
-    const attr = ATTRIBUTE_NAMES[attrIndex];
-    
-    if (attributes[attr] < 10) {
+    const attrIndex = rng(0, CORE_ATTRIBUTE_NAMES.length - 1);
+    const attr = CORE_ATTRIBUTE_NAMES[attrIndex];
+
+    if (attributes[attr] < 100) {
       attributes[attr]++;
       remaining--;
     }
   }
-  
+
   return attributes;
 }
 

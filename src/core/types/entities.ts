@@ -13,16 +13,21 @@ export type BattleId = string;
 export type NobleTitle = 'Župan' | 'Magnát' | 'Palatín' | 'Kráľ' | 'Regent';
 export type NobleStatus = 'alive' | 'dead' | 'exiled' | 'rebel';
 
+// Kánon v1.1: jednotná škála 0-100 pre všetky atribúty (pôvodná škála 1-10 zrušená, prevod ×10).
 export interface Attributes {
-  combat: number;        // 1-10
-  diplomacy: number;     // 1-10
-  intelligence: number;  // 1-10
-  piety: number;         // 1-10
-  charisma: number;      // 1-10
+  combat: number;        // 0-100
+  diplomacy: number;     // 0-100
+  intelligence: number;  // 0-100
+  piety: number;         // 0-100
+  charisma: number;      // 0-100
+  ambition: number;      // 0-100 - riziko vzbury/uzurpácie, ochota riskantných zmlúv
+  education: number;     // 0-100 - rýchlosť výskumu, bonus k eventom s učením
+  reputation: number;    // 0-100 - vplyv na lojalitu žúp a frakcií, dedičné
 }
 
-// Bodové rozpočty podľa titulu:
-// Župan: 15-20 | Magnát: 20-28 | Palatín: 28-38 | Kráľ: 40-50
+// Bodové rozpočty (combat/diplomacy/intelligence/piety/charisma) podľa titulu, ×10 oproti pôvodnej 1-10 škále:
+// Župan: 150-200 | Magnát: 200-280 | Palatín: 280-380 | Kráľ: 400-500
+// Ambition/education/reputation nie sú viazané na titul, generujú sa nezávisle.
 export interface Noble {
   id: NobleId;
   name: string;

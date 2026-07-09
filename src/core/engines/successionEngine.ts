@@ -44,7 +44,7 @@ export function generateHeir(state: GameState, familyId: string, name: string): 
     name,
     familyId,
     title: 'Župan',
-    attributes: { combat: 5, diplomacy: 5, intelligence: 5, piety: 5, charisma: 5 },
+    attributes: { combat: 50, diplomacy: 50, intelligence: 50, piety: 50, charisma: 50, ambition: 50, education: 50, reputation: 50 },
     loyalty: 80,
     location: Object.keys(state.zupy)[0],
     armyIds: [],

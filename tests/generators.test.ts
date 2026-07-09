@@ -37,31 +37,42 @@ describe('Generators', () => {
   });
 
   describe('generateAttributes', () => {
-    it('should generate all five attributes', () => {
+    it('should generate all eight attributes', () => {
       const attrs = generateAttributes('Magnát');
       expect(attrs).toHaveProperty('combat');
       expect(attrs).toHaveProperty('diplomacy');
       expect(attrs).toHaveProperty('intelligence');
       expect(attrs).toHaveProperty('piety');
       expect(attrs).toHaveProperty('charisma');
+      expect(attrs).toHaveProperty('ambition');
+      expect(attrs).toHaveProperty('education');
+      expect(attrs).toHaveProperty('reputation');
     });
 
-    it('should respect the point budget for each title (1-10 per attribute)', () => {
+    it('should respect the point budget for each title on the 0-100 scale', () => {
       const attrs = generateAttributes('Kráľ');
       const sum = attrs.combat + attrs.diplomacy + attrs.intelligence + attrs.piety + attrs.charisma;
-      expect(sum).toBeGreaterThanOrEqual(40);
-      expect(sum).toBeLessThanOrEqual(50);
-      for (const value of Object.values(attrs)) {
-        expect(value).toBeGreaterThanOrEqual(1);
-        expect(value).toBeLessThanOrEqual(10);
+      expect(sum).toBeGreaterThanOrEqual(400);
+      expect(sum).toBeLessThanOrEqual(500);
+      for (const attr of ['combat', 'diplomacy', 'intelligence', 'piety', 'charisma'] as const) {
+        expect(attrs[attr]).toBeGreaterThanOrEqual(0);
+        expect(attrs[attr]).toBeLessThanOrEqual(100);
+      }
+    });
+
+    it('should keep ambition/education/reputation independent of title, within 0-100', () => {
+      const attrs = generateAttributes('Regent');
+      for (const attr of ['ambition', 'education', 'reputation'] as const) {
+        expect(attrs[attr]).toBeGreaterThanOrEqual(0);
+        expect(attrs[attr]).toBeLessThanOrEqual(100);
       }
     });
 
     it('should use a smaller budget for lower titles', () => {
       const attrs = generateAttributes('Župan');
       const sum = attrs.combat + attrs.diplomacy + attrs.intelligence + attrs.piety + attrs.charisma;
-      expect(sum).toBeGreaterThanOrEqual(15);
-      expect(sum).toBeLessThanOrEqual(20);
+      expect(sum).toBeGreaterThanOrEqual(150);
+      expect(sum).toBeLessThanOrEqual(200);
     });
 
     it('should be deterministic with same seed', () => {
