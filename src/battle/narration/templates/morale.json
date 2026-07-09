@@ -1,0 +1,86 @@
+[
+  {
+    "id": "morale_rise_1",
+    "slot": "morale",
+    "conditions": { "outcome": "attacker_wins" },
+    "text": "Morálka vojakov {attackerName} stúpala, keď videli, ako ich nepriateľ ustupuje.",
+    "weight": 1
+  },
+  {
+    "id": "morale_rise_2",
+    "slot": "morale",
+    "conditions": { "outcome": "defender_wins" },
+    "text": "Obrancovia z {defenderName} sa cítili silnejší, keď odrazili nepriateľský útok.",
+    "weight": 1
+  },
+  {
+    "id": "morale_rise_3",
+    "slot": "morale",
+    "conditions": { "outcome": "attacker_wins" },
+    "text": "V radach {attackerName} sa ozýval bojný pokrik, keď si uvedomili, že majú prevahu.",
+    "weight": 1
+  },
+  {
+    "id": "morale_rise_4",
+    "slot": "morale",
+    "conditions": { "outcome": "defender_wins" },
+    "text": "Vojaci {defenderName} sa zoskupili a s novou odhodlanosťou pokračovali v boji.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fall_1",
+    "slot": "morale",
+    "conditions": { "outcome": "attacker_wins" },
+    "text": "V zadných radoch {defenderName} sa objavili prvé známky pochybností, keď videli, ako ich druhovia padnú.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fall_2",
+    "slot": "morale",
+    "conditions": { "outcome": "defender_wins" },
+    "text": "Útočníci z {attackerName} sa začali obzerať k lesu, keď ich útok bol odrazený.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fall_3",
+    "slot": "morale",
+    "conditions": { "outcome": "attacker_wins" },
+    "text": "Morálka {defenderName} klesala, keď videli, ako ich rady sa rozpadajú.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fall_4",
+    "slot": "morale",
+    "conditions": { "outcome": "defender_wins" },
+    "text": "Vojaci {attackerName} sa cítili unavení a znechutení, keď ich útok nepriniesol očakávané výsledky.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fluctuate_1",
+    "slot": "morale",
+    "conditions": { "outcome": "draw" },
+    "text": "Morálka oboch strán kolísala, keď sa bitka vyvíjala neistým smerom.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fluctuate_2",
+    "slot": "morale",
+    "conditions": { "outcome": "draw" },
+    "text": "Vojaci oboch strán sa obzerali po bojišti, neistí, či majú ešte silu pokračovať.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fluctuate_3",
+    "slot": "morale",
+    "conditions": { "outcome": "draw" },
+    "text": "Bitka prebiehala vyrovnane a morálka oboch strán sa menila s každým novým útokom.",
+    "weight": 1
+  },
+  {
+    "id": "morale_fluctuate_4",
+    "slot": "morale",
+    "conditions": { "outcome": "draw" },
+    "text": "Ani jedna strana nezískala prevahu a morálka vojakov kolísala medzi nádejou a pochybnosťami.",
+    "weight": 1
+  }
+]

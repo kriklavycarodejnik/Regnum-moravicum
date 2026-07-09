@@ -1,0 +1,107 @@
+[
+  {
+    "id": "terrain_field_1",
+    "slot": "terrain",
+    "conditions": { "terrain": "field" },
+    "text": "Rovná pláň poskytovala priestor pre manévre jazdy a pechoty.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_field_2",
+    "slot": "terrain",
+    "conditions": { "terrain": "field" },
+    "text": "Otvorené pole umožňovalo vojenstvu rozvinúť plnú silu svojich oddielov.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_field_3",
+    "slot": "terrain",
+    "conditions": { "terrain": "field" },
+    "text": "Na otvorenom poli sa bojujúci mohli voľne pohybovať, ale aj rýchlo stať cieľom nepriateľských šípov.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_forest_1",
+    "slot": "terrain",
+    "conditions": { "terrain": "forest" },
+    "text": "Hustý les poskytoval krytie pechote, ale spomaľoval pohyb jazdy.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_forest_2",
+    "slot": "terrain",
+    "conditions": { "terrain": "forest" },
+    "text": "Stromy a podrast' znesnadňovali manévre, ale lukostrelci mohli využiť výhodu skrytého postavenia.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_forest_3",
+    "slot": "terrain",
+    "conditions": { "terrain": "forest" },
+    "text": "V lesnom poraste sa vojaci museli pohybovať opatrne, aby sa nešli do pasce nepriateľa.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_fortress_1",
+    "slot": "terrain",
+    "conditions": { "terrain": "fortress" },
+    "text": "Múry pevnosti poskytovali obrancom výborné krytie pred nepriateľskými útoky.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_fortress_2",
+    "slot": "terrain",
+    "conditions": { "terrain": "fortress" },
+    "text": "Opevnené hradby znesnadňovali útočníkom priblíženie sa k bránam.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_fortress_3",
+    "slot": "terrain",
+    "conditions": { "terrain": "fortress" },
+    "text": "Pevnosť sa tyčila nad okolím, poskytujúc obrancom strategickú výhodu.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_river_1",
+    "slot": "terrain",
+    "conditions": { "terrain": "river" },
+    "text": "Rieka pretekala cez bojište, znesnadňujúc pohyb a deliaca vojská na dve strany.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_river_2",
+    "slot": "terrain",
+    "conditions": { "terrain": "river" },
+    "text": "Voda rieky odrážala slnečné lúče, oslepujúc vojakov a znesnadňujúc im zameranie.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_river_3",
+    "slot": "terrain",
+    "conditions": { "terrain": "river" },
+    "text": "Brod cez rieku sa stal strategickým bodom, o ktorý sa obidve strany snažili získať kontrolu.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_hill_1",
+    "slot": "terrain",
+    "conditions": { "terrain": "hill" },
+    "text": "Kopec poskytoval obrancom výhodné postavenie, z ktorého mohli sledovať pohyb nepriateľa.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_hill_2",
+    "slot": "terrain",
+    "conditions": { "terrain": "hill" },
+    "text": "Výška kopca umožňovala lukostrelcom lepšie zameranie a väčší dosah.",
+    "weight": 1
+  },
+  {
+    "id": "terrain_hill_3",
+    "slot": "terrain",
+    "conditions": { "terrain": "hill" },
+    "text": "Strmé svahy kopca spomaľovali útok, ale poskytovali obrancom prirodzenú bariéru.",
+    "weight": 1
+  }
+]

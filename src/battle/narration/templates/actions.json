@@ -1,0 +1,233 @@
+[
+  {
+    "id": "action_melee_vs_melee_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "melee", "outcome": "attacker_wins" },
+    "text": "V muži proti mužovi sa ukázala prevaha {attackerName}, ktorí svojou silou a odhodlaním zvrhli nepriateľské rady.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_melee_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "melee", "outcome": "defender_wins" },
+    "text": "Obrancovia z {defenderName} sa udržali a svojou obratnosťou odrazili útok {attackerName}.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_melee_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "melee", "outcome": "draw" },
+    "text": "Obidve strany sa zapojili do krutého boja muža proti mužovi, kde sa nezdalo, že by ktorej z nich patrilo víťazstvo.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_ranged_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "ranged", "outcome": "attacker_wins" },
+    "text": "Vojaci {attackerName} sa rýchlo priblížili k lukostrelcom a donútili ich k ústupu, keď sa ich šípy ukázali ako neúčinné na blízku vzdialenosť.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_ranged_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "ranged", "outcome": "defender_wins" },
+    "text": "Lukostrelci {defenderName} spustili sprchu šípov na priblížujúcich sa útočníkov a spôsobili im ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_ranged_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "ranged", "outcome": "draw" },
+    "text": "Keď sa útočníci priblížili, lukostrelci spustili šípy, ale obidve strany utrpeli rovnaké straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_flank_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "flank", "outcome": "attacker_wins" },
+    "text": "Pechota {attackerName} sa udržala v strede a odrazila pokus o obchvat zo strany {defenderName}.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_flank_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "flank", "outcome": "defender_wins" },
+    "text": "Jazda {defenderName} obišla pechotu a zaútočila na nechránené boky {attackerName}.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_flank_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "flank", "outcome": "draw" },
+    "text": "Pechota sa postavila do obranného postavenia, zatiaľ čo jazda sa pokúšala nájsť slabé miesto.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_melee_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "melee", "outcome": "attacker_wins" },
+    "text": "Lukostrelci {attackerName} spustili ničivú sprchu šípov na priblížujúcich sa nepriateľov a spôsobili im ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_melee_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "melee", "outcome": "defender_wins" },
+    "text": "Pechota {defenderName} sa rýchlo priblížila a donútila lukostrelcov k ústupu, keď sa ich šípy ukázali ako neúčinné.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_melee_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "melee", "outcome": "draw" },
+    "text": "Lukostrelci spustili šípy na priblížujúcich sa nepriateľov, ale pechota sa udržala a utrpela len malé straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_ranged_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "ranged", "outcome": "attacker_wins" },
+    "text": "Lukostrelci {attackerName} preukázali väčšiu presnosť a ich šípy zasiahli viac cieľov v radach {defenderName}.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_ranged_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "ranged", "outcome": "defender_wins" },
+    "text": "Obrancovia z {defenderName} mali lepšie krytie a ich lukostrelci zasiahli presnejšie.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_ranged_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "ranged", "outcome": "draw" },
+    "text": "Obidve strany vymieňali šípy, ale ani jedna nestrácala viac mužov ako druhá.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_flank_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "flank", "outcome": "attacker_wins" },
+    "text": "Lukostrelci {attackerName} spustili sprchu šípov na jazdu {defenderName} a spôsobili im ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_flank_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "flank", "outcome": "defender_wins" },
+    "text": "Jazda {defenderName} sa rýchlo priblížila a donútila lukostrelcov k ústupu, keď sa ich konie ukázali ako rýchlejšie.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_flank_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "flank", "outcome": "draw" },
+    "text": "Lukostrelci spustili šípy na priblížujúcich sa jazdcov, ale jazda sa udržala a utrpela len malé straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_melee_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "melee", "outcome": "attacker_wins" },
+    "text": "Jazda {attackerName} obišla pechotu {defenderName} a zaútočila na nechránené boky, spôsobujúc chaos v ich radoch.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_melee_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "melee", "outcome": "defender_wins" },
+    "text": "Pechota {defenderName} sa rýchlo zoskupila a odrazila útok jazdy {attackerName}.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_melee_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "melee", "outcome": "draw" },
+    "text": "Jazda sa pokúšala obísť pechotu, ale pechota sa udržala v obrannom postavení.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_ranged_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "ranged", "outcome": "attacker_wins" },
+    "text": "Jazda {attackerName} sa rýchlo priblížila k lukostrelcom {defenderName} a donútila ich k ústupu.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_ranged_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "ranged", "outcome": "defender_wins" },
+    "text": "Lukostrelci {defenderName} spustili sprchu šípov na priblížujúcich sa jazdcov a spôsobili im ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_ranged_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "ranged", "outcome": "draw" },
+    "text": "Jazda sa pokúšala priblížiť, ale lukostrelci spustili šípy, ktoré spôsobili straty na oboch stranách.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_flank_attacker_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "flank", "outcome": "attacker_wins" },
+    "text": "Jazda {attackerName} preukázala väčšiu obratnosť a zvrhla jazdu {defenderName} v priamom stretnutí.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_flank_defender_wins",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "flank", "outcome": "defender_wins" },
+    "text": "Jazda {defenderName} sa udržala a odrazila útok jazdy {attackerName}.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_flank_draw",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "flank", "outcome": "draw" },
+    "text": "Obidve strany jazdy sa stretli v rýchlom súboji, kde sa nezdalo, že by ktorej z nich patrilo víťazstvo.",
+    "weight": 1
+  },
+  {
+    "id": "action_melee_vs_retreat_attacker",
+    "slot": "action",
+    "conditions": { "attackerAction": "melee", "defenderAction": "retreat" },
+    "text": "Vojaci {attackerName} zaútočili na ustupujúcich nepriateľov a spôsobili im ďalšie straty.",
+    "weight": 1
+  },
+  {
+    "id": "action_ranged_vs_retreat_attacker",
+    "slot": "action",
+    "conditions": { "attackerAction": "ranged", "defenderAction": "retreat" },
+    "text": "Lukostrelci {attackerName} spustili šípy na ustupujúcich nepriateľov.",
+    "weight": 1
+  },
+  {
+    "id": "action_flank_vs_retreat_attacker",
+    "slot": "action",
+    "conditions": { "attackerAction": "flank", "defenderAction": "retreat" },
+    "text": "Jazda {attackerName} prenasledovala ustupujúcich nepriateľov.",
+    "weight": 1
+  },
+  {
+    "id": "action_retreat_vs_melee_defender",
+    "slot": "action",
+    "conditions": { "attackerAction": "retreat", "defenderAction": "melee" },
+    "text": "Vojaci {defenderName} prenasledovali ustupujúcich nepriateľov.",
+    "weight": 1
+  },
+  {
+    "id": "action_retreat_vs_ranged_defender",
+    "slot": "action",
+    "conditions": { "attackerAction": "retreat", "defenderAction": "ranged" },
+    "text": "Lukostrelci {defenderName} spustili šípy na ustupujúcich nepriateľov.",
+    "weight": 1
+  },
+  {
+    "id": "action_retreat_vs_flank_defender",
+    "slot": "action",
+    "conditions": { "attackerAction": "retreat", "defenderAction": "flank" },
+    "text": "Jazda {defenderName} prenasledovala ustupujúcich nepriateľov.",
+    "weight": 1
+  }
+]

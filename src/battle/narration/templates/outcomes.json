@@ -1,0 +1,191 @@
+[
+  {
+    "id": "outcome_attacker_wins_light",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "light" },
+    "text": "Vojaci {attackerName} si udržali prevahu a donútili {defenderName} k malému ústupu.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_heavy",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "heavy" },
+    "text": "Útočníci z {attackerName} zvrhli nepriateľské rady a spôsobili im ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_light",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "light" },
+    "text": "Obrancovia z {defenderName} sa udržali a odrazili útok s malými stratami.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_heavy",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "heavy" },
+    "text": "{defenderName} odrazili útok a spôsobili útočníkom z {attackerName} ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_light",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "light" },
+    "text": "Obidve strany utrpeli malé straty a bitka prebiehala vyrovnane.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_heavy",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "heavy" },
+    "text": "Krvavý boj skončil remízou, keď obidve strany utrpeli ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_light_2",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "light" },
+    "text": "{attackerName} si udržali tlak a nepriateľ sa musel stiahnuť z bojišta.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_heavy_2",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "heavy" },
+    "text": "Nepriateľské rady sa pod tlakom {attackerName} začali rozpadat' a ustupovať.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_light_2",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "light" },
+    "text": "Obrana {defenderName} sa ukázala ako neprekonateľná a útočníci sa museli stiahnuť.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_heavy_2",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "heavy" },
+    "text": "Útočníci utrpeli ťažké straty a boli donútení k ústupu pred silnou obranou {defenderName}.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_light_2",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "light" },
+    "text": "Bitka prebiehala vyrovnane, ani jedna strana nezískala prevahu.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_heavy_2",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "heavy" },
+    "text": "Krvavý súboj skončil bez jasného víťaza, keď obidve strany utrpeli ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_light_3",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "light" },
+    "text": "{attackerCommander} vedel svoje vojsko s presnosťou a donútil nepriateľa k ústupu.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_heavy_3",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "heavy" },
+    "text": "Pod velením {attackerCommander} zvrhli vojaci {attackerName} nepriateľské rady.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_light_3",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "light" },
+    "text": "{defenderCommander} vedel obranu s odhodlaním a odrazil útok {attackerName}.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_heavy_3",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "heavy" },
+    "text": "Vojaci {defenderName} pod velením {defenderCommander} odrazili útok a spôsobili útočníkom ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_light_3",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "light" },
+    "text": "Bitka prebiehala vyrovnane, obidve strany preukázali rovnakú silu.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_heavy_3",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "heavy" },
+    "text": "Krvavý boj skončil bez víťaza, keď obidve strany utrpeli ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_light_4",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "light" },
+    "text": "Vojská {attackerName} si udržali prevahu a nepriateľ sa musel stiahnuť.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_heavy_4",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "heavy" },
+    "text": "{attackerName} zvrhli nepriateľské rady a zabezpečili si víťazstvo.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_light_4",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "light" },
+    "text": "Obrana {defenderName} sa ukázala ako silnejšia a útočníci sa museli stiahnuť.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_heavy_4",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "heavy" },
+    "text": "{defenderName} odrazili útok a donútili útočníkov k ústupu.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_light_4",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "light" },
+    "text": "Bitka prebiehala bez jasného víťaza, obidve strany si udržali svoje pozície.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_heavy_4",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "heavy" },
+    "text": "Krvavý boj skončil remízou, keď obidve strany utrpeli ťažké straty.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_attacker_wins_light_5",
+    "slot": "outcome",
+    "conditions": { "outcome": "attacker_wins", "intensity": "light" },
+    "text": "Vojaci {attackerName} si udržali prevahu a nepriateľ sa musel stiahnuť z bojišta.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_defender_wins_heavy_5",
+    "slot": "outcome",
+    "conditions": { "outcome": "defender_wins", "intensity": "heavy" },
+    "text": "{defenderName} odrazili útok a donútili útočníkov k ústupu s ťažkými stratami.",
+    "weight": 1
+  },
+  {
+    "id": "outcome_draw_heavy_5",
+    "slot": "outcome",
+    "conditions": { "outcome": "draw", "intensity": "heavy" },
+    "text": "Krvavý súboj skončil bez jasného víťaza, keď obidve strany utrpeli ťažké straty.",
+    "weight": 1
+  }
+]

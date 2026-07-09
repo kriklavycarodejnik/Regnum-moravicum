@@ -1,0 +1,149 @@
+[
+  {
+    "id": "special_rout_1",
+    "slot": "special",
+    "conditions": { "special": "rout" },
+    "text": "Nepriateľské vojsko sa rozutekalo, keď morálka klesla pod kritickú úroveň.",
+    "weight": 1
+  },
+  {
+    "id": "special_rout_2",
+    "slot": "special",
+    "conditions": { "special": "rout" },
+    "text": "V radach nepriateľa sa šírilo panika a vojaci začali ustupovať v neporiadku.",
+    "weight": 1
+  },
+  {
+    "id": "special_rout_3",
+    "slot": "special",
+    "conditions": { "special": "rout" },
+    "text": "Keď morálka klesla, nepriateľské vojsko sa obrátilo na ústup a rozpadlo sa.",
+    "weight": 1
+  },
+  {
+    "id": "special_rout_4",
+    "slot": "special",
+    "conditions": { "special": "rout" },
+    "text": "Vojaci nepriateľa zahodili zbrane a rozbehli sa z bojišta.",
+    "weight": 1
+  },
+  {
+    "id": "special_rout_5",
+    "slot": "special",
+    "conditions": { "special": "rout" },
+    "text": "Nepriateľské rady sa rozpadli a vojaci sa dali na útek.",
+    "weight": 1
+  },
+  {
+    "id": "special_pursue_1",
+    "slot": "special",
+    "conditions": { "special": "pursue" },
+    "text": "Víťazné vojsko sa dalo do prenasledovania ustupujúcich nepriateľov.",
+    "weight": 1
+  },
+  {
+    "id": "special_pursue_2",
+    "slot": "special",
+    "conditions": { "special": "pursue" },
+    "text": "Víťazi neodpustili nepriateľom a prenasledovali ich, spôsobujúc ďalšie straty.",
+    "weight": 1
+  },
+  {
+    "id": "special_pursue_3",
+    "slot": "special",
+    "conditions": { "special": "pursue" },
+    "text": "Keď nepriateľ začal ustupovať, víťazi sa dali do prenasledovania.",
+    "weight": 1
+  },
+  {
+    "id": "special_pursue_4",
+    "slot": "special",
+    "conditions": { "special": "pursue" },
+    "text": "Prenasledovanie ustupujúcich nepriateľov prinieslo ďalšie víťazstvá.",
+    "weight": 1
+  },
+  {
+    "id": "special_retreat_1",
+    "slot": "special",
+    "conditions": { "special": "retreat" },
+    "text": "Vojsko sa stiahlo z bojišta, aby sa pregrupovalo a pripravilo na ďalší boj.",
+    "weight": 1
+  },
+  {
+    "id": "special_retreat_2",
+    "slot": "special",
+    "conditions": { "special": "retreat" },
+    "text": "Veliteľ dal signál k ústupu, aby zachránil, čo sa ešte dalo zachrániť.",
+    "weight": 1
+  },
+  {
+    "id": "special_retreat_3",
+    "slot": "special",
+    "conditions": { "special": "retreat" },
+    "text": "Vojaci sa stiahli z bojišta, aby sa vyhli úplnej porážke.",
+    "weight": 1
+  },
+  {
+    "id": "special_retreat_4",
+    "slot": "special",
+    "conditions": { "special": "retreat" },
+    "text": "Ústup bol jedinou možnosťou, keď sa bitka obrátila proti nim.",
+    "weight": 1
+  },
+  {
+    "id": "special_river_crossing_1",
+    "slot": "special",
+    "conditions": { "special": "river_crossing" },
+    "text": "Prechod cez rieku sa stal kritickým momentom bitky.",
+    "weight": 1
+  },
+  {
+    "id": "special_river_crossing_2",
+    "slot": "special",
+    "conditions": { "special": "river_crossing" },
+    "text": "Vojaci sa museli prebrodiť cez rieku, čo spomaľovalo ich postup.",
+    "weight": 1
+  },
+  {
+    "id": "special_river_crossing_3",
+    "slot": "special",
+    "conditions": { "special": "river_crossing" },
+    "text": "Rieka poskytovala prirodzenú bariéru, ktorú bolo ťažké prekonat'.",
+    "weight": 1
+  },
+  {
+    "id": "special_river_crossing_4",
+    "slot": "special",
+    "conditions": { "special": "river_crossing" },
+    "text": "Brod cez rieku sa stal miestom krutých bojov.",
+    "weight": 1
+  },
+  {
+    "id": "special_fortress_assault_1",
+    "slot": "special",
+    "conditions": { "special": "fortress_assault" },
+    "text": "Útok na pevnosť bol náročný, keď obrancovia mali výhodu vysokých múrov.",
+    "weight": 1
+  },
+  {
+    "id": "special_fortress_assault_2",
+    "slot": "special",
+    "conditions": { "special": "fortress_assault" },
+    "text": "Oblehanie pevnosti sa stalo skúškou trpezlivosti pre útočníkov.",
+    "weight": 1
+  },
+  {
+    "id": "special_fortress_assault_3",
+    "slot": "special",
+    "conditions": { "special": "fortress_assault" },
+    "text": "Múry pevnosti sa tyčili neprekonateľne pred útočníkmi.",
+    "weight": 1
+  },
+  {
+    "id": "special_fortress_assault_4",
+    "slot": "special",
+    "conditions": { "special": "fortress_assault" },
+    "text": "Obrancovia na hrádbach spustili sprchu šípov a kameňov na útočníkov.",
+    "weight": 1
+  }
+]
