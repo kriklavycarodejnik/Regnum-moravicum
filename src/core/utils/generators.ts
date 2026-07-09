@@ -208,13 +208,16 @@ const MORAVIAN_ZUPY = [
 ];
 
 // Faction definitions for scenario "prežitie"
+// Kánon v1.1: Kumáni sú novou stepnou frakciou až od ~1090, nie sú prítomní pri
+// štarte hry (902) - nahradení Bogatovcami, kánonickým vnútorným antagonistom
+// (rod Bogata z Užskej župy, opakovaný zdroj vzbúr a uzurpačných pokusov).
 const INITIAL_FACTIONS = [
   { name: 'Župani', personality: 'loyal' as const },
   { name: 'Cyrilometodskí Kňazi', personality: 'opportunist' as const },
   { name: 'Byzantskí Poslovia', personality: 'opportunist' as const },
   { name: 'Nemeckí Kolonisti', personality: 'traitor' as const },
   { name: 'Maďarské zvyšky', personality: 'aggressive' as const },
-  { name: 'Kumáni', personality: 'aggressive' as const }
+  { name: 'Bogatovci', personality: 'opportunist' as const }
 ];
 
 /**
