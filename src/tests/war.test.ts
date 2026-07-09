@@ -81,7 +81,7 @@ describe('War Engine', () => {
         morale: 80,
         commander: { id: 'cmd_new', name: 'New', skill: 5 },
         composition: { infantry: 1.0, cavalry: 0, archers: 0 },
-        locationZupaId: 'moravia_brno',
+        locationZupaId: ZUPA_IDS.bratislava,
       };
 
       engine.addArmy(newArmy);
@@ -118,8 +118,8 @@ describe('War Engine', () => {
     });
 
     it('should update zupa war state', () => {
-      engine.updateZupaWarState('hungarian_zupa', { occupierFactionId: null });
-      const updatedState = engine.getZupaWarState('hungarian_zupa');
+      engine.updateZupaWarState(ZUPA_IDS.devin, { occupierFactionId: null });
+      const updatedState = engine.getZupaWarState(ZUPA_IDS.devin);
       expect(updatedState?.occupierFactionId).toBeNull();
     });
 
@@ -133,7 +133,7 @@ describe('War Engine', () => {
     it('should start new battle', () => {
       const battle = engine.startBattle(
         'war_hungarian_invasion',
-        'hungarian_zupa',
+        ZUPA_IDS.devin,
         'field',
         'army_hungarian_main',
         'army_moravian_main'
@@ -148,7 +148,7 @@ describe('War Engine', () => {
       const battle: Battle = {
         id: 'battle1',
         warId: 'war_hungarian_invasion',
-        zupaId: 'hungarian_zupa',
+        zupaId: ZUPA_IDS.devin,
         terrain: 'field',
         attackerArmyId: 'army_hungarian_main',
         defenderArmyId: 'army_moravian_main',
@@ -169,7 +169,7 @@ describe('War Engine', () => {
     it('should get all battles', () => {
       engine.startBattle(
         'war_hungarian_invasion',
-        'hungarian_zupa',
+        ZUPA_IDS.devin,
         'field',
         'army_hungarian_main',
         'army_moravian_main'
@@ -183,96 +183,89 @@ describe('War Engine', () => {
   describe('Zupa Liberation (9.1)', () => {
     it('should mark objective as completed when zupa is liberated', () => {
       // Remove Hungarian army from Hungarian zupa
-      engine.updateArmy('army_hungarian_main', { locationZupaId: 'nitrianska_zupa' });
+      engine.updateArmy('army_hungarian_main', { locationZupaId: ZUPA_IDS.nitra });
 
       // Check if Hungarian zupa is liberated
-      const isLiberated = engine.checkZupaLiberated('hungarian_zupa', 'war_hungarian_invasion');
+      const isLiberated = engine.checkZupaLiberated(ZUPA_IDS.devin, 'war_hungarian_invasion');
       
       expect(isLiberated).toBe(true);
 
       // Check if objective is completed
       const war = engine.getWar('war_hungarian_invasion');
-      const objective = war?.objectives.find(o => o.zupaId === 'hungarian_zupa');
+      const objective = war?.objectives.find(o => o.zupaId === ZUPA_IDS.devin);
       expect(objective?.completed).toBe(true);
     });
 
     it('should update zupa state when liberated', () => {
       // Remove Hungarian army from Hungarian zupa
-      engine.updateArmy('army_hungarian_main', { locationZupaId: 'nitrianska_zupa' });
+      engine.updateArmy('army_hungarian_main', { locationZupaId: ZUPA_IDS.nitra });
 
       // Check if Hungarian zupa is liberated
-      engine.checkZupaLiberated('hungarian_zupa', 'war_hungarian_invasion');
+      engine.checkZupaLiberated(ZUPA_IDS.devin, 'war_hungarian_invasion');
 
       // Check zupa state
-      const zupaState = engine.getZupaWarState('hungarian_zupa');
+      const zupaState = engine.getZupaWarState(ZUPA_IDS.devin);
       expect(zupaState?.occupierFactionId).toBeNull();
     });
   });
 
   describe('Army Retreat (9.2)', () => {
     it('should retreat to adjacent friendly zupa', () => {
-      // Set up: Hungarian army in Hungarian zupa, Moravian army in Nitrianska zupa
-      engine.updateArmy('army_hungarian_main', { locationZupaId: 'hungarian_zupa' });
-      engine.updateArmy('army_moravian_main', { locationZupaId: 'nitrianska_zupa' });
+      // Set up: Hungarian army in Devín, Moravian army in Nitra
+      engine.updateArmy('army_hungarian_main', { locationZupaId: ZUPA_IDS.devin });
+      engine.updateArmy('army_moravian_main', { locationZupaId: ZUPA_IDS.nitra });
 
-      // Add more zupy for retreat testing
+      // Bratislava (adjacent to Devín) is Moravian-controlled, not Hungarian
       engine.addZupaWarState({
-        zupaId: 'moravia_brno',
+        zupaId: ZUPA_IDS.bratislava,
         controllerFactionId: 'moravian',
         occupierFactionId: null,
       });
 
-      // Retreat Hungarian army (should go to adjacent zupa controlled by Hungarians)
-      // But there are no other Hungarian-controlled zupy adjacent to hungarian_zupa
-      // So the army should be destroyed
+      // Retreat Hungarian army: no Hungarian-controlled zupa adjacent to Devín
+      // (Devín's neighbors are Bratislava and Trnava, both Moravian), so it's destroyed
       const retreated = engine.retreatArmy('army_hungarian_main', 'war_hungarian_invasion');
-      
-      // Since there's no friendly adjacent zupa, army should be destroyed
+
       expect(retreated).toBe(false);
       expect(engine.getArmy('army_hungarian_main')).toBeNull();
     });
 
     it('should retreat to friendly zupa when available', () => {
-      // Set up: Add a friendly zupa for Hungarians
+      // Trnava (adjacent to Devín) is controlled by the Hungarians
       engine.addZupaWarState({
-        zupaId: 'madarska_zupa',
+        zupaId: ZUPA_IDS.trnava,
         controllerFactionId: 'hungarian',
         occupierFactionId: null,
       });
+      engine.updateArmy('army_hungarian_main', { locationZupaId: ZUPA_IDS.devin });
 
-      // Update adjacency to include madarska_zupa
-      // For this test, we'll manually set the location
-      engine.updateArmy('army_hungarian_main', { locationZupaId: 'madarska_zupa' });
+      const retreated = engine.retreatArmy('army_hungarian_main', 'war_hungarian_invasion');
 
-      // Now retreat from madarska_zupa (should stay there as it's friendly)
-      // Actually, we need to set up a scenario where the army is in a non-friendly zupa
-      // Let's put it back in hungarian_zupa and add madarska_zupa as adjacent
-      engine.updateArmy('army_hungarian_main', { locationZupaId: 'hungarian_zupa' });
-
-      // For this test, we'll just verify the logic works
-      // The actual adjacency is defined in the adjacency matrix
-      engine.retreatArmy('army_hungarian_main', 'war_hungarian_invasion');
-
-      // Since hungarian_zupa is adjacent to madarska_zupa (in our matrix), it should retreat there
-      // But we need to check if madarska_zupa is controlled by Hungarians
-      // In our setup, it is, so the retreat should succeed
-      // However, the army might be destroyed if no friendly zupa is found
-      // This depends on the exact adjacency matrix
+      expect(retreated).toBe(true);
+      expect(engine.getArmy('army_hungarian_main')?.locationZupaId).toBe(ZUPA_IDS.trnava);
     });
 
     it('should destroy army when no retreat path available', () => {
-      // Set up: Army in a zupa with no friendly adjacent zupy
-      engine.updateArmy('army_moravian_main', { locationZupaId: 'hungarian_zupa' });
+      // Set up: Army in a zupa with no friendly adjacent zupy - Devín and both
+      // of its neighbors (Bratislava, Trnava) all fall under Hungarian control.
+      engine.updateArmy('army_moravian_main', { locationZupaId: ZUPA_IDS.devin });
 
-      // Update zupa state to be controlled by Hungarians
-      engine.updateZupaWarState('hungarian_zupa', {
+      engine.updateZupaWarState(ZUPA_IDS.devin, {
+        controllerFactionId: 'hungarian',
+        occupierFactionId: 'hungarian',
+      });
+      engine.updateZupaWarState(ZUPA_IDS.bratislava, {
+        controllerFactionId: 'hungarian',
+        occupierFactionId: 'hungarian',
+      });
+      engine.updateZupaWarState(ZUPA_IDS.trnava, {
         controllerFactionId: 'hungarian',
         occupierFactionId: 'hungarian',
       });
 
       // Retreat Moravian army from Hungarian-controlled zupa
       const retreated = engine.retreatArmy('army_moravian_main', 'war_hungarian_invasion');
-      
+
       // Should be destroyed as there are no friendly adjacent zupy
       expect(retreated).toBe(false);
       expect(engine.getArmy('army_moravian_main')).toBeNull();
@@ -329,9 +322,9 @@ describe('War Engine', () => {
 
   describe('Adjacency', () => {
     it('should return adjacent zupy', () => {
-      const adjacent = engine.getAdjacentZupy('hungarian_zupa');
-      expect(adjacent).toContain('moravia_uherske_hradiste');
-      expect(adjacent).toContain('moravia_znojmo');
+      const adjacent = engine.getAdjacentZupy(ZUPA_IDS.devin);
+      expect(adjacent).toContain(ZUPA_IDS.bratislava);
+      expect(adjacent).toContain(ZUPA_IDS.trnava);
     });
 
     it('should return empty array for unknown zupa', () => {
@@ -367,13 +360,13 @@ describe('War Engine', () => {
     it('should have correct initial zupa states', () => {
       const zupyWarState = createInitialZupaWarStates();
       
-      const hungarianZupa = zupyWarState.find(z => z.zupaId === ZUPA_IDS.hungarianZupa);
-      expect(hungarianZupa).not.toBeUndefined();
-      expect(hungarianZupa?.occupierFactionId).toBe(FACTION_IDS.hungarian);
-      
-      const nitrianskaZupa = zupyWarState.find(z => z.zupaId === ZUPA_IDS.nitrianskaZupa);
-      expect(nitrianskaZupa).not.toBeUndefined();
-      expect(nitrianskaZupa?.occupierFactionId).toBeNull();
+      const devinZupa = zupyWarState.find(z => z.zupaId === ZUPA_IDS.devin);
+      expect(devinZupa).not.toBeUndefined();
+      expect(devinZupa?.occupierFactionId).toBe(FACTION_IDS.hungarian);
+
+      const nitraZupa = zupyWarState.find(z => z.zupaId === ZUPA_IDS.nitra);
+      expect(nitraZupa).not.toBeUndefined();
+      expect(nitraZupa?.occupierFactionId).toBeNull();
     });
   });
 });

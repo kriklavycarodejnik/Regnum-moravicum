@@ -4,28 +4,7 @@ import type { War, ZupaWarState } from './types';
 import type { Army, Battle } from '../battle/types';
 import { createBattle, BattleEngine } from '../battle/engine';
 import { autoResolveAIvsAI, shouldAutoResolve } from '../battle/autoResolve';
-
-// Adjacency matrix for zupy (TODO: verify with actual map data)
-// Based on historical Moravian regions
-const ZUPA_ADJACENCY: Record<string, string[]> = {
-  // Moravian zupy
-  'moravia_brno': ['moravia_velehrad', 'moravia_olomouc', 'moravia_znojmo', 'moravia_uherske_hradiste'],
-  'moravia_velehrad': ['moravia_brno', 'moravia_olomouc', 'moravia_mikulcice'],
-  'moravia_olomouc': ['moravia_brno', 'moravia_velehrad', 'moravia_stare_mesto'],
-  'moravia_stare_mesto': ['moravia_olomouc', 'moravia_pozvadov'],
-  'moravia_pozvadov': ['moravia_stare_mesto', 'moravia_znojmo'],
-  'moravia_znojmo': ['moravia_brno', 'moravia_pozvadov', 'moravia_uherske_hradiste'],
-  'moravia_uherske_hradiste': ['moravia_brno', 'moravia_znojmo', 'moravia_mikulcice'],
-  'moravia_mikulcice': ['moravia_velehrad', 'moravia_uherske_hradiste'],
-  
-  // Hungarian zupy (for the war scenario)
-  'hungarian_zupa': ['moravia_uherske_hradiste', 'moravia_znojmo'],
-  'nitra_zupa': ['moravia_brno', 'moravia_velehrad'],
-  
-  // Additional zupy for completeness
-  'nitrianska_zupa': ['nitra_zupa', 'moravia_brno'],
-  'madarska_zupa': ['hungarian_zupa'],
-};
+import { ZUPA_ADJACENCY } from './adjacency';
 
 // War Engine
 export class WarEngine {

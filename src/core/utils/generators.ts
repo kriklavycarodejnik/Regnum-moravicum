@@ -222,24 +222,20 @@ const INITIAL_FACTIONS = [
  */
 export function generateInitialState(scenario: ScenarioType, seed: string): GameState {
   initRNG(seed);
-  
-  // Create Mojmír II. (35 years old)
-  const mojmir = generateNoble('Mojmír II.', '', 'Kráľ', 35, 'nitra');
-  
-  // Create Mojmírovci family
-  const mojmirovci = generateFamily('Mojmírovci', mojmir);
-  mojmir.familyId = mojmirovci.id;
-  
-  // Create 11 zupy
+
+  // Create 11 zupy first, so nobles/armies can reference their real generated IDs
+  // (zupa IDs are slugified from the name, e.g. "Nitra" -> "zupa_nitra").
   const zupy: Record<ZupaId, Zupa> = {};
   const zupaIds: ZupaId[] = [];
-  
+  const zupaIdByName: Record<string, ZupaId> = {};
+
   MORAVIAN_ZUPY.forEach((name) => {
-    const zupa = generateZupa(name, mojmir.id);
+    const zupa = generateZupa(name, '');
     zupy[zupa.id] = zupa;
     zupaIds.push(zupa.id);
+    zupaIdByName[name] = zupa.id;
   });
-  
+
   // Connect neighbors (simple ring topology)
   zupaIds.forEach((zupaId) => {
     const index = zupaIds.indexOf(zupaId);
@@ -247,16 +243,31 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
     const nextIndex = (index + 1) % zupaIds.length;
     zupy[zupaId].neighbors = [zupaIds[prevIndex], zupaIds[nextIndex]];
   });
-  
+
+  const nitraZupaId = zupaIdByName['Nitra'];
+  const devinZupaId = zupaIdByName['Devín'];
+
+  // Create Mojmír II. (35 years old), based in Nitra
+  const mojmir = generateNoble('Mojmír II.', '', 'Kráľ', 35, nitraZupaId);
+
+  // Create Mojmírovci family
+  const mojmirovci = generateFamily('Mojmírovci', mojmir);
+  mojmir.familyId = mojmirovci.id;
+
+  // Zupy are owned by the ruler once he exists
+  zupaIds.forEach((zupaId) => {
+    zupy[zupaId].owner = mojmir.id;
+  });
+
   // Create factions
   const factions: Faction[] = INITIAL_FACTIONS.map(f => generateFaction(f.name, f.personality));
-  
+
   // Create initial armies for Mojmír
   const armies: Army[] = [
-    generateArmy(mojmir.id, 'nitra', { lightInfantry: 50, heavyInfantry: 30, archers: 20, lightCavalry: 10, heavyCavalry: 5 }),
-    generateArmy(mojmir.id, 'devín', { lightInfantry: 40, heavyInfantry: 20, archers: 15, lightCavalry: 5, heavyCavalry: 0 })
+    generateArmy(mojmir.id, nitraZupaId, { lightInfantry: 50, heavyInfantry: 30, archers: 20, lightCavalry: 10, heavyCavalry: 5 }),
+    generateArmy(mojmir.id, devinZupaId, { lightInfantry: 40, heavyInfantry: 20, archers: 15, lightCavalry: 5, heavyCavalry: 0 })
   ];
-  
+
   // Update Mojmír with army IDs
   mojmir.armyIds = armies.map(a => a.id);
   

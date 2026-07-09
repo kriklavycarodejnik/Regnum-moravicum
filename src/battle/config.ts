@@ -62,16 +62,14 @@ export const FACTION_TRAITS: Record<string, {
   riverMoralePenalty?: number;
 }> = {
   // Maďarská jazda: multiplikátor cavalry na field = 1.40 namiesto 1.20
+  // Rieka Dunaj: bitka na teréne river → Maďari −10 bodov morálky (kľúčové pri Devíne 907)
   hungarian: {
     cavalryFieldMultiplier: 1.40,
+    riverMoralePenalty: -10,
   },
   // Moravské opevnenia: obranný terénový faktor na fortress × 1.30
   moravian: {
     fortressDefenseMultiplier: 1.30,
-  },
-  // Rieka Dunaj: bitka na teréne river → Maďari −10 bodov morálky
-  hungarian_danube: {
-    riverMoralePenalty: -10,
   },
 } as const;
 

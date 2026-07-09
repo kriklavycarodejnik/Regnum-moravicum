@@ -1,4 +1,11 @@
-// Regnum Moravicum - Hungarian War Scenario
+// Regnum Moravicum - Hungarian War Scenario: Bitka pri Devíne (907)
+//
+// Kánon v1.1: 907 - Mojmír II. nastraží Árpádovým Maďarom pascu pri Devíne,
+// s podporou byzantských lodí ovládajúcich grécky oheň a moravskej ťažkej
+// pechoty ako "neprerušiteľnej steny". Víťazstvo zakladá mýtus "Morava ako
+// štít". 908-910: ďalšie bitky a konečné odrazenie Maďarov, časť sa
+// slavizuje, zvyšok ustupuje do Potisia. Veliteľom moravských vojsk v tejto
+// vojne je župan Radomír, nie panovník osobne.
 
 import type { War, WarObjective, ZupaWarState } from '../war/types';
 import type { Terrain, Army, Commander, UnitType } from '../battle/types';
@@ -8,16 +15,16 @@ export const SCENARIO_CONSTANTS = {
   // Initial army sizes
   hungarianArmySize: 12000,
   moravianArmySize: 8000,
-  
+
   // Reinforcements
   hungarianReinforcements: 3000,
   hungarianRaidSize: 4000,
-  
+
   // Timing
   raidTick: 3,
   reinforcementTick: 12,
   timeoutTicks: 60,
-  
+
   // Occupation effects
   loyaltyPenaltyPerTick: 1,
   goldPenaltyPerTick: 50,
@@ -25,14 +32,14 @@ export const SCENARIO_CONSTANTS = {
 
 // Scenario rewards (10.4)
 export const SCENARIO_REWARDS = {
-  // Oslobodená Maďarská župa
-  liberatedHungarianZupa: {
+  // Oslobodený Devín (víťazstvo v bitke 907)
+  liberatedDevin: {
     prestige: 5,
     gold: 1000,
     loyaltyBonus: 10,
   },
-  // Oslobodená Nitrianska župa
-  liberatedNitraZupa: {
+  // Oslobodená Nitra (konečné odrazenie, 910)
+  liberatedNitra: {
     prestige: 7,
     gold: 1500,
     loyaltyBonus: 15,
@@ -51,20 +58,22 @@ export const FACTION_IDS = {
   moravian: 'moravian',
 };
 
-// Zupa IDs
+// Zupa IDs - musia zodpovedať skutočným 11 župám generovaným v
+// src/core/utils/generators.ts (id = `zupa_${name.toLowerCase().replace(/\s+/g, '_')}`)
 export const ZUPA_IDS = {
-  hungarianZupa: 'hungarian_zupa',
-  nitraZupa: 'nitra_zupa',
-  nitrianskaZupa: 'nitrianska_zupa',
-  moraviaBrno: 'moravia_brno',
+  devin: 'zupa_devín',
+  nitra: 'zupa_nitra',
+  bratislava: 'zupa_bratislava',
+  trnava: 'zupa_trnava',
 };
 
-// Terrain for battles
+// Terrain for battles - Devín leží na sútoku Dunaja a Moravy (rieka),
+// Nitra je vnútrozemská (pole)
 export const BATTLE_TERRAINS: Record<string, Terrain> = {
-  [ZUPA_IDS.hungarianZupa]: 'field',
-  [ZUPA_IDS.nitraZupa]: 'river',
-  [ZUPA_IDS.nitrianskaZupa]: 'field',
-  [ZUPA_IDS.moraviaBrno]: 'fortress',
+  [ZUPA_IDS.devin]: 'river',
+  [ZUPA_IDS.nitra]: 'field',
+  [ZUPA_IDS.bratislava]: 'field',
+  [ZUPA_IDS.trnava]: 'field',
 };
 
 // Commanders
@@ -74,17 +83,18 @@ export const COMMANDERS: Record<string, Commander> = {
     name: 'Árpád',
     skill: 8,
   },
-  mojmir: {
-    id: 'commander_mojmir',
-    name: 'Mojmír II.',
-    skill: 7,
+  // Radomír - kľúčový župan, veliteľ moravských vojsk v bitkách 907+ (kánon)
+  radomir: {
+    id: 'commander_radomir',
+    name: 'Radomír',
+    skill: 9,
   },
 };
 
 // Create initial armies for the scenario
 export function createInitialArmies(): Army[] {
   return [
-    // Hungarian army
+    // Hungarian army under Árpád
     {
       id: 'army_hungarian_main',
       factionId: FACTION_IDS.hungarian,
@@ -96,21 +106,21 @@ export function createInitialArmies(): Army[] {
         cavalry: 0.45,
         archers: 0.25,
       },
-      locationZupaId: ZUPA_IDS.hungarianZupa,
+      locationZupaId: ZUPA_IDS.devin,
     },
-    // Moravian army
+    // Moravian army under Radomír - ťažká pechota ako "neprerušiteľná stena"
     {
       id: 'army_moravian_main',
       factionId: FACTION_IDS.moravian,
       size: SCENARIO_CONSTANTS.moravianArmySize,
       morale: 90,
-      commander: { ...COMMANDERS.mojmir },
+      commander: { ...COMMANDERS.radomir },
       composition: {
         infantry: 0.55,
         cavalry: 0.20,
         archers: 0.25,
       },
-      locationZupaId: ZUPA_IDS.nitrianskaZupa,
+      locationZupaId: ZUPA_IDS.nitra,
     },
   ];
 }
@@ -119,12 +129,12 @@ export function createInitialArmies(): Army[] {
 export function createWarObjectives(): WarObjective[] {
   return [
     {
-      zupaId: ZUPA_IDS.hungarianZupa,
+      zupaId: ZUPA_IDS.devin,
       type: 'expel',
       completed: false,
     },
     {
-      zupaId: ZUPA_IDS.nitrianskaZupa,
+      zupaId: ZUPA_IDS.nitra,
       type: 'expel',
       completed: false,
     },
@@ -135,22 +145,22 @@ export function createWarObjectives(): WarObjective[] {
 export function createInitialZupaWarStates(): ZupaWarState[] {
   return [
     {
-      zupaId: ZUPA_IDS.hungarianZupa,
+      zupaId: ZUPA_IDS.devin,
       controllerFactionId: FACTION_IDS.moravian,
       occupierFactionId: FACTION_IDS.hungarian, // Occupied by Hungarians
     },
     {
-      zupaId: ZUPA_IDS.nitrianskaZupa,
+      zupaId: ZUPA_IDS.nitra,
       controllerFactionId: FACTION_IDS.moravian,
       occupierFactionId: null, // Initially not occupied
     },
     {
-      zupaId: ZUPA_IDS.nitraZupa,
+      zupaId: ZUPA_IDS.bratislava,
       controllerFactionId: FACTION_IDS.moravian,
       occupierFactionId: null,
     },
     {
-      zupaId: ZUPA_IDS.moraviaBrno,
+      zupaId: ZUPA_IDS.trnava,
       controllerFactionId: FACTION_IDS.moravian,
       occupierFactionId: null,
     },
@@ -184,29 +194,29 @@ export function getScenarioEvents(): ScenarioEvent[] {
     {
       tick: SCENARIO_CONSTANTS.raidTick,
       type: 'raid',
-      description: 'Maďari vyšlú nájazdový oddiel 4 000 mužov do Nitrianskej župy',
+      description: 'Maďari vyšlú nájazdový oddiel 4 000 mužov smerom na Nitru',
       data: {
         armyId: 'army_hungarian_raid',
         size: SCENARIO_CONSTANTS.hungarianRaidSize,
         factionId: FACTION_IDS.hungarian,
-        commander: { ...COMMANDERS.arpad }, // Same commander or different?
+        commander: { ...COMMANDERS.arpad },
         composition: {
           infantry: 0.20,
           cavalry: 0.60,
           archers: 0.20,
         },
-        targetZupaId: ZUPA_IDS.nitrianskaZupa,
+        targetZupaId: ZUPA_IDS.nitra,
       },
     },
     {
       tick: SCENARIO_CONSTANTS.reinforcementTick,
       type: 'reinforcement',
-      description: 'Maďari dostanú posily +3 000 mužov, ak stále okupujú Maďarskú župu',
+      description: 'Maďari dostanú posily +3 000 mužov, ak stále okupujú Devín',
       data: {
         armyId: 'army_hungarian_main',
         reinforcementSize: SCENARIO_CONSTANTS.hungarianReinforcements,
         condition: {
-          zupaId: ZUPA_IDS.hungarianZupa,
+          zupaId: ZUPA_IDS.devin,
           occupierFactionId: FACTION_IDS.hungarian,
         },
       },
@@ -282,7 +292,7 @@ function applyReinforcementEvent(event: ScenarioEvent, warEngine: import('../war
     };
   };
 
-  // Check condition: Hungarians must still occupy Hungarian zupa
+  // Check condition: Hungarians must still occupy Devín
   const zupaState = warEngine.getZupaWarState(data.condition.zupaId);
   if (zupaState && zupaState.occupierFactionId === data.condition.occupierFactionId) {
     // Add reinforcement
@@ -297,14 +307,15 @@ function applyReinforcementEvent(event: ScenarioEvent, warEngine: import('../war
 
 // Get scenario name
 export function getScenarioName(): string {
-  return 'Maďarská vojna';
+  return 'Bitka pri Devíne';
 }
 
 // Get scenario description
 export function getScenarioDescription(): string {
-  return `Maďarská vojna (902 - 907): Maďari pod velením kniežaťa Árpáda vpadli do Veľkej Moravy.
-  Moravanom velí knieža Mojmír II., ktorý sa snaží obraniť svoju zem pred nájazdníkmi.
-  Cieľom je vyhnať Maďarov z Moravy a oslobodiť okupované župy.`;
+  return `Bitka pri Devíne (907 - 910): Maďari pod velením náčelníka Árpáda vpadli do Veľkej Moravy.
+  Moravským vojskám velí župan Radomír, ktorý pri Devíne nastraží nepriateľovi pascu s podporou
+  byzantských lodí ovládajúcich grécky oheň. Cieľom je vyhnať Maďarov z Devína a napokon aj z Nitry
+  a odraziť maďarskú hrozbu natrvalo.`;
 }
 
 // Initialize the scenario

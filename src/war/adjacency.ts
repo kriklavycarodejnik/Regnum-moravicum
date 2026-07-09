@@ -1,26 +1,26 @@
 // Regnum Moravicum - Zupa Adjacency Matrix
-// TODO: Verify with actual SVG map data
+//
+// Mirrors the 11 zupy generated in src/core/utils/generators.ts
+// (id = `zupa_${name.toLowerCase().replace(/\s+/g, '_')}`): Nitra, Devín,
+// Bratislava, Trnava, Zvolen, Banská Bystrica, Košice, Prešov, Žilina,
+// Poprad, Bardejov. Neighbor relationships are an approximation of real
+// Slovak regional geography (west -> east), not the generated ring topology
+// used for the core zupy - the war layer needs a graph with more than two
+// neighbors per zupa for retreat routing to make sense.
 
-// Adjacency matrix for zupy
 export const ZUPA_ADJACENCY: Record<string, string[]> = {
-  // Moravian zupy
-  'moravia_brno': ['moravia_velehrad', 'moravia_olomouc', 'moravia_znojmo', 'moravia_uherske_hradiste'],
-  'moravia_velehrad': ['moravia_brno', 'moravia_olomouc', 'moravia_mikulcice'],
-  'moravia_olomouc': ['moravia_brno', 'moravia_velehrad', 'moravia_stare_mesto'],
-  'moravia_stare_mesto': ['moravia_olomouc', 'moravia_pozvadov'],
-  'moravia_pozvadov': ['moravia_stare_mesto', 'moravia_znojmo'],
-  'moravia_znojmo': ['moravia_brno', 'moravia_pozvadov', 'moravia_uherske_hradiste'],
-  'moravia_uherske_hradiste': ['moravia_brno', 'moravia_znojmo', 'moravia_mikulcice'],
-  'moravia_mikulcice': ['moravia_velehrad', 'moravia_uherske_hradiste'],
-  
-  // Hungarian zupy (for the war scenario)
-  'hungarian_zupa': ['moravia_uherske_hradiste', 'moravia_znojmo', 'madarska_zupa'],
-  'nitra_zupa': ['moravia_brno', 'moravia_velehrad', 'nitrianska_zupa'],
-  
-  // Additional zupy for the Hungarian war scenario
-  'nitrianska_zupa': ['nitra_zupa', 'moravia_brno', 'hungarian_zupa'],
-  'madarska_zupa': ['hungarian_zupa'],
-} as const;
+  zupa_bratislava: ['zupa_devín', 'zupa_trnava'],
+  zupa_devín: ['zupa_bratislava', 'zupa_trnava'],
+  zupa_trnava: ['zupa_bratislava', 'zupa_devín', 'zupa_nitra', 'zupa_žilina'],
+  zupa_nitra: ['zupa_trnava', 'zupa_zvolen', 'zupa_banská_bystrica'],
+  zupa_zvolen: ['zupa_nitra', 'zupa_banská_bystrica', 'zupa_poprad'],
+  zupa_banská_bystrica: ['zupa_nitra', 'zupa_zvolen', 'zupa_žilina', 'zupa_poprad'],
+  zupa_žilina: ['zupa_trnava', 'zupa_banská_bystrica', 'zupa_poprad'],
+  zupa_poprad: ['zupa_zvolen', 'zupa_banská_bystrica', 'zupa_žilina', 'zupa_prešov'],
+  zupa_prešov: ['zupa_poprad', 'zupa_košice', 'zupa_bardejov'],
+  zupa_košice: ['zupa_prešov', 'zupa_bardejov'],
+  zupa_bardejov: ['zupa_prešov', 'zupa_košice'],
+};
 
 // Check if two zupy are adjacent
 export function areAdjacent(zupaId1: string, zupaId2: string): boolean {
