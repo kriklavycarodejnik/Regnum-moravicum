@@ -43,4 +43,6 @@ export interface GameEvent {
   cooldownTicks?: number;
   weight?: number;
   triggeredTick?: number; // tick this instance was spawned into GameState.events, used for cooldowns
+  chainOnly?: boolean; // only ever spawned via a parent choice's nextEvent, never by the automatic historical/random scans
+  resolvedChoiceIndex?: number; // which EventChoice the player picked, set by resolveEventChoice
 }

@@ -91,6 +91,7 @@ function priorInstances(state: GameState, templateId: string): GameEvent[] {
 }
 
 function isEligible(template: GameEvent, state: GameState): boolean {
+  if (template.chainOnly) return false;
   if (!checkEventConditions(template, state)) return false;
 
   const prior = priorInstances(state, template.id);
@@ -135,7 +136,9 @@ export function resolveEventChoice(state: GameState, eventId: string, choiceInde
   if (!choice) return state;
 
   let newState: GameState = { ...state, ...choice.effects };
-  newState.events = state.events.map((e, i) => (i === eventIndex ? { ...e, triggered: true } : e));
+  newState.events = state.events.map((e, i) =>
+    i === eventIndex ? { ...e, triggered: true, resolvedChoiceIndex: choiceIndex } : e
+  );
 
   if (choice.prestigeChange) {
     newState.player = { ...newState.player, prestige: Math.max(0, newState.player.prestige + choice.prestigeChange) };
@@ -209,7 +212,7 @@ export function processEvents(state: GameState): GameState {
   const newState: GameState = { ...state, events: [...state.events] };
 
   for (const template of HISTORICAL_EVENTS) {
-    if (template.type !== 'historical') continue;
+    if (template.type !== 'historical' || template.chainOnly) continue;
     if (newState.events.some((e) => e.id === template.id)) continue;
     if (!checkEventConditions(template, newState)) continue;
     newState.events.push({ ...template, triggered: false, triggeredTick: newState.tick });

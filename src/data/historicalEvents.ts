@@ -1,4 +1,4 @@
-// Regnum Moravicum v2.1 - Event Templates (Phase 3 M1)
+// Regnum Moravicum v2.1 - Event Templates (Phase 3 M1 + storyline chains)
 //
 // Static templates consumed by src/core/engines/eventEngine.ts. Faction ids
 // are generated non-deterministically at runtime (Date.now()-based), so
@@ -6,6 +6,10 @@
 // engine) rather than by id. Zupa ids are deterministic slugs of their
 // canon names (e.g. "Nitra" -> "zupa_nitra"), so zupaLoyaltyChanges/zupaLoyalty
 // conditions may reference them directly.
+//
+// Events marked `chainOnly: true` are story continuations - they are only
+// ever spawned via a parent choice's `nextEvent`, never by the automatic
+// historical-date scan or the weighted random pool (see eventEngine.ts).
 import type { GameEvent } from '../core/types/events';
 
 const HISTORICAL_EVENTS: GameEvent[] = [
@@ -35,6 +39,28 @@ const HISTORICAL_EVENTS: GameEvent[] = [
     once: true,
   },
   {
+    id: 'hist_hungarian_rumors_904',
+    type: 'military',
+    title: 'Zvesti o Maďaroch',
+    description:
+      'Kupci prichádzajúci od juhu prinášajú znepokojivé správy o zhromažďovaní maďarských jazdcov za hranicami ríše.',
+    conditions: [{ year: 904 }],
+    choices: [
+      {
+        text: 'Posilniť opevnenia Devína a Nitry',
+        effects: {},
+        resourceChanges: { gold: -50 },
+        zupaLoyaltyChanges: { zupa_devín: 5, zupa_nitra: 5 },
+      },
+      {
+        text: 'Ignorovať zvesti ako preháňanie kupcov',
+        effects: {},
+      },
+    ],
+    triggered: false,
+    once: true,
+  },
+  {
     id: 'hist_byzantine_envoy_904',
     type: 'historical',
     title: 'Byzantské posolstvo',
@@ -53,6 +79,31 @@ const HISTORICAL_EVENTS: GameEvent[] = [
         text: 'Zachovať odstup od oboch cirkevných centier',
         effects: {},
         moodChanges: { 'Byzantskí Poslovia': { trust: -5 } },
+      },
+    ],
+    triggered: false,
+    once: true,
+  },
+  {
+    id: 'byz_bride_proposal_906',
+    type: 'diplomatic',
+    title: 'Byzantská ponuka sobáša',
+    description:
+      'Cisár Lev VI. ponúka ruku byzantskej princeznej jednému z moravských šľachticov ako spečatenie spojenectva medzi ríšami.',
+    conditions: [{ year: 906 }],
+    choices: [
+      {
+        text: 'Prijať ponuku sobáša',
+        effects: {},
+        nextEvent: 'byz_bride_wedding_907',
+        religionChange: 10,
+        moodChanges: { 'Byzantskí Poslovia': { trust: 15, loyalty: 10 } },
+      },
+      {
+        text: 'Zdvorilo odmietnuť',
+        effects: {},
+        nextEvent: 'byz_bride_insult_907',
+        moodChanges: { 'Byzantskí Poslovia': { trust: -15, anger: 10 } },
       },
     ],
     triggered: false,
@@ -93,12 +144,14 @@ const HISTORICAL_EVENTS: GameEvent[] = [
       {
         text: 'Preventívne zatknúť vodcov sprisahania',
         effects: {},
+        nextEvent: 'bogata_trial_916',
         moodChanges: { Bogatovci: { fear: 25, anger: 20 } },
         prestigeChange: 5,
       },
       {
         text: 'Sledovať a zhromažďovať dôkazy',
         effects: {},
+        nextEvent: 'bogata_uprising_917',
         moodChanges: { Bogatovci: { fear: 5 } },
       },
     ],
@@ -251,6 +304,116 @@ const HISTORICAL_EVENTS: GameEvent[] = [
     once: false,
     cooldownTicks: 24,
     weight: 8,
+  },
+
+  // --- Story chain follow-ups (chainOnly: never auto-spawned, only via nextEvent) ---
+
+  {
+    id: 'byz_bride_wedding_907',
+    type: 'religious',
+    title: 'Svadba na kráľovskom dvore',
+    description:
+      'O rok neskôr sa v Nitre koná honosná svadba spečaťujúca byzantsko-moravské spojenectvo pred zrakom vyslancov z celej Európy.',
+    conditions: [],
+    choices: [
+      {
+        text: 'Osláviť veľkolepou hostinou',
+        effects: {},
+        resourceChanges: { gold: -60 },
+        prestigeChange: 8,
+        moodChanges: { 'Byzantskí Poslovia': { loyalty: 10 }, Župani: { trust: 5 } },
+      },
+      {
+        text: 'Usporiadať skromný obrad',
+        effects: {},
+        prestigeChange: 3,
+        moodChanges: { 'Byzantskí Poslovia': { trust: 5 } },
+      },
+    ],
+    triggered: false,
+    once: true,
+    chainOnly: true,
+  },
+  {
+    id: 'byz_bride_insult_907',
+    type: 'diplomatic',
+    title: 'Chladné vzťahy s Konštantínopolom',
+    description:
+      'Odmietnutie sobáša sa v Konštantínopole nesie ako urážka cisárskeho domu. Byzantskí poslovia začínajú obmedzovať obchodné výsady.',
+    conditions: [],
+    choices: [
+      {
+        text: 'Vyslať ospravedlňujúce posolstvo s darmi',
+        effects: {},
+        resourceChanges: { gold: -40 },
+        moodChanges: { 'Byzantskí Poslovia': { trust: 10, anger: -10 } },
+      },
+      {
+        text: 'Neustupovať',
+        effects: {},
+        prestigeChange: 1,
+        moodChanges: { 'Byzantskí Poslovia': { anger: 10 } },
+      },
+    ],
+    triggered: false,
+    once: true,
+    chainOnly: true,
+  },
+  {
+    id: 'bogata_trial_916',
+    type: 'diplomatic',
+    title: 'Súd nad sprisahancami',
+    description: 'Po zatknutí vodcov rodu Bogata žiada kráľovská rada rozsudok nad usvedčenými sprisahancami.',
+    conditions: [],
+    choices: [
+      {
+        text: 'Odsúdiť na vyhnanstvo',
+        effects: {},
+        prestigeChange: 2,
+        moodChanges: { Bogatovci: { anger: -10 } },
+      },
+      {
+        text: 'Odsúdiť na smrť',
+        effects: {},
+        prestigeChange: -3,
+        moodChanges: { Bogatovci: { anger: 15, fear: 15 }, Župani: { trust: 5 } },
+      },
+      {
+        text: 'Udeliť milosť výmenou za vernosť',
+        effects: {},
+        prestigeChange: -1,
+        moodChanges: { Bogatovci: { loyalty: 20, trust: 15, anger: -10 } },
+      },
+    ],
+    triggered: false,
+    once: true,
+    chainOnly: true,
+  },
+  {
+    id: 'bogata_uprising_917',
+    type: 'military',
+    title: 'Povstanie rodu Bogata',
+    description:
+      'Nesledovaní a nezastavení sa sprisahanci rodu Bogata odhodlali k otvorenej vzbure v Užskej župe.',
+    conditions: [],
+    choices: [
+      {
+        text: 'Poslať kráľovské vojsko potlačiť vzburu',
+        effects: {},
+        resourceChanges: { gold: -40 },
+        prestigeChange: 4,
+        moodChanges: { Bogatovci: { fear: 30, anger: 10 } },
+      },
+      {
+        text: 'Rokovať o kapitulácii výmenou za amnestiu',
+        effects: {},
+        prestigeChange: -2,
+        moodChanges: { Bogatovci: { trust: 10, anger: -15 } },
+      },
+    ],
+    triggered: false,
+    once: true,
+    chainOnly: true,
   },
 ];
 

@@ -6,3 +6,4 @@ export { default as EventPanel } from './EventPanel';
 export { default as DiplomacyPanel } from './DiplomacyPanel';
 export { default as ArmyPanel } from './ArmyPanel';
 export { default as BattleView } from './BattleView';
+export { default as ChronicleView } from './ChronicleView';

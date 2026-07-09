@@ -10,9 +10,10 @@ import { EventPanel } from '../components/EventPanel';
 import { DiplomacyPanel } from '../components/DiplomacyPanel';
 import { ArmyPanel } from '../components/ArmyPanel';
 import { BattleView } from '../components/BattleView';
+import { ChronicleView } from '../components/ChronicleView';
 import styles from '../../styles/GameScreen.module.css';
 
-type ActivePanel = 'map' | 'events' | 'diplomacy' | 'army' | 'battle';
+type ActivePanel = 'map' | 'events' | 'diplomacy' | 'army' | 'battle' | 'chronicle';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -49,6 +50,8 @@ export function GameScreen({
         return <DiplomacyPanel gameState={gameState} onPerformDiplomaticAction={onPerformDiplomaticAction} />;
       case 'army':
         return <ArmyPanel gameState={gameState} />;
+      case 'chronicle':
+        return <ChronicleView gameState={gameState} />;
       case 'battle':
         return (
           <BattleView
@@ -99,6 +102,12 @@ export function GameScreen({
             onClick={() => setActivePanel('battle')}
           >
             Bitky
+          </button>
+          <button
+            className={`${styles.navButton} ${activePanel === 'chronicle' ? styles.active : ''}`}
+            onClick={() => setActivePanel('chronicle')}
+          >
+            Kronika
           </button>
         </nav>
         

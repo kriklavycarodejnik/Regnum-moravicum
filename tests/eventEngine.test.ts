@@ -199,4 +199,57 @@ describe('Event Engine', () => {
       expect(sawExtra).toBe(false);
     });
   });
+
+  describe('chainOnly story events', () => {
+    it('are never spawned by the automatic historical scan, even when their year is unconditioned', () => {
+      let s: GameState = { ...initialState, year: 902, events: [] };
+      for (let year = 902; year <= 920; year++) {
+        s = processEvents({ ...s, year });
+      }
+      const chainOnlyIds = HISTORICAL_EVENTS.filter((e) => e.chainOnly).map((e) => e.id);
+      for (const id of chainOnlyIds) {
+        expect(s.events.some((e) => e.id === id)).toBe(false);
+      }
+    });
+
+    it('are never returned by generateRandomEvent', () => {
+      for (let tick = 0; tick < 50; tick++) {
+        const generated = generateRandomEvent({ ...initialState, year: 910, tick });
+        expect(generated?.chainOnly).not.toBe(true);
+      }
+    });
+
+    it('accepting the Byzantine marriage proposal queues the wedding as the next event', () => {
+      const proposal = HISTORICAL_EVENTS.find((e) => e.id === 'byz_bride_proposal_906')!;
+      const state: GameState = { ...initialState, events: [{ ...proposal, triggered: false }] };
+
+      const newState = resolveEventChoice(state, proposal.id, 0);
+      expect(newState.events.some((e) => e.id === 'byz_bride_wedding_907' && !e.triggered)).toBe(true);
+    });
+
+    it('declining the Byzantine marriage proposal queues the insult event instead', () => {
+      const proposal = HISTORICAL_EVENTS.find((e) => e.id === 'byz_bride_proposal_906')!;
+      const state: GameState = { ...initialState, events: [{ ...proposal, triggered: false }] };
+
+      const newState = resolveEventChoice(state, proposal.id, 1);
+      expect(newState.events.some((e) => e.id === 'byz_bride_insult_907' && !e.triggered)).toBe(true);
+      expect(newState.events.some((e) => e.id === 'byz_bride_wedding_907')).toBe(false);
+    });
+
+    it('arresting the Bogata conspirators queues their trial', () => {
+      const conspiracy = HISTORICAL_EVENTS.find((e) => e.id === 'hist_bogata_conspiracy_915')!;
+      const state: GameState = { ...initialState, events: [{ ...conspiracy, triggered: false }] };
+
+      const newState = resolveEventChoice(state, conspiracy.id, 0);
+      expect(newState.events.some((e) => e.id === 'bogata_trial_916' && !e.triggered)).toBe(true);
+    });
+
+    it('watching the Bogata conspirators queues the uprising instead', () => {
+      const conspiracy = HISTORICAL_EVENTS.find((e) => e.id === 'hist_bogata_conspiracy_915')!;
+      const state: GameState = { ...initialState, events: [{ ...conspiracy, triggered: false }] };
+
+      const newState = resolveEventChoice(state, conspiracy.id, 1);
+      expect(newState.events.some((e) => e.id === 'bogata_uprising_917' && !e.triggered)).toBe(true);
+    });
+  });
 });
