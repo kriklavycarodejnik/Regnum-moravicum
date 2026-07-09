@@ -9,6 +9,7 @@ import {
 } from '../../core/engines/warCampaign';
 import { getScenarioDescription } from '../../scenarios/hungarianWar';
 import { CoatOfArms } from './CoatOfArms';
+import { BattleScene } from './BattleScene';
 import styles from '../../styles/BattleView.module.css';
 
 interface BattleViewProps {
@@ -82,6 +83,7 @@ export function BattleView({ gameState, onStartWar, onStartBattle, onPlayBattleP
           </span>
         </div>
         <div className={styles.content}>
+          <BattleScene terrain={battle.terrain} />
           <div className={styles.battleInfo}>
             <div className={`${styles.battleSide} ${styles.sideAttacker}`}>
               <div className={styles.sideHeader}>
