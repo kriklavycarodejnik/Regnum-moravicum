@@ -20,7 +20,8 @@ export function App() {
     startWar,
     startBattle,
     playBattlePhase,
-    autoResolveBattle
+    autoResolveBattle,
+    resolveEvent
   } = useGame();
   
   const [appState, setAppState] = useState<AppState>('loading');
@@ -86,6 +87,7 @@ export function App() {
         onStartBattle={startBattle}
         onPlayBattlePhase={playBattlePhase}
         onAutoResolveBattle={autoResolveBattle}
+        onResolveEvent={resolveEvent}
       />
     );
   }

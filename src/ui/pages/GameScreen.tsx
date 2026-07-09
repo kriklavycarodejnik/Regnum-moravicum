@@ -21,6 +21,7 @@ interface GameScreenProps {
   onStartBattle: (front: BattleFront) => void;
   onPlayBattlePhase: (action: BattleAction) => void;
   onAutoResolveBattle: (front: BattleFront) => void;
+  onResolveEvent: (eventId: string, choiceIndex: number) => void;
 }
 
 export function GameScreen({
@@ -31,6 +32,7 @@ export function GameScreen({
   onStartBattle,
   onPlayBattlePhase,
   onAutoResolveBattle,
+  onResolveEvent,
 }: GameScreenProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel>('map');
 
@@ -39,7 +41,7 @@ export function GameScreen({
       case 'map':
         return <MapView gameState={gameState} />;
       case 'events':
-        return <EventPanel gameState={gameState} />;
+        return <EventPanel gameState={gameState} onResolveEvent={onResolveEvent} />;
       case 'diplomacy':
         return <DiplomacyPanel gameState={gameState} />;
       case 'army':
