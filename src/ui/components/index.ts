@@ -7,3 +7,4 @@ export { default as DiplomacyPanel } from './DiplomacyPanel';
 export { default as ArmyPanel } from './ArmyPanel';
 export { default as BattleView } from './BattleView';
 export { default as ChronicleView } from './ChronicleView';
+export { default as CoatOfArms } from './CoatOfArms';

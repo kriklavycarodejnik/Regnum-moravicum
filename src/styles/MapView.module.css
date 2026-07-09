@@ -220,6 +220,12 @@
   color: var(--text-primary);
 }
 
+.ownerRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

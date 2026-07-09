@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import type { GameState, ZupaId } from '../../core/types/gameState';
 import type { Zupa } from '../../core/types/entities';
+import { CoatOfArms } from './CoatOfArms';
 import styles from '../../styles/MapView.module.css';
 
 interface MapViewProps {
@@ -76,10 +77,8 @@ export function MapView({ gameState }: MapViewProps) {
 
   const getZupaById = (id: ZupaId): Zupa | undefined => gameState.zupy[id];
 
-  const getNobleName = (id: string): string => {
-    const noble = gameState.nobles.find((n) => n.id === id);
-    return noble ? noble.name : 'Neznámy';
-  };
+  const getNoble = (id: string) => gameState.nobles.find((n) => n.id === id);
+  const getNobleName = (id: string): string => getNoble(id)?.name ?? 'Neznámy';
 
   const zupaIds = Object.keys(gameState.zupy);
 
@@ -187,7 +186,17 @@ export function MapView({ gameState }: MapViewProps) {
           <div className={styles.detailsGrid}>
             <div className={styles.detailItem}>
               <span className={styles.detailLabel}>Vlastník:</span>
-              <span className={styles.detailValue}>{getNobleName(selected.owner)}</span>
+              <span className={styles.detailValue}>
+                <span className={styles.ownerRow}>
+                  <CoatOfArms
+                    nobleId={selected.owner}
+                    familyId={getNoble(selected.owner)?.familyId}
+                    title={getNoble(selected.owner)?.title}
+                    size={22}
+                  />
+                  {getNobleName(selected.owner)}
+                </span>
+              </span>
             </div>
             <div className={styles.detailItem}>
               <span className={styles.detailLabel}>Vernosť:</span>
