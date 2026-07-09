@@ -3,6 +3,7 @@ import type { GameState } from '../types/gameState';
 import { rngChance } from '../utils/rng';
 import { processWarCampaignTick } from './warCampaign';
 import { processEvents } from './eventEngine';
+import { processDiplomacy } from './diplomacyEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -208,11 +209,11 @@ export function processSuccessionPhase(state: GameState): GameState {
 }
 
 /**
- * Process diplomacy (Phase 3)
+ * Process diplomacy: passive per-tick AI drift driven by faction
+ * personality archetypes, per src/core/engines/diplomacyEngine.ts.
  */
 export function processDiplomacyPhase(state: GameState): GameState {
-  // Stub for Phase 3
-  return { ...state };
+  return processDiplomacy(state);
 }
 
 /**
@@ -263,7 +264,7 @@ export function processTick(state: GameState): GameState {
   // Phase 8: Process succession (stub)
   newState = processSuccessionPhase(newState);
   
-  // Phase 9: Process diplomacy (stub)
+  // Phase 9: Process diplomacy
   newState = processDiplomacyPhase(newState);
   
   // Phase 10: Process wars

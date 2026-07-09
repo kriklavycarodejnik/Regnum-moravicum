@@ -13,6 +13,7 @@ import {
   type BattleFront,
 } from '../core/engines/warCampaign';
 import { resolveEventChoice } from '../core/engines/eventEngine';
+import { performDiplomaticAction as performDiplomaticActionEngine, type DiplomaticActionType } from '../core/engines/diplomacyEngine';
 import type { BattleAction } from '../battle/types';
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -31,6 +32,7 @@ interface UseGameReturn {
   playBattlePhase: (action: BattleAction) => void;
   autoResolveBattle: (front: BattleFront) => void;
   resolveEvent: (eventId: string, choiceIndex: number) => void;
+  performDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
 }
 
 export function useGame(): UseGameReturn {
@@ -158,6 +160,15 @@ export function useGame(): UseGameReturn {
     }
   }, [gameState]);
 
+  const performDiplomaticAction = useCallback((factionId: string, action: DiplomaticActionType) => {
+    if (!gameState) return;
+    try {
+      setGameState(performDiplomaticActionEngine(gameState, factionId, action));
+    } catch (err) {
+      setError(`Error performing diplomatic action: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [gameState]);
+
   return {
     gameState,
     isLoading,
@@ -171,7 +182,8 @@ export function useGame(): UseGameReturn {
     startBattle,
     playBattlePhase,
     autoResolveBattle,
-    resolveEvent
+    resolveEvent,
+    performDiplomaticAction
   };
 }
 
