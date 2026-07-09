@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { GameState } from '../../core/types/gameState';
 import type { BattleAction } from '../../battle/types';
 import type { BattleFront } from '../../core/engines/warCampaign';
+import type { DiplomaticActionType } from '../../core/engines/diplomacyEngine';
 import { StatusBar } from '../components/StatusBar';
 import { MapView } from '../components/MapView';
 import { EventPanel } from '../components/EventPanel';
@@ -22,6 +23,7 @@ interface GameScreenProps {
   onPlayBattlePhase: (action: BattleAction) => void;
   onAutoResolveBattle: (front: BattleFront) => void;
   onResolveEvent: (eventId: string, choiceIndex: number) => void;
+  onPerformDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
 }
 
 export function GameScreen({
@@ -33,6 +35,7 @@ export function GameScreen({
   onPlayBattlePhase,
   onAutoResolveBattle,
   onResolveEvent,
+  onPerformDiplomaticAction,
 }: GameScreenProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel>('map');
 
@@ -43,7 +46,7 @@ export function GameScreen({
       case 'events':
         return <EventPanel gameState={gameState} onResolveEvent={onResolveEvent} />;
       case 'diplomacy':
-        return <DiplomacyPanel gameState={gameState} />;
+        return <DiplomacyPanel gameState={gameState} onPerformDiplomaticAction={onPerformDiplomaticAction} />;
       case 'army':
         return <ArmyPanel gameState={gameState} />;
       case 'battle':
