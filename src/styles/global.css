@@ -17,10 +17,46 @@
   --text-muted: #6b5d4b;
   --accent-gold: #d4af37;
   --accent-gold-light: #f4d03f;
+  --accent-gold-dark: #a3811f;
   --accent-red: #6b4a4a;
   --accent-green: #4a6b4a;
+  --accent-purple: #8b5fbf;
   --font-main: 'Georgia', serif;
   --font-mono: 'Courier New', monospace;
+
+  /* Darker panel tiers (headers, wells, recessed surfaces) */
+  --bg-panel-dark: #120c07;
+  --bg-panel-darker: #0d0904;
+  --text-dark: #1a120b;
+
+  /* Semantic status colors */
+  --color-success: #5a9c5a;
+  --color-warning: #c9902f;
+  --color-danger: #b8453f;
+  --color-danger-dark: #8f332f;
+  --color-danger-light: #d97066;
+  --color-info: #4a7a9c;
+  --color-pink: #c97ba0;
+
+  /* Player vs. rival territory/army markers */
+  --faction-primary: #d4af37;
+  --faction-primary-light: #f4d03f;
+  --faction-secondary: #8b4a3a;
+  --faction-secondary-light: #b56a52;
+
+  /* Faction badge colors (background / readable text) */
+  --faction-zupani: rgba(212, 175, 55, 0.25);
+  --faction-zupani-text: #d4af37;
+  --faction-cyrilometodski: rgba(107, 74, 139, 0.35);
+  --faction-cyrilometodski-text: #d9c3f0;
+  --faction-byzantski: rgba(74, 90, 139, 0.35);
+  --faction-byzantski-text: #cdd6f0;
+  --faction-nemecki: rgba(90, 107, 122, 0.35);
+  --faction-nemecki-text: #dfe6ec;
+  --faction-madarski: rgba(139, 58, 58, 0.35);
+  --faction-madarski-text: #f0d0d0;
+  --faction-kumani: rgba(139, 106, 58, 0.35);
+  --faction-kumani-text: #f0e0c0;
   
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
