@@ -4,19 +4,26 @@ import { useGame } from './hooks/useGame';
 import { MainMenu } from './ui/pages/MainMenu';
 import { GameScreen } from './ui/pages/GameScreen';
 import { LoadingScreen } from './ui/pages/LoadingScreen';
+import { GameOverScreen } from './ui/pages/GameOverScreen';
 import styles from './styles/App.module.css';
 
 type AppState = 'loading' | 'menu' | 'game';
 
 export function App() {
-  const { 
-    gameState, 
-    isLoading, 
-    error, 
-    tick, 
-    newGame, 
+  const {
+    gameState,
+    isLoading,
+    error,
+    tick,
+    newGame,
     loadSavedGame,
-    hasSavedGame 
+    hasSavedGame,
+    startWar,
+    startBattle,
+    playBattlePhase,
+    autoResolveBattle,
+    resolveEvent,
+    performDiplomaticAction
   } = useGame();
   
   const [appState, setAppState] = useState<AppState>('loading');
@@ -73,11 +80,21 @@ export function App() {
 
   // Show game
   if (appState === 'game' && gameState) {
+    if (gameState.gameOver) {
+      return <GameOverScreen gameState={gameState} onBackToMenu={handleBackToMenu} />;
+    }
+
     return (
       <GameScreen
         gameState={gameState}
         onTick={tick}
         onBackToMenu={handleBackToMenu}
+        onStartWar={startWar}
+        onStartBattle={startBattle}
+        onPlayBattlePhase={playBattlePhase}
+        onAutoResolveBattle={autoResolveBattle}
+        onResolveEvent={resolveEvent}
+        onPerformDiplomaticAction={performDiplomaticAction}
       />
     );
   }

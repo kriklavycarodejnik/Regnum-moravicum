@@ -1,6 +1,10 @@
 // Regnum Moravicum v2.1 - Tick Engine
 import type { GameState } from '../types/gameState';
 import { rngChance } from '../utils/rng';
+import { processWarCampaignTick } from './warCampaign';
+import { processEvents } from './eventEngine';
+import { processDiplomacy } from './diplomacyEngine';
+import { decayReligionAxis, growPrestige, checkVictoryConditions } from './victoryEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -157,16 +161,17 @@ export function payUpkeep(state: GameState): GameState {
  */
 export function checkRebellions(state: GameState): GameState {
   const newState = { ...state };
-  
+
   newState.zupy = { ...state.zupy };
-  
+  newState.events = [...state.events];
+
   Object.entries(state.zupy).forEach(([zupaId, zupa]) => {
     if (zupa.loyalty < 20 && rngChance(0.3)) {
       const newZupa = { ...zupa };
       newZupa.prosperity = Math.max(0, zupa.prosperity - 10);
       newZupa.loyalty = Math.min(100, zupa.loyalty + 5); // Rebellion suppressed for now
       newState.zupy[zupaId] = newZupa;
-      
+
       // Add rebellion event to state
       newState.events.push({
         id: `rebellion_${state.tick}_${zupaId}`,
@@ -190,7 +195,7 @@ export function checkRebellions(state: GameState): GameState {
       });
     }
   });
-  
+
   return newState;
 }
 
@@ -206,27 +211,28 @@ export function processSuccessionPhase(state: GameState): GameState {
 }
 
 /**
- * Process diplomacy (Phase 3)
+ * Process diplomacy: passive per-tick AI drift driven by faction
+ * personality archetypes, per src/core/engines/diplomacyEngine.ts.
  */
 export function processDiplomacyPhase(state: GameState): GameState {
-  // Stub for Phase 3
-  return { ...state };
+  return processDiplomacy(state);
 }
 
 /**
- * Process wars (Phase 2)
+ * Process wars: scripted war campaign events (raids, reinforcements,
+ * occupation looting, liberation/war-end checks). Battles themselves are
+ * player-triggered from the UI, not auto-run during the tick.
  */
 export function processWarsPhase(state: GameState): GameState {
-  // Stub for Phase 2
-  return { ...state };
+  return processWarCampaignTick(state);
 }
 
 /**
- * Process events (Phase 3)
+ * Process events: spawn newly-due historical events and roll for random
+ * flavor events, per src/core/engines/eventEngine.ts.
  */
 export function processEventsPhase(state: GameState): GameState {
-  // Stub for Phase 3
-  return { ...state };
+  return processEvents(state);
 }
 
 /**
@@ -244,9 +250,15 @@ export function processTick(state: GameState): GameState {
   
   // Phase 3: Decay moods and morale
   newState = decayMoods(newState);
-  
+
+  // Phase 3b: Decay religion axis toward neutral
+  newState = decayReligionAxis(newState);
+
   // Phase 4: Grow prosperity
   newState = growProsperity(newState);
+
+  // Phase 4b: Passive prestige trickle from good governance
+  newState = growPrestige(newState);
   
   // Phase 5: Add recruitment pool
   newState = addRecruitmentPool(newState);
@@ -260,15 +272,18 @@ export function processTick(state: GameState): GameState {
   // Phase 8: Process succession (stub)
   newState = processSuccessionPhase(newState);
   
-  // Phase 9: Process diplomacy (stub)
+  // Phase 9: Process diplomacy
   newState = processDiplomacyPhase(newState);
   
-  // Phase 10: Process wars (stub)
+  // Phase 10: Process wars
   newState = processWarsPhase(newState);
-  
-  // Phase 11: Process events (stub)
+
+  // Phase 11: Process events
   newState = processEventsPhase(newState);
-  
+
+  // Phase 12: Check victory/defeat conditions
+  newState = checkVictoryConditions(newState);
+
   return newState;
 }
 

@@ -67,6 +67,27 @@ export function rngChance(probability: number): boolean {
 }
 
 /**
+ * Pick one item from a list using weighted random selection
+ */
+export function rngWeighted<T>(items: T[], weightFn: (item: T) => number): T | null {
+  if (items.length === 0) {
+    return null;
+  }
+  const totalWeight = items.reduce((sum, item) => sum + weightFn(item), 0);
+  if (totalWeight <= 0) {
+    return items[rngMax(items.length)];
+  }
+  let roll = rngFloat(0, totalWeight);
+  for (const item of items) {
+    roll -= weightFn(item);
+    if (roll <= 0) {
+      return item;
+    }
+  }
+  return items[items.length - 1];
+}
+
+/**
  * Get the current RNG state for saving
  */
 export function getRNGState(): RNGState | null {
@@ -85,6 +106,7 @@ export default {
   rng,
   rngFloat,
   rngChance,
+  rngWeighted,
   getRNGState,
   setRNGState
 };

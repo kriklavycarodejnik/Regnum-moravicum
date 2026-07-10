@@ -5,262 +5,239 @@
   width: 100%;
   height: 100%;
   min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
   border: 2px solid var(--accent-gold);
   border-radius: 8px;
   overflow: hidden;
+  padding: 15px;
 }
 
-.svgContainer {
+.container h2 {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+.mapContainer {
+  flex: 1;
+  min-height: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.mapSvg {
   width: 100%;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: block;
 }
 
-.svgMap {
-  width: 100%;
-  height: 100%;
-}
-
-/* Zupa circles */
-.zupaCircle {
-  fill: var(--bg-panel);
-  stroke: var(--accent-gold);
+/* Parchment frame */
+.borderOuter {
+  fill: none;
+  stroke: var(--accent-gold-dark);
   stroke-width: 2;
+}
+
+.borderInner {
+  fill: none;
+  stroke: var(--accent-gold);
+  stroke-width: 1;
+  stroke-opacity: 0.6;
+}
+
+.river {
+  fill: none;
+  stroke: #3a5a6b;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+
+/* Roads between neighboring župy */
+.road {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 4, 4;
+  opacity: 0.5;
+}
+
+/* Settlement group */
+.zupaGroup {
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.zupaCircle:hover {
-  fill: var(--bg-panel-hover);
-  stroke: var(--accent-gold-light);
-  stroke-width: 3;
+.zupaGroup:hover .towerBody,
+.zupaGroup:hover .towerGate {
+  filter: brightness(1.25);
 }
 
-.zupaCircle.selected {
+.tower {
+  transition: filter 0.2s ease;
+}
+
+.towerBody,
+.towerGate {
+  stroke: var(--bg-darker);
+  stroke-width: 0.75;
+}
+
+.towerHigh .towerBody { fill: var(--color-success); }
+.towerMid .towerBody { fill: var(--color-warning); }
+.towerLow .towerBody { fill: var(--color-danger); }
+.towerGate { fill: var(--bg-darker); }
+
+.towerFlagpole {
+  stroke: var(--text-secondary);
+  stroke-width: 1;
+}
+
+.towerFlag {
   fill: var(--accent-gold);
+}
+
+.towerSelected .towerBody {
   stroke: var(--accent-gold-light);
-  stroke-width: 3;
+  stroke-width: 2;
 }
 
-.zupaCircle.owned {
-  fill: var(--faction-primary);
+/* Labels */
+.labelBanner {
+  fill: var(--bg-panel-dark);
+  stroke: var(--accent-gold);
+  stroke-width: 0.75;
+  opacity: 0.9;
+  rx: 3;
+  pointer-events: none;
 }
 
-.zupaCircle.owned:hover {
-  fill: var(--faction-primary-light);
-}
-
-/* Zupa text labels */
 .zupaText {
   fill: var(--text-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  text-anchor: middle;
+  font-family: var(--font-main);
   pointer-events: none;
   user-select: none;
 }
 
-.zupaText.selected {
-  fill: var(--text-dark);
+.ownerText {
+  fill: var(--accent-gold);
+  font-size: 9px;
+  font-family: var(--font-main);
+  pointer-events: none;
+  user-select: none;
 }
 
-/* Connection lines between zupas */
-.connection {
-  stroke: var(--text-muted);
+/* Compass rose */
+.compass .compassRing {
+  fill: none;
+  stroke: var(--accent-gold);
   stroke-width: 1;
-  stroke-opacity: 0.3;
-  stroke-dasharray: 5,3;
+  opacity: 0.6;
 }
 
-.connection.owned {
-  stroke: var(--faction-primary);
-  stroke-opacity: 0.5;
-}
-
-/* Army markers on map */
-.armyMarker {
-  fill: var(--faction-secondary);
-  stroke: var(--text-dark);
+.compass .compassLine {
+  stroke: var(--accent-gold);
   stroke-width: 1;
-  cursor: pointer;
+  opacity: 0.5;
 }
 
-.armyMarker:hover {
-  fill: var(--faction-secondary-light);
+.compass .compassNeedle {
+  fill: var(--accent-gold);
 }
 
-.armyMarker.owned {
-  fill: var(--faction-primary);
+.compass .compassLabel {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font-main);
 }
 
-/* Battle markers */
-.battleMarker {
-  fill: var(--color-danger);
-  stroke: var(--text-dark);
-  stroke-width: 2;
-  cursor: pointer;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-/* Details panel for selected zupa */
-.detailsPanel {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.85);
+/* Selected zupa "royal charter" details card */
+.zupaDetails {
+  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-dark) 100%);
   border: 1px solid var(--accent-gold);
-  border-radius: 8px;
-  padding: 15px;
-  color: var(--text-primary);
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 10;
-  backdrop-filter: blur(10px);
+  border-radius: 6px;
+  padding: 15px 18px;
+  animation: fadeIn 0.25s ease-out;
 }
 
-.detailsPanel.hidden {
-  display: none;
+.charterHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.detailsPanel h3 {
-  margin: 0 0 10px 0;
+.charterHeader h3 {
+  margin: 0;
   color: var(--accent-gold);
   font-size: 16px;
 }
 
-.detailsPanel .infoGrid {
+.wax {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--color-danger-light), var(--color-danger) 60%, var(--color-danger-dark) 100%);
+  color: #fff0e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-danger-dark);
+}
+
+.detailsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 10px;
 }
 
-.detailsPanel .infoItem {
+.detailItem {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-.detailsPanel .infoLabel {
+.detailLabel {
   font-size: 11px;
   color: var(--text-muted);
-  margin-bottom: 2px;
 }
 
-.detailsPanel .infoValue {
+.detailValue {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-/* Loyalty bar */
-.loyaltyBar {
-  width: 100%;
-  height: 8px;
-  background: var(--bg-panel);
-  border-radius: 4px;
-  margin: 8px 0;
-  overflow: hidden;
+.ownerRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.loyaltyFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-success), var(--color-warning), var(--color-danger));
-  transition: width 0.3s ease;
-}
-
-/* Prosperity bar */
-.prosperityBar {
-  width: 100%;
-  height: 8px;
-  background: var(--bg-panel);
-  border-radius: 4px;
-  margin: 8px 0;
-  overflow: hidden;
-}
-
-.prosperityFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent-gold-dark), var(--accent-gold), var(--accent-gold-light));
-  transition: width 0.3s ease;
-}
-
-/* Garrison info */
-.garrisonInfo {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-color);
-}
-
-.garrisonTitle {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 5px;
-}
-
-.garrisonUnits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.garrisonUnit {
-  background: var(--bg-panel);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-}
-
-/* Tooltip for zupa info */
-.tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.95);
-  border: 1px solid var(--accent-gold);
-  border-radius: 6px;
-  padding: 10px;
-  color: var(--text-primary);
-  font-size: 12px;
-  pointer-events: none;
-  z-index: 20;
-  min-width: 180px;
-}
-
-.tooltip.hidden {
-  display: none;
-}
-
-.tooltip h4 {
-  margin: 0 0 8px 0;
-  color: var(--accent-gold);
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 5px;
-}
-
-.tooltip p {
-  margin: 3px 0;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .detailsPanel {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    padding: 10px;
-  }
-  
   .zupaText {
     font-size: 10px;
   }
-  
-  .detailsPanel h3 {
+
+  .charterHeader h3 {
     font-size: 14px;
   }
 }

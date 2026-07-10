@@ -1,23 +1,43 @@
 // Regnum Moravicum v2.1 - Game Screen Page
 import { useState } from 'react';
 import type { GameState } from '../../core/types/gameState';
+import type { BattleAction } from '../../battle/types';
+import type { BattleFront } from '../../core/engines/warCampaign';
+import type { DiplomaticActionType } from '../../core/engines/diplomacyEngine';
 import { StatusBar } from '../components/StatusBar';
 import { MapView } from '../components/MapView';
 import { EventPanel } from '../components/EventPanel';
 import { DiplomacyPanel } from '../components/DiplomacyPanel';
 import { ArmyPanel } from '../components/ArmyPanel';
 import { BattleView } from '../components/BattleView';
+import { ChronicleView } from '../components/ChronicleView';
 import styles from '../../styles/GameScreen.module.css';
 
-type ActivePanel = 'map' | 'events' | 'diplomacy' | 'army' | 'battle';
+type ActivePanel = 'map' | 'events' | 'diplomacy' | 'army' | 'battle' | 'chronicle';
 
 interface GameScreenProps {
   gameState: GameState;
   onTick: () => void;
   onBackToMenu: () => void;
+  onStartWar: () => void;
+  onStartBattle: (front: BattleFront) => void;
+  onPlayBattlePhase: (action: BattleAction) => void;
+  onAutoResolveBattle: (front: BattleFront) => void;
+  onResolveEvent: (eventId: string, choiceIndex: number) => void;
+  onPerformDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
 }
 
-export function GameScreen({ gameState, onTick, onBackToMenu }: GameScreenProps) {
+export function GameScreen({
+  gameState,
+  onTick,
+  onBackToMenu,
+  onStartWar,
+  onStartBattle,
+  onPlayBattlePhase,
+  onAutoResolveBattle,
+  onResolveEvent,
+  onPerformDiplomaticAction,
+}: GameScreenProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel>('map');
 
   const renderPanel = () => {
@@ -25,13 +45,23 @@ export function GameScreen({ gameState, onTick, onBackToMenu }: GameScreenProps)
       case 'map':
         return <MapView gameState={gameState} />;
       case 'events':
-        return <EventPanel gameState={gameState} />;
+        return <EventPanel gameState={gameState} onResolveEvent={onResolveEvent} />;
       case 'diplomacy':
-        return <DiplomacyPanel gameState={gameState} />;
+        return <DiplomacyPanel gameState={gameState} onPerformDiplomaticAction={onPerformDiplomaticAction} />;
       case 'army':
         return <ArmyPanel gameState={gameState} />;
+      case 'chronicle':
+        return <ChronicleView gameState={gameState} />;
       case 'battle':
-        return <BattleView gameState={gameState} />;
+        return (
+          <BattleView
+            gameState={gameState}
+            onStartWar={onStartWar}
+            onStartBattle={onStartBattle}
+            onPlayBattlePhase={onPlayBattlePhase}
+            onAutoResolveBattle={onAutoResolveBattle}
+          />
+        );
       default:
         return <MapView gameState={gameState} />;
     }
@@ -72,6 +102,12 @@ export function GameScreen({ gameState, onTick, onBackToMenu }: GameScreenProps)
             onClick={() => setActivePanel('battle')}
           >
             Bitky
+          </button>
+          <button
+            className={`${styles.navButton} ${activePanel === 'chronicle' ? styles.active : ''}`}
+            onClick={() => setActivePanel('chronicle')}
+          >
+            Kronika
           </button>
         </nav>
         

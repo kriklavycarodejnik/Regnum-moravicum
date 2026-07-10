@@ -303,7 +303,8 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
     },
     religion: { value: 0 },
     gameOver: false,
-    saveVersion: SAVE_VERSION
+    saveVersion: SAVE_VERSION,
+    warCampaign: null
   };
 }
 

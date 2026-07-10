@@ -22,8 +22,13 @@ export interface EventChoice {
   effects: Partial<GameState>;
   nextEvent?: EventId;
   prestigeChange?: number;
+  // Key may be a faction id or a faction name (faction ids are generated
+  // non-deterministically at runtime, so static event data keys by name).
   moodChanges?: Record<FactionId, Partial<import('./entities').FactionMoods>>;
   armyChanges?: Record<ArmyId, Partial<import('./entities').Army>>;
+  resourceChanges?: Partial<Record<keyof import('./gameState').Resources, number>>; // deltas
+  religionChange?: number; // delta to GameState.religion.value, clamped to -100..100
+  zupaLoyaltyChanges?: Record<ZupaId, number>; // deltas, clamped 0..100
 }
 
 export interface GameEvent {
@@ -37,4 +42,7 @@ export interface GameEvent {
   once?: boolean;
   cooldownTicks?: number;
   weight?: number;
+  triggeredTick?: number; // tick this instance was spawned into GameState.events, used for cooldowns
+  chainOnly?: boolean; // only ever spawned via a parent choice's nextEvent, never by the automatic historical/random scans
+  resolvedChoiceIndex?: number; // which EventChoice the player picked, set by resolveEventChoice
 }

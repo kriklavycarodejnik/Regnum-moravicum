@@ -318,4 +318,22 @@ describe('Tick Engine', () => {
       expect(['alive', 'dead']).toContain(oldNoble?.status);
     });
   });
+
+  describe('long-run integration', () => {
+    it('reaches gameOver by processing ticks all the way to the victory year without throwing', () => {
+      let state = initialState;
+      let iterations = 0;
+      const MAX_TICKS = 1300; // well past the year-1000 survival victory threshold
+
+      while (!state.gameOver && iterations < MAX_TICKS) {
+        state = processTick(state);
+        iterations++;
+      }
+
+      expect(state.gameOver).toBe(true);
+      expect(typeof state.gameOverReason).toBe('string');
+      // Either the dynasty was wiped out along the way, or it survived to the target year.
+      expect(typeof state.gameOverVictory).toBe('boolean');
+    });
+  });
 });

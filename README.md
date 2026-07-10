@@ -10,12 +10,18 @@ Regnum Moravicum is a turn-based strategy game where you take on the role of the
 
 - **Historical Setting**: Start in 902 AD as Mojmír II. of the Mojmírovci dynasty
 - **11 Župy**: Nitra, Devín, Bratislava, Trnava, Zvolen, Banská Bystrica, Košice, Prešov, Žilina, Poprad, Bardejov
-- **6 Factions**: Župani, Cyrilometodskí Kňazi, Byzantskí Poslovia, Nemeckí Kolonisti, Maďarské zvyšky, Kumáni
+- **6 Factions**: Župani, Cyrilometodskí Kňazi, Byzantskí Poslovia, Nemeckí Kolonisti, Maďarské zvyšky, Bogatovci
 - **Resource Management**: Gold, Food, Wood, Stone, Iron, Prestige
-- **Religion Axis**: Balance between Rome and Constantinople
-- **Military System**: Recruit units, form armies, engage in battles
-- **Diplomacy**: Negotiate treaties, form alliances, manage relations
-- **Event System**: Random and historical events with choices and consequences
+- **Religion Axis**: Balance between Rome and Constantinople, slowly drifting back to neutral over time
+- **Military System**: Recruit units, form armies, and fight the scripted Hungarian invasion
+  (Bitka pri Devíne, 907) phase-by-phase - melee/ranged/flank/retreat choices each round, or
+  auto-resolve a front instantly
+- **Diplomacy**: Gift, threaten, or propose trade/non-aggression/military-pact treaties with each
+  faction; AI factions also drift on their own each tick based on their personality archetype
+- **Event System**: Random and historical events with choices that affect prestige, religion,
+  resources, faction moods, and zupa loyalty
+- **Victory/Defeat**: Survive as a dynasty to the year 1000 for victory; lose if the dynasty goes
+  extinct or loses its last župa
 
 ## Installation
 
@@ -62,12 +68,12 @@ regnum-moravicum/
 │   │   │   ├── events.ts        # EventType, EventCondition, EventChoice, GameEvent
 │   │   │   └── index.ts         # Type exports
 │   │   ├── engines/
-│   │   │   ├── tickEngine.ts     # Main game loop (11 phases)
-│   │   │   ├── battleEngine.ts   # Battle resolution
-│   │   │   ├── warEngine.ts      # War management
-│   │   │   ├── diplomacyEngine.ts # Diplomacy system
-│   │   │   ├── successionEngine.ts # Succession and inheritance
-│   │   │   ├── eventEngine.ts    # Event processing
+│   │   │   ├── tickEngine.ts     # Main game loop (12 phases)
+│   │   │   ├── warCampaign.ts    # Bridges core state to the battle/war layer
+│   │   │   ├── diplomacyEngine.ts # Diplomacy system (gift/threat/treaties, AI drift)
+│   │   │   ├── eventEngine.ts    # Event conditions, generation, choice resolution
+│   │   │   ├── victoryEngine.ts  # Religion decay, prestige growth, victory/defeat
+│   │   │   ├── successionEngine.ts # Succession and inheritance (stub)
 │   │   │   └── index.ts         # Engine exports
 │   │   └── utils/
 │   │       ├── rng.ts           # Reproducible RNG (seedrandom wrapper)
@@ -95,6 +101,7 @@ regnum-moravicum/
 │   │   │   ├── MainMenu.tsx    # Main menu and scenario selection
 │   │   │   ├── GameScreen.tsx   # Main game interface
 │   │   │   ├── LoadingScreen.tsx # Loading screen
+│   │   │   ├── GameOverScreen.tsx # Victory/defeat screen
 │   │   │   └── index.ts        # Page exports
 │   │   └── index.ts            # UI exports
 │   ├── hooks/
@@ -116,8 +123,12 @@ regnum-moravicum/
 ├── tests/
 │   ├── rng.test.ts            # RNG utility tests
 │   ├── generators.test.ts     # Generator tests
-│   ├── tickEngine.test.ts     # Tick engine tests
-│   └── saveLoad.test.ts       # Save/load tests
+│   ├── tickEngine.test.ts     # Tick engine tests (incl. full-run victory integration)
+│   ├── saveLoad.test.ts       # Save/load tests
+│   ├── warCampaign.test.ts    # War campaign bridge / battle engine tests
+│   ├── eventEngine.test.ts    # Event condition/generation/resolution tests
+│   ├── diplomacyEngine.test.ts # Diplomacy action and AI drift tests
+│   └── victoryEngine.test.ts  # Religion decay, prestige growth, victory/defeat tests
 ├── index.html
 ├── package.json
 ├── vite.config.ts
@@ -134,41 +145,50 @@ The central data structure containing all game information. Fully JSON-serializa
 
 ```typescript
 interface GameState {
-  version: string;
+  tick: number;               // 1 tick = 1 month
+  year: number;                // 902-1300
   seed: string;
-  tick: number;
-  year: number;
-  month: number;
-  player: Player;
+  scenario: ScenarioType;
+  player: Player;               // dynasty, currentRuler, prestige, religionAxis
   nobles: Noble[];
   families: Family[];
   factions: Faction[];
-  zupas: Zupa[];
+  zupy: Record<ZupaId, Zupa>;
   armies: Army[];
   wars: War[];
   treaties: Treaty[];
   events: GameEvent[];
-  resources: Resources;
-  religionAxis: number;
-  scenario: ScenarioType;
+  resources: Resources;         // gold/food/wood/stone/iron/prestige
+  religion: ReligionAxis;       // { value: -100..100, Rím..Konštantínopol }
+  gameOver: boolean;
+  gameOverReason?: string;
+  gameOverVictory?: boolean;
+  saveVersion: string;
+  warCampaign: WarCampaignState | null; // scripted Hungarian-invasion campaign, see warCampaign.ts
 }
 ```
 
 ### Tick Engine
 
-The main game loop processes 11 phases each tick (month):
+The main game loop processes 12 phases each tick (month):
 
 1. **incrementYear** - Advance month/year
 2. **ageNobles** - Age all living nobles
 3. **decayMoods** - Reduce faction relations slightly
+3b. **decayReligionAxis** - Drift the Rím/Konštantínopol axis back toward neutral
 4. **growProsperity** - Increase zupa prosperity
+4b. **growPrestige** - Passive prestige trickle tied to average zupa loyalty
 5. **addRecruitmentPool** - Add recruitment points to zupas
 6. **payUpkeep** - Deduct army upkeep from resources
 7. **checkRebellions** - Check for zupa rebellions
-8. **processSuccession** - Handle noble deaths and succession
-9. **processDiplomacy** - Process diplomatic actions
-10. **processWars** - Process ongoing wars
-11. **processEvents** - Process random and historical events
+8. **processSuccession** - Handle noble deaths and succession (stub)
+9. **processDiplomacy** - Passive AI mood drift by faction personality
+10. **processWars** - Scripted war campaign events, occupation looting, liberation checks
+11. **processEvents** - Spawn due historical events and roll random events
+12. **checkVictoryConditions** - Dynasty extinction/territory-loss defeat, year-1000 survival victory
+
+Battles themselves are not auto-resolved during the tick - the player triggers and plays
+(or auto-resolves) them from the Battle panel once a war has started.
 
 ### RNG System
 
@@ -200,7 +220,17 @@ All random operations use `seedrandom` for reproducible results. The RNG wrapper
 
 - **Status Bar**: Year, tick, resources, prestige, religion axis, Next Month button
 - **Map View**: Interactive map showing all 11 župy with loyalty, prosperity, and garrison info
-- **Sidebar Navigation**: Switch between Map, Armies, Diplomacy, Events, and other panels
+- **Events Panel**: Shows the current pending event (if any) with selectable choices and their
+  effects, plus a history of resolved events
+- **Diplomacy Panel**: Faction cards with a computed relation badge and mood stats; select a
+  faction to see its active treaties and send a gift/threat/treaty proposal
+- **Army Panel**: Overview of raised armies
+- **Battle Panel**: Once the Hungarian invasion starts (year >= 905), lists available battle
+  fronts; start a battle to play it phase-by-phase (melee/ranged/flank/retreat) or auto-resolve it
+  instantly
+- **Game Over Screen**: Shown once the dynasty wins (survives to year 1000) or loses (extinction
+  or total loss of territory)
+- **Sidebar Navigation**: Switch between Map, Events, Diplomacy, Armies, and Battle panels
 
 ### Controls
 

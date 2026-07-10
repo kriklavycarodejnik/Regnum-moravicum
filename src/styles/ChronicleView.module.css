@@ -1,0 +1,197 @@
+/* ChronicleView.module.css */
+
+.container {
+  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-dark) 100%);
+  border: 1px solid var(--accent-gold);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 18px 22px;
+  background: linear-gradient(135deg, var(--bg-panel-dark) 0%, var(--bg-panel-darker) 100%);
+  border-bottom: 2px solid var(--accent-gold);
+}
+
+.header h2 {
+  margin: 0 0 4px 0;
+  color: var(--accent-gold);
+  font-size: 19px;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.emptyState .icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+/* Vertical timeline */
+.timeline {
+  position: relative;
+  padding-left: 34px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent-gold) 0%, var(--accent-gold-dark) 100%);
+  opacity: 0.6;
+}
+
+.entry {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.entry:last-child {
+  margin-bottom: 0;
+}
+
+.entryMarker {
+  position: absolute;
+  left: -34px;
+  top: 2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-panel-dark);
+  border: 2px solid var(--accent-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  box-shadow: var(--shadow-sm);
+}
+
+.entryCard {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+
+.entryDate {
+  font-size: 11px;
+  color: var(--accent-gold);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.entryMonth {
+  color: var(--text-muted);
+  font-weight: 400;
+  text-transform: none;
+}
+
+.entryTitle {
+  margin: 0 0 6px 0;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.entryDescription {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.entryDecision {
+  margin: 8px 0 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 12px;
+  color: var(--text-primary);
+  font-style: italic;
+}
+
+.entryDecisionLabel {
+  color: var(--accent-gold);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* War chronicle */
+.warSection {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid var(--accent-gold);
+}
+
+.warHeading {
+  margin: 0 0 14px 0;
+  color: var(--color-danger);
+  font-size: 15px;
+}
+
+.warLog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warLogLine {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--bg-panel-dark);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.warLogMarker {
+  color: var(--accent-gold);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .timeline {
+    padding-left: 28px;
+  }
+
+  .entryMarker {
+    left: -28px;
+    width: 24px;
+    height: 24px;
+  }
+}

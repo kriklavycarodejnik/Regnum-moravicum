@@ -81,26 +81,33 @@
 /* Responsive */
 @media (max-width: 768px) {
   .container {
-    flex-direction: column;
-    gap: 15px;
-    padding: 10px;
+    gap: 8px 16px;
+    padding: 8px 12px;
   }
-  
+
   .leftSection,
   .centerSection,
   .rightSection {
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px 14px;
   }
-  
+
   .resources {
-    flex-direction: column;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px 14px;
   }
-  
+
+  .label {
+    font-size: 0.75rem;
+  }
+
+  .value {
+    font-size: 0.9rem;
+  }
+
   .tickButton {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
+    order: 10;
   }
 }
