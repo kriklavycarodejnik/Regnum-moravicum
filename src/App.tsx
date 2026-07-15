@@ -23,7 +23,8 @@ export function App() {
     playBattlePhase,
     autoResolveBattle,
     resolveEvent,
-    performDiplomaticAction
+    performDiplomaticAction,
+    startInvestment
   } = useGame();
   
   const [appState, setAppState] = useState<AppState>('loading');
@@ -95,6 +96,7 @@ export function App() {
         onAutoResolveBattle={autoResolveBattle}
         onResolveEvent={resolveEvent}
         onPerformDiplomaticAction={performDiplomaticAction}
+        onStartInvestment={startInvestment}
       />
     );
   }

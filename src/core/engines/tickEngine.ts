@@ -5,6 +5,7 @@ import { processWarCampaignTick } from './warCampaign';
 import { processEvents } from './eventEngine';
 import { processDiplomacy } from './diplomacyEngine';
 import { decayReligionAxis, growPrestige, checkVictoryConditions } from './victoryEngine';
+import { processInvestmentsTick, processEconomyIncome } from './investmentEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -259,7 +260,11 @@ export function processTick(state: GameState): GameState {
 
   // Phase 4b: Passive prestige trickle from good governance
   newState = growPrestige(newState);
-  
+
+  // Phase 4c: Investment tracks — monthly economy income, then advance/complete active builds
+  newState = processEconomyIncome(newState);
+  newState = processInvestmentsTick(newState);
+
   // Phase 5: Add recruitment pool
   newState = addRecruitmentPool(newState);
   

@@ -14,7 +14,10 @@ import {
 } from '../core/engines/warCampaign';
 import { resolveEventChoice } from '../core/engines/eventEngine';
 import { performDiplomaticAction as performDiplomaticActionEngine, type DiplomaticActionType } from '../core/engines/diplomacyEngine';
+import { startInvestment as startInvestmentEngine } from '../core/engines/investmentEngine';
 import type { BattleAction } from '../battle/types';
+import type { InvestmentTrack, ReligiousRite } from '../core/types/investments';
+import type { ZupaId } from '../core/types/gameState';
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -33,6 +36,7 @@ interface UseGameReturn {
   autoResolveBattle: (front: BattleFront) => void;
   resolveEvent: (eventId: string, choiceIndex: number) => void;
   performDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
+  startInvestment: (zupaId: ZupaId, track: InvestmentTrack, rite?: ReligiousRite) => void;
 }
 
 export function useGame(): UseGameReturn {
@@ -169,6 +173,15 @@ export function useGame(): UseGameReturn {
     }
   }, [gameState]);
 
+  const startInvestment = useCallback((zupaId: ZupaId, track: InvestmentTrack, rite?: ReligiousRite) => {
+    if (!gameState) return;
+    try {
+      setGameState(startInvestmentEngine(gameState, zupaId, track, rite));
+    } catch (err) {
+      setError(`Error starting investment: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [gameState]);
+
   return {
     gameState,
     isLoading,
@@ -183,7 +196,8 @@ export function useGame(): UseGameReturn {
     playBattlePhase,
     autoResolveBattle,
     resolveEvent,
-    performDiplomaticAction
+    performDiplomaticAction,
+    startInvestment
   };
 }
 

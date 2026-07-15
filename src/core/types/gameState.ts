@@ -7,6 +7,7 @@ import type {
 import type { Noble, Family, Faction, Zupa, Army, War, Treaty } from './entities';
 import type { GameEvent } from './events';
 import type { WarCampaignState } from './warCampaign';
+import type { ZupaInvestmentState } from './investments';
 
 export type { NobleId, FamilyId, ZupaId };
 export type ScenarioType = 'prežitie' | 'konsolidácia' | 'zlatý_vek' | 'mongolská_skúška';
@@ -52,4 +53,5 @@ export interface GameState {
   gameOverVictory?: boolean;
   saveVersion: string;
   warCampaign: WarCampaignState | null;
+  investments: Record<ZupaId, ZupaInvestmentState>;
 }

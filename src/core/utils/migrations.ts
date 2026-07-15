@@ -1,7 +1,7 @@
 // Regnum Moravicum v2.1 - Migrations
 import type { GameState } from '../types/gameState';
 
-const SAVE_VERSION = '2.1.0';
+const SAVE_VERSION = '2.2.0';
 
 /**
  * Migration function type
@@ -9,11 +9,26 @@ const SAVE_VERSION = '2.1.0';
 type MigrationFunction = (state: any) => GameState;
 
 /**
+ * Core Loop M1: adds the per-zupa investment tracks (economy/fortification/
+ * church). Old saves get level-0/no-active-investment defaults for every
+ * zupa currently in state.zupy.
+ */
+function migrateTo2_2_0(state: any): GameState {
+  if (state.investments) return state as GameState;
+
+  const investments: GameState['investments'] = {};
+  for (const zupaId of Object.keys(state.zupy ?? {})) {
+    investments[zupaId] = { economy: 0, fortification: 0, church: 0, active: null };
+  }
+
+  return { ...state, investments } as GameState;
+}
+
+/**
  * Available migrations
  */
 const migrations: Record<string, MigrationFunction> = {
-  // Add migrations here as needed for future versions
-  // Example: '1.0.0': (state) => migrateFrom1_0_0(state)
+  '2.2.0': migrateTo2_2_0,
 };
 
 /**

@@ -2,11 +2,16 @@
 import { useState } from 'react';
 import type { GameState, ZupaId } from '../../core/types/gameState';
 import type { Zupa } from '../../core/types/entities';
+import type { InvestmentTrack, ReligiousRite } from '../../core/types/investments';
+import { getInvestmentCost, getInvestmentDuration } from '../../core/engines/investmentEngine';
+import { INVESTMENT_TRACKS } from '../../data/investments';
+import { MAX_INVESTMENT_LEVEL } from '../../data/balance';
 import { CoatOfArms } from './CoatOfArms';
 import styles from '../../styles/MapView.module.css';
 
 interface MapViewProps {
   gameState: GameState;
+  onStartInvestment: (zupaId: ZupaId, track: InvestmentTrack, rite?: ReligiousRite) => void;
 }
 
 // Approximate real-world positions of the 11 canon župy, normalized into the
@@ -68,7 +73,7 @@ function CompassRose() {
   );
 }
 
-export function MapView({ gameState }: MapViewProps) {
+export function MapView({ gameState, onStartInvestment }: MapViewProps) {
   const [selectedZupa, setSelectedZupa] = useState<ZupaId | null>(null);
 
   const handleZupaClick = (zupaId: ZupaId) => {
@@ -227,6 +232,87 @@ export function MapView({ gameState }: MapViewProps) {
               <span className={styles.detailValue}>{selected.garrison}</span>
             </div>
           </div>
+
+          {getNoble(selected.owner)?.familyId === gameState.player.dynasty && (
+            <div className={styles.investmentSection}>
+              <h4 className={styles.investmentHeading}>Investičné dráhy</h4>
+              <div className={styles.investmentTracks}>
+                {(Object.keys(INVESTMENT_TRACKS) as InvestmentTrack[]).map((track) => {
+                  const info = INVESTMENT_TRACKS[track];
+                  const investment = gameState.investments[selectedZupa as ZupaId];
+                  const level = investment?.[track] ?? 0;
+                  const active = investment?.active ?? null;
+                  const isThisTrackActive = active?.track === track;
+                  const cost = getInvestmentCost(level);
+                  const duration = getInvestmentDuration(level);
+                  const maxed = level >= MAX_INVESTMENT_LEVEL;
+                  const canAfford = gameState.resources.gold >= cost;
+                  const disabled = !!active || !canAfford || maxed;
+
+                  return (
+                    <div key={track} className={styles.investmentTrack}>
+                      <div className={styles.trackHeader}>
+                        <span className={styles.trackName}>{info.name}</span>
+                        <span className={styles.trackLevel}>Úr. {level}/{MAX_INVESTMENT_LEVEL}</span>
+                      </div>
+
+                      {isThisTrackActive && active && (
+                        <div className={styles.trackProgress}>
+                          <div
+                            className={styles.trackProgressBar}
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.round(
+                                  ((gameState.tick - active.startTick) / (active.completeTick - active.startTick)) * 100
+                                )
+                              )}%`,
+                            }}
+                          />
+                          <span className={styles.trackProgressLabel}>
+                            Prebieha… dokončenie o {Math.max(0, active.completeTick - gameState.tick)} mes.
+                          </span>
+                        </div>
+                      )}
+
+                      {!isThisTrackActive && maxed && (
+                        <span className={styles.trackMaxed}>Maximálna úroveň</span>
+                      )}
+
+                      {!isThisTrackActive && !maxed && track !== 'church' && (
+                        <button
+                          className={styles.investButton}
+                          disabled={disabled}
+                          onClick={() => onStartInvestment(selectedZupa as ZupaId, track)}
+                        >
+                          Investovať ({cost} zlata, {duration} mes.)
+                        </button>
+                      )}
+
+                      {!isThisTrackActive && !maxed && track === 'church' && (
+                        <div className={styles.riteButtons}>
+                          <button
+                            className={styles.investButton}
+                            disabled={disabled}
+                            onClick={() => onStartInvestment(selectedZupa as ZupaId, track, 'roman')}
+                          >
+                            Rímsky rítus ({cost} zlata, {duration} mes.)
+                          </button>
+                          <button
+                            className={styles.investButton}
+                            disabled={disabled}
+                            onClick={() => onStartInvestment(selectedZupa as ZupaId, track, 'byzantine')}
+                          >
+                            Byzantský rítus
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

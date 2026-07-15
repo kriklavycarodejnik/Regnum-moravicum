@@ -4,6 +4,8 @@ import type { GameState } from '../../core/types/gameState';
 import type { BattleAction } from '../../battle/types';
 import type { BattleFront } from '../../core/engines/warCampaign';
 import type { DiplomaticActionType } from '../../core/engines/diplomacyEngine';
+import type { InvestmentTrack, ReligiousRite } from '../../core/types/investments';
+import type { ZupaId } from '../../core/types/gameState';
 import { StatusBar } from '../components/StatusBar';
 import { MapView } from '../components/MapView';
 import { EventPanel } from '../components/EventPanel';
@@ -25,6 +27,7 @@ interface GameScreenProps {
   onAutoResolveBattle: (front: BattleFront) => void;
   onResolveEvent: (eventId: string, choiceIndex: number) => void;
   onPerformDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
+  onStartInvestment: (zupaId: ZupaId, track: InvestmentTrack, rite?: ReligiousRite) => void;
 }
 
 export function GameScreen({
@@ -37,13 +40,14 @@ export function GameScreen({
   onAutoResolveBattle,
   onResolveEvent,
   onPerformDiplomaticAction,
+  onStartInvestment,
 }: GameScreenProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel>('map');
 
   const renderPanel = () => {
     switch (activePanel) {
       case 'map':
-        return <MapView gameState={gameState} />;
+        return <MapView gameState={gameState} onStartInvestment={onStartInvestment} />;
       case 'events':
         return <EventPanel gameState={gameState} onResolveEvent={onResolveEvent} />;
       case 'diplomacy':
@@ -63,7 +67,7 @@ export function GameScreen({
           />
         );
       default:
-        return <MapView gameState={gameState} />;
+        return <MapView gameState={gameState} onStartInvestment={onStartInvestment} />;
     }
   };
 
