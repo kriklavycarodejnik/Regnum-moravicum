@@ -14,16 +14,9 @@ import { rngWeighted } from '../utils/rng';
 import { FALLBACK_EVENTS } from '../../data/fallbackEvents';
 import { INVESTMENT_TRACKS } from '../../data/investments';
 import { findInvestmentOpportunities, getInvestmentDuration } from './investmentEngine';
+import { generateFactionDemandEvent } from './factionEngine';
 
-/**
- * Faction demand hook for M4 (src/core/engines/factionEngine.ts). Returns
- * null until the faction agenda automaton exists to fill it in — decision
- * priority (1) pending event, (3) investment, (4) fallback still guarantee
- * a decision every tick in the meantime.
- */
-export function generateFactionDemandEvent(_state: GameState): GameEvent | null {
-  return null;
-}
+export { generateFactionDemandEvent };
 
 function hasPendingDecision(state: GameState): boolean {
   return state.events.some((e) => !e.triggered);

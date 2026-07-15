@@ -17,9 +17,11 @@ import type {
   ArmyUnits
 } from '../types/entities';
 import type { ZupaInvestmentState } from '../types/investments';
+import type { FactionAgendaState } from '../types/factionAgenda';
+import { resolveGoalType } from '../../data/factionAgendas';
 import { rng, rngChance, initRNG } from './rng';
 
-export const SAVE_VERSION = '2.3.0';
+export const SAVE_VERSION = '2.4.0';
 
 // Attribute point budgets by title (0-100 scale, ×10 oproti pôvodnej 1-10 škále)
 const ATTRIBUTE_BUDGETS: Record<NobleTitle, { min: number; max: number }> = {
@@ -280,6 +282,11 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
     investments[zupaId] = { economy: 0, fortification: 0, church: 0, active: null };
   });
 
+  const factionAgendas: Record<string, FactionAgendaState> = {};
+  factions.forEach((faction) => {
+    factionAgendas[faction.id] = { goalType: resolveGoalType(faction.name), satisfaction: 50, state: 'CALM' };
+  });
+
   return {
     tick: 0,
     year: 902,
@@ -312,7 +319,8 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
     saveVersion: SAVE_VERSION,
     warCampaign: null,
     investments,
-    startScenarioId: 'nastup-902'
+    startScenarioId: 'nastup-902',
+    factionAgendas
   };
 }
 

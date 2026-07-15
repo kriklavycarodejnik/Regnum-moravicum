@@ -121,15 +121,15 @@ describe('Save/Load Utilities', () => {
 
 describe('Migrations', () => {
   it('getSaveVersion should return the current save format version', () => {
-    expect(getSaveVersion()).toBe('2.3.0');
+    expect(getSaveVersion()).toBe('2.4.0');
   });
 
   describe('migrateSaveData', () => {
     it('should stamp the current saveVersion on data already at the current version', () => {
       const state = generateInitialState('prežitie', 'migration-seed');
-      const migrated = migrateSaveData({ state, saveVersion: '2.3.0' });
+      const migrated = migrateSaveData({ state, saveVersion: '2.4.0' });
 
-      expect(migrated.saveVersion).toBe('2.3.0');
+      expect(migrated.saveVersion).toBe('2.4.0');
       expect(migrated.seed).toBe('migration-seed');
     });
 
@@ -137,7 +137,7 @@ describe('Migrations', () => {
       const state = generateInitialState('prežitie', 'old-seed');
       const migrated = migrateSaveData({ state, saveVersion: '1.0.0' });
 
-      expect(migrated.saveVersion).toBe('2.3.0');
+      expect(migrated.saveVersion).toBe('2.4.0');
       expect(migrated.seed).toBe('old-seed');
     });
 
@@ -145,7 +145,7 @@ describe('Migrations', () => {
       const state = generateInitialState('prežitie', 'no-version-seed');
       const migrated = migrateSaveData({ state });
 
-      expect(migrated.saveVersion).toBe('2.3.0');
+      expect(migrated.saveVersion).toBe('2.4.0');
     });
 
     it('should preserve all state fields during migration', () => {

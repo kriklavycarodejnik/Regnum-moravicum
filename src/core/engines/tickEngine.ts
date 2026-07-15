@@ -7,6 +7,7 @@ import { processDiplomacy } from './diplomacyEngine';
 import { decayReligionAxis, growPrestige, checkVictoryConditions } from './victoryEngine';
 import { processInvestmentsTick, processEconomyIncome } from './investmentEngine';
 import { ensureDecision } from './decisionScheduler';
+import { processFactionAgendas } from './factionEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -280,7 +281,10 @@ export function processTick(state: GameState): GameState {
   
   // Phase 9: Process diplomacy
   newState = processDiplomacyPhase(newState);
-  
+
+  // Phase 9b: Process faction agendas (Core Loop M4) - may trigger a rebellion
+  newState = processFactionAgendas(newState);
+
   // Phase 10: Process wars
   newState = processWarsPhase(newState);
 

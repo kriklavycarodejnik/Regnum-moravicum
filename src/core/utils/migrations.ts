@@ -1,7 +1,8 @@
 // Regnum Moravicum v2.1 - Migrations
 import type { GameState } from '../types/gameState';
+import { resolveGoalType } from '../../data/factionAgendas';
 
-const SAVE_VERSION = '2.3.0';
+const SAVE_VERSION = '2.4.0';
 
 /**
  * Migration function type
@@ -35,11 +36,27 @@ function migrateTo2_3_0(state: any): GameState {
 }
 
 /**
+ * Core Loop M4: adds the faction agenda automaton (goalType/satisfaction/
+ * state per faction). Old saves get a fresh CALM agenda per existing faction.
+ */
+function migrateTo2_4_0(state: any): GameState {
+  if (state.factionAgendas) return state as GameState;
+
+  const factionAgendas: GameState['factionAgendas'] = {};
+  for (const faction of state.factions ?? []) {
+    factionAgendas[faction.id] = { goalType: resolveGoalType(faction.name), satisfaction: 50, state: 'CALM' };
+  }
+
+  return { ...state, factionAgendas } as GameState;
+}
+
+/**
  * Available migrations
  */
 const migrations: Record<string, MigrationFunction> = {
   '2.2.0': migrateTo2_2_0,
   '2.3.0': migrateTo2_3_0,
+  '2.4.0': migrateTo2_4_0,
 };
 
 /**
