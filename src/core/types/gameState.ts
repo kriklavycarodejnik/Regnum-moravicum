@@ -54,4 +54,5 @@ export interface GameState {
   saveVersion: string;
   warCampaign: WarCampaignState | null;
   investments: Record<ZupaId, ZupaInvestmentState>;
+  startScenarioId: string;
 }

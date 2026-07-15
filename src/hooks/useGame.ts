@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { GameState, ScenarioType } from '../core/types/gameState';
 import { processTick } from '../core/engines/tickEngine';
 import { generateInitialState } from '../core/utils/generators';
+import { loadScenario } from '../core/engines/scenarioLoader';
 import { initRNG } from '../core/utils/rng';
 import { saveGame, loadGame, hasSave, deleteSave } from '../core/utils/saveLoad';
 import {
@@ -26,7 +27,7 @@ interface UseGameReturn {
   isLoading: boolean;
   error: string | null;
   tick: () => void;
-  newGame: (scenario: ScenarioType, seed?: string) => void;
+  newGame: (scenario: ScenarioType, seed?: string, startScenarioId?: string) => void;
   loadSavedGame: () => void;
   deleteSavedGame: () => void;
   hasSavedGame: boolean;
@@ -84,11 +85,13 @@ export function useGame(): UseGameReturn {
     }
   }, [gameState]);
   
-  const newGame = useCallback((scenario: ScenarioType, seed?: string) => {
+  const newGame = useCallback((scenario: ScenarioType, seed?: string, startScenarioId?: string) => {
     try {
       const actualSeed = seed || `regnum_${Date.now()}`;
       initRNG(actualSeed);
-      const initialState = generateInitialState(scenario, actualSeed);
+      const initialState = startScenarioId
+        ? { ...loadScenario(startScenarioId, actualSeed), scenario }
+        : generateInitialState(scenario, actualSeed);
       setGameState(initialState);
       setError(null);
     } catch (err) {

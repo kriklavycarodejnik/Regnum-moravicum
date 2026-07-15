@@ -38,8 +38,8 @@ export function App() {
     }
   }, [isLoading]);
 
-  const handleStartGame = (scenario: any, seed?: string) => {
-    newGame(scenario, seed);
+  const handleStartGame = (scenario: any, seed?: string, startScenarioId?: string) => {
+    newGame(scenario, seed, startScenarioId);
     setAppState('game');
   };
 

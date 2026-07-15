@@ -1,7 +1,7 @@
 // Regnum Moravicum v2.1 - Migrations
 import type { GameState } from '../types/gameState';
 
-const SAVE_VERSION = '2.2.0';
+const SAVE_VERSION = '2.3.0';
 
 /**
  * Migration function type
@@ -25,10 +25,21 @@ function migrateTo2_2_0(state: any): GameState {
 }
 
 /**
+ * Core Loop M3: adds startScenarioId, remembering which start scenario a
+ * save began from. Old saves all began from the fixed 902 default, so they
+ * backfill to that scenario's id.
+ */
+function migrateTo2_3_0(state: any): GameState {
+  if (state.startScenarioId) return state as GameState;
+  return { ...state, startScenarioId: 'nastup-902' } as GameState;
+}
+
+/**
  * Available migrations
  */
 const migrations: Record<string, MigrationFunction> = {
   '2.2.0': migrateTo2_2_0,
+  '2.3.0': migrateTo2_3_0,
 };
 
 /**

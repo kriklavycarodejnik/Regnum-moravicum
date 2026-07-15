@@ -19,7 +19,7 @@ import type {
 import type { ZupaInvestmentState } from '../types/investments';
 import { rng, rngChance, initRNG } from './rng';
 
-export const SAVE_VERSION = '2.2.0';
+export const SAVE_VERSION = '2.3.0';
 
 // Attribute point budgets by title (0-100 scale, ×10 oproti pôvodnej 1-10 škále)
 const ATTRIBUTE_BUDGETS: Record<NobleTitle, { min: number; max: number }> = {
@@ -311,7 +311,8 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
     gameOver: false,
     saveVersion: SAVE_VERSION,
     warCampaign: null,
-    investments
+    investments,
+    startScenarioId: 'nastup-902'
   };
 }
 
