@@ -226,6 +226,108 @@
   gap: 6px;
 }
 
+/* Investment tracks panel */
+.investmentSection {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.investmentHeading {
+  margin: 0 0 10px;
+  color: var(--accent-gold);
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+.investmentTracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.investmentTrack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-panel-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.trackHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.trackName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.trackLevel {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.trackProgress {
+  position: relative;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--bg-darker);
+  overflow: hidden;
+}
+
+.trackProgressBar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent-gold-dark);
+  transition: width 0.2s ease;
+}
+
+.trackProgressLabel {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.trackMaxed {
+  font-size: 11px;
+  color: var(--color-success);
+}
+
+.riteButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.investButton {
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--accent-gold);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.investButton:hover:not(:disabled) {
+  background: var(--accent-gold-dark);
+}
+
+.investButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

@@ -1,6 +1,7 @@
 // Regnum Moravicum v2.1 - Main Menu Page
 import { useState } from 'react';
 import type { ScenarioType } from '../../core/types/gameState';
+import { SCENARIOS as START_SCENARIOS, DEFAULT_SCENARIO_ID } from '../../data/scenarios';
 import styles from '../../styles/MainMenu.module.css';
 
 const SCENARIOS: { id: ScenarioType; name: string; description: string }[] = [
@@ -27,18 +28,19 @@ const SCENARIOS: { id: ScenarioType; name: string; description: string }[] = [
 ];
 
 interface MainMenuProps {
-  onStartGame: (scenario: ScenarioType, seed?: string) => void;
+  onStartGame: (scenario: ScenarioType, seed?: string, startScenarioId?: string) => void;
   onLoadGame: () => void;
   hasSavedGame: boolean;
 }
 
 export function MainMenu({ onStartGame, onLoadGame, hasSavedGame }: MainMenuProps) {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>('prežitie');
+  const [selectedStartScenario, setSelectedStartScenario] = useState<string>(DEFAULT_SCENARIO_ID);
   const [seed, setSeed] = useState<string>('');
   const [showSeedInput, setShowSeedInput] = useState<boolean>(false);
 
   const handleStart = () => {
-    onStartGame(selectedScenario, showSeedInput && seed ? seed : undefined);
+    onStartGame(selectedScenario, showSeedInput && seed ? seed : undefined, selectedStartScenario);
   };
 
   const handleLoad = () => {
@@ -64,6 +66,22 @@ export function MainMenu({ onStartGame, onLoadGame, hasSavedGame }: MainMenuProp
               >
                 <h3>{scenario.name}</h3>
                 <p>{scenario.description}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.scenarios}>
+          <h2>Vyberte začiatočnú situáciu</h2>
+          <div className={styles.scenarioList}>
+            {Object.values(START_SCENARIOS).map((startScenario) => (
+              <button
+                key={startScenario.id}
+                className={`${styles.scenarioButton} ${selectedStartScenario === startScenario.id ? styles.selected : ''}`}
+                onClick={() => setSelectedStartScenario(startScenario.id)}
+              >
+                <h3>{startScenario.name}</h3>
+                <p>{startScenario.description}</p>
               </button>
             ))}
           </div>

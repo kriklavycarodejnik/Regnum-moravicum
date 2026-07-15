@@ -5,6 +5,9 @@ import { processWarCampaignTick } from './warCampaign';
 import { processEvents } from './eventEngine';
 import { processDiplomacy } from './diplomacyEngine';
 import { decayReligionAxis, growPrestige, checkVictoryConditions } from './victoryEngine';
+import { processInvestmentsTick, processEconomyIncome } from './investmentEngine';
+import { ensureDecision } from './decisionScheduler';
+import { processFactionAgendas } from './factionEngine';
 
 /**
  * Increment year every 12 ticks (1 tick = 1 month)
@@ -259,7 +262,11 @@ export function processTick(state: GameState): GameState {
 
   // Phase 4b: Passive prestige trickle from good governance
   newState = growPrestige(newState);
-  
+
+  // Phase 4c: Investment tracks — monthly economy income, then advance/complete active builds
+  newState = processEconomyIncome(newState);
+  newState = processInvestmentsTick(newState);
+
   // Phase 5: Add recruitment pool
   newState = addRecruitmentPool(newState);
   
@@ -274,12 +281,18 @@ export function processTick(state: GameState): GameState {
   
   // Phase 9: Process diplomacy
   newState = processDiplomacyPhase(newState);
-  
+
+  // Phase 9b: Process faction agendas (Core Loop M4) - may trigger a rebellion
+  newState = processFactionAgendas(newState);
+
   // Phase 10: Process wars
   newState = processWarsPhase(newState);
 
   // Phase 11: Process events
   newState = processEventsPhase(newState);
+
+  // Phase 11b: Guarantee at least one decision per tick (Core Loop M2)
+  newState = ensureDecision(newState);
 
   // Phase 12: Check victory/defeat conditions
   newState = checkVictoryConditions(newState);

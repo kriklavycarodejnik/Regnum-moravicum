@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { GameState, ScenarioType } from '../core/types/gameState';
 import { processTick } from '../core/engines/tickEngine';
 import { generateInitialState } from '../core/utils/generators';
+import { loadScenario } from '../core/engines/scenarioLoader';
 import { initRNG } from '../core/utils/rng';
 import { saveGame, loadGame, hasSave, deleteSave } from '../core/utils/saveLoad';
 import {
@@ -14,7 +15,10 @@ import {
 } from '../core/engines/warCampaign';
 import { resolveEventChoice } from '../core/engines/eventEngine';
 import { performDiplomaticAction as performDiplomaticActionEngine, type DiplomaticActionType } from '../core/engines/diplomacyEngine';
+import { startInvestment as startInvestmentEngine } from '../core/engines/investmentEngine';
 import type { BattleAction } from '../battle/types';
+import type { InvestmentTrack, ReligiousRite } from '../core/types/investments';
+import type { ZupaId } from '../core/types/gameState';
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -23,7 +27,7 @@ interface UseGameReturn {
   isLoading: boolean;
   error: string | null;
   tick: () => void;
-  newGame: (scenario: ScenarioType, seed?: string) => void;
+  newGame: (scenario: ScenarioType, seed?: string, startScenarioId?: string) => void;
   loadSavedGame: () => void;
   deleteSavedGame: () => void;
   hasSavedGame: boolean;
@@ -33,6 +37,7 @@ interface UseGameReturn {
   autoResolveBattle: (front: BattleFront) => void;
   resolveEvent: (eventId: string, choiceIndex: number) => void;
   performDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
+  startInvestment: (zupaId: ZupaId, track: InvestmentTrack, rite?: ReligiousRite) => void;
 }
 
 export function useGame(): UseGameReturn {
@@ -80,11 +85,13 @@ export function useGame(): UseGameReturn {
     }
   }, [gameState]);
   
-  const newGame = useCallback((scenario: ScenarioType, seed?: string) => {
+  const newGame = useCallback((scenario: ScenarioType, seed?: string, startScenarioId?: string) => {
     try {
       const actualSeed = seed || `regnum_${Date.now()}`;
       initRNG(actualSeed);
-      const initialState = generateInitialState(scenario, actualSeed);
+      const initialState = startScenarioId
+        ? { ...loadScenario(startScenarioId, actualSeed), scenario }
+        : generateInitialState(scenario, actualSeed);
       setGameState(initialState);
       setError(null);
     } catch (err) {
@@ -169,6 +176,15 @@ export function useGame(): UseGameReturn {
     }
   }, [gameState]);
 
+  const startInvestment = useCallback((zupaId: ZupaId, track: InvestmentTrack, rite?: ReligiousRite) => {
+    if (!gameState) return;
+    try {
+      setGameState(startInvestmentEngine(gameState, zupaId, track, rite));
+    } catch (err) {
+      setError(`Error starting investment: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [gameState]);
+
   return {
     gameState,
     isLoading,
@@ -183,7 +199,8 @@ export function useGame(): UseGameReturn {
     playBattlePhase,
     autoResolveBattle,
     resolveEvent,
-    performDiplomaticAction
+    performDiplomaticAction,
+    startInvestment
   };
 }
 

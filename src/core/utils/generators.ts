@@ -16,9 +16,12 @@ import type {
   ZupaSpecialization,
   ArmyUnits
 } from '../types/entities';
+import type { ZupaInvestmentState } from '../types/investments';
+import type { FactionAgendaState } from '../types/factionAgenda';
+import { resolveGoalType } from '../../data/factionAgendas';
 import { rng, rngChance, initRNG } from './rng';
 
-export const SAVE_VERSION = '2.1.0';
+export const SAVE_VERSION = '2.4.0';
 
 // Attribute point budgets by title (0-100 scale, ×10 oproti pôvodnej 1-10 škále)
 const ATTRIBUTE_BUDGETS: Record<NobleTitle, { min: number; max: number }> = {
@@ -273,7 +276,17 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
 
   // Update Mojmír with army IDs
   mojmir.armyIds = armies.map(a => a.id);
-  
+
+  const investments: Record<ZupaId, ZupaInvestmentState> = {};
+  zupaIds.forEach((zupaId) => {
+    investments[zupaId] = { economy: 0, fortification: 0, church: 0, active: null };
+  });
+
+  const factionAgendas: Record<string, FactionAgendaState> = {};
+  factions.forEach((faction) => {
+    factionAgendas[faction.id] = { goalType: resolveGoalType(faction.name), satisfaction: 50, state: 'CALM' };
+  });
+
   return {
     tick: 0,
     year: 902,
@@ -304,7 +317,10 @@ export function generateInitialState(scenario: ScenarioType, seed: string): Game
     religion: { value: 0 },
     gameOver: false,
     saveVersion: SAVE_VERSION,
-    warCampaign: null
+    warCampaign: null,
+    investments,
+    startScenarioId: 'nastup-902',
+    factionAgendas
   };
 }
 

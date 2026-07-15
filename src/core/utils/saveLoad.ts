@@ -3,6 +3,7 @@ import LZString from 'lz-string';
 import type { GameState } from '../types/gameState';
 import { setRNGState, getRNGState } from './rng';
 import { SAVE_VERSION } from './generators';
+import { migrateSaveData } from './migrations';
 
 const SAVE_KEY = 'regnum_moravicum_save';
 const INDEXED_DB_NAME = 'RegnumMoravicumDB';
@@ -71,17 +72,15 @@ export async function loadGame(): Promise<GameState | null> {
       if (serialized) {
         const saveData = JSON.parse(serialized);
         
-        // Check version
-        if (saveData.saveVersion !== SAVE_VERSION) {
-          // Migration needed (stub for now)
-          console.warn(`Save version mismatch: expected ${SAVE_VERSION}, got ${saveData.saveVersion}`);
-        }
-        
         // Restore RNG state
         if (saveData.rngState) {
           setRNGState(saveData.rngState);
         }
-        
+
+        if (saveData.saveVersion !== SAVE_VERSION) {
+          return migrateSaveData(saveData);
+        }
+
         return saveData.state as GameState;
       }
     }
@@ -168,18 +167,18 @@ async function loadFromIndexedDB(): Promise<GameState | null> {
       if (serialized) {
         const saveData = JSON.parse(serialized);
         
-        if (saveData.saveVersion !== SAVE_VERSION) {
-          console.warn(`Save version mismatch: expected ${SAVE_VERSION}, got ${saveData.saveVersion}`);
-        }
-        
         if (saveData.rngState) {
           setRNGState(saveData.rngState);
         }
-        
+
+        if (saveData.saveVersion !== SAVE_VERSION) {
+          return migrateSaveData(saveData);
+        }
+
         return saveData.state as GameState;
       }
     }
-    
+
     return null;
   } catch (error) {
     console.error('Failed to load from IndexedDB:', error);
