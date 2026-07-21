@@ -3,16 +3,19 @@ class_name WarManager
 extends RefCounted
 
 const _BattleManager := preload("res://scripts/managers/BattleManager.gd")
+const _HungarianWarScenario := preload("res://scripts/scenarios/HungarianWarScenario.gd")
 
 var game_state
 var rng: RandomNumberGenerator
 var battle_manager
+var hungarian_war_scenario
 
 
 func _init(state, rng_ref: RandomNumberGenerator) -> void:
 	game_state = state
 	rng = rng_ref
 	battle_manager = _BattleManager.new(state, rng_ref)
+	hungarian_war_scenario = _HungarianWarScenario.new(state, self, battle_manager, rng_ref)
 
 
 func get_neighbors(province_id: String) -> Array:
@@ -68,16 +71,23 @@ func list_frontiers(faction_id: String = "moravia") -> Array:
 	return frontiers
 
 
-## Trigger a skirmish on a frontier province (Magyar attacker default).
 func resolve_skirmish(province_id: String, terrain: String = "field") -> Dictionary:
 	return battle_manager.resolve_border_skirmish(province_id, terrain)
 
 
+func resolve_devine_battle() -> Dictionary:
+	return hungarian_war_scenario.resolve_devine_battle()
+
+
+func process_war_scenario_tick(tick_count: int) -> Dictionary:
+	return hungarian_war_scenario.process_war_tick(tick_count)
+
+
 func process_wars() -> Dictionary:
-	var frontiers := list_frontiers("moravia")
+	var frontiers: Array = list_frontiers("moravia")
 	return {
 		"type": "war",
 		"frontier_count": frontiers.size(),
-		"frontiers_sample": frontiers.slice(0, mini(3, frontiers.size())),
+		"frontiers_sample": frontiers.slice(0, min(3, frontiers.size())),
 		"placeholder": frontiers.is_empty()
 	}

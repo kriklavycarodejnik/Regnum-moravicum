@@ -28,7 +28,7 @@ var map_manager
 
 func _ready() -> void:
 	_bootstrap()
-	print("GameManager ready – M1+M2+M3 (battle) year %d provinces %d factions %d" % [
+	print("GameManager ready – M1+M2+M3 (battle+scenario) year %d provinces %d factions %d" % [
 		game_state.year, game_state.provinces.size(), game_state.factions.size()
 	])
 
@@ -97,6 +97,26 @@ func run_skirmish(province_id: String = "nitra", terrain: String = "field") -> D
 		"month": game_state.month,
 		"text": line
 	})
+	outcome["chronicle"] = line
+	return outcome
+
+
+func run_devine_battle() -> Dictionary:
+	var outcome: Dictionary = war_manager.resolve_devine_battle()
+	var line := "Bitka pri Devíne 907: víťaz %s — %s" % [
+		str(outcome.get("winner", "?")),
+		str(outcome.get("result", "?"))
+	]
+	game_state.chronicle.append({
+		"year": game_state.year,
+		"month": game_state.month,
+		"text": line
+	})
+	if outcome.has("rewards_applied"):
+		var r = outcome["rewards_applied"]
+		line += " | Odmena: +%d prestíž, +%d zlato, +%d lojalita" % [
+			r.get("prestige", 0), r.get("gold", 0), r.get("loyalty_bonus", 0)
+		]
 	outcome["chronicle"] = line
 	return outcome
 
