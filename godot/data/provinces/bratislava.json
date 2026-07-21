@@ -1,0 +1,8 @@
+{
+  "id": "bratislava",
+  "name": "Bratislava",
+  "prosperity": 60,
+  "loyalty": 70,
+  "religion": 50,
+  "owner_faction": "moravia"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "uzhorod",
+  "name": "Užhorod",
+  "prosperity": 40,
+  "loyalty": 60,
+  "religion": 25,
+  "owner_faction": "moravia"
+}

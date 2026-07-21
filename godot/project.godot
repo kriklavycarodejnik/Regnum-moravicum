@@ -1,0 +1,31 @@
+; Engine configuration file.
+; Godot 4 project for Regnum Moravicum (M1+M2 core)
+
+config_version=5
+
+[application]
+
+config/name="Regnum Moravicum"
+config/description="Ťahová historická stratégia — Veľká Morava (Mojmír II., 902–1000 MVP)"
+run/main_scene="res://scenes/main/Main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://autoloads/GameManager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[internationalization]
+
+locale/fallback="sk"
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
