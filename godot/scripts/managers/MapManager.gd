@@ -45,11 +45,13 @@ func load_provinces_from_dir(dir_path: String) -> int:
 			file_name = dir.get_next()
 		dir.list_dir_end()
 
-	# Inicializovať neighbors pre každú provinciu, ak nie sú definované
+	# Inicializovať neighbors a religion pre každú provinciu
 	for province_id in provinces:
 		var province: Dictionary = provinces[province_id]
 		if not province.has("neighbors"):
 			province["neighbors"] = []
+		if not province.has("religion"):
+			province["religion"] = "pagan"
 	game_state.set("provinces", provinces.duplicate(true))
 	return count
 

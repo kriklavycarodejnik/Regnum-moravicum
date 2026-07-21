@@ -17,11 +17,12 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 
 
 func _init_province_religions() -> void:
-	var provinces_conversion: Dictionary = game_state.get("provinces") or {}
-	for province_id in provinces_conversion:
-		var province: Dictionary = provinces_conversion[province_id]
+	var provinces: Dictionary = game_state.get("provinces") or {}
+	for province_id in provinces:
+		var province: Dictionary = provinces[province_id]
 		if not province.has("religion"):
 			province["religion"] = "pagan"
+	game_state.set("provinces", provinces)
 
 
 func process_religion() -> Dictionary:
@@ -29,9 +30,9 @@ func process_religion() -> Dictionary:
 	var religion_counts: Dictionary = {}
 
 	# Count religions
-	var provinces_conversion: Dictionary = game_state.get("provinces") or {}
-	for province_id in provinces_conversion:
-		var province: Dictionary = provinces_conversion[province_id]
+	var provinces: Dictionary = game_state.get("provinces") or {}
+	for province_id in provinces:
+		var province: Dictionary = provinces[province_id]
 		var religion: String = str(province.get("religion", "pagan"))
 		religion_counts[religion] = int(religion_counts.get(religion, 0)) + 1
 
@@ -44,16 +45,16 @@ func process_religion() -> Dictionary:
 
 	# Random conversion
 	if rng.randf_range(0.0, 1.0) < 0.05:
-		var provinces_conversion_2: Dictionary = game_state.get("provinces") or {}
-		var province_ids: Array = provinces_conversion_2.keys()
-		for province_id in province_ids:
-			var province: Dictionary = provinces_conversion_2[province_id]
-			var new_religion: String = "christian" if str(province.get("religion", "pagan")) == "pagan" else "pagan"
-			province["religion"] = new_religion
-			report.changes.append({
-				"province_id": province_id,
-				"old_religion": province.get("religion", "pagan"),
-				"new_religion": new_religion
-			})
+		var province_ids: Array = provinces.keys()
+		var province_id: String = province_ids[rng.randi_range(0, province_ids.size() - 1)]
+		var province: Dictionary = provinces[province_id]
+		var new_religion: String = "christian" if str(province.get("religion", "pagan")) == "pagan" else "pagan"
+		province["religion"] = new_religion
+		report.changes.append({
+			"province_id": province_id,
+			"old_religion": province.get("religion", "pagan"),
+			"new_religion": new_religion
+		})
+	game_state.set("provinces", provinces)
 
 	return report
