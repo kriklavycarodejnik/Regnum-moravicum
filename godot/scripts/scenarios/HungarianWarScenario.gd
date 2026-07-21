@@ -34,7 +34,7 @@ const FACTION_HUNGARIAN := "madari"
 const FACTION_MORAVIAN := "moravia"
 
 # Province IDs
-const PROVINCE_DEVIN := "devin"
+const PROVINCE_DEVIN := "bratislava"  # Oprava: Devín = Bratislava v kánone
 const PROVINCE_NITRA := "nitra"
 
 # Terrain
@@ -78,8 +78,8 @@ func resolve_devine_battle() -> Dictionary:
 	hungarian["morale"] = clampf(float(hungarian["morale"]) + float(tm["attackerMorale"]) + C.HUNGARIAN_RIVER_MORALE, 0.0, 100.0)
 	moravian["morale"] = clampf(float(moravian["morale"]) + float(tm["defenderMorale"]), 0.0, 100.0)
 
-	# Grécky oheň: +15 % ES pre obrancu (Morava)
-	var es_moravian: float = Formulas.calculate_effective_strength(moravian, false, TERRAIN_DEVIN) * 1.15
+	# Grécky oheň: +15 % ES pre obrancu (Morava) → aplikujeme ako +15 % morálky
+	moravian["morale"] = clampf(float(moravian["morale"]) * 1.15, 0.0, 100.0)
 
 	# Auto-resolve
 	var outcome: Dictionary = battle_manager.auto_resolve(hungarian, moravian, TERRAIN_DEVIN)
@@ -89,8 +89,8 @@ func resolve_devine_battle() -> Dictionary:
 
 	# Apply occupation if hungarian win
 	if outcome.get("winner", "") == "attacker":
-		war_manager.set_occupier(PROVINCE_DEVIN, FACTION_HUNGARIAN)
-		outcome["occupation_applied"] = true
+		var ok: bool = war_manager.set_occupier(PROVINCE_DEVIN, FACTION_HUNGARIAN)
+		outcome["occupation_applied"] = ok
 	else:
 		# Moravian victory → remove occupation, apply rewards
 		war_manager.clear_occupation(PROVINCE_DEVIN)

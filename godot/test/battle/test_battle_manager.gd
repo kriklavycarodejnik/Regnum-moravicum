@@ -1,6 +1,6 @@
 # test/battle/test_battle_manager.gd
 class_name TestBattleManager
-extends "res://addons/gdUnit4/src/GdUnitTest.gd"
+extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const BattleManager := preload("res://scripts/managers/BattleManager.gd")
 const GameState := preload("res://scripts/core/GameState.gd")
@@ -23,10 +23,10 @@ func test_make_army():
 		{"infantry": 0.5, "cavalry": 0.3, "archers": 0.2},
 		5, "Test Commander"
 	)
-	assert_eq(army["id"], "test_army")
-	assert_eq(army["size"], 1000)
-	assert_eq(army["morale"], 75.0)
-	assert_eq(army["commander"].name, "Test Commander")
+	assert_that(army["id"]).is_equal("test_army")
+	assert_that(army["size"]).is_equal(1000)
+	assert_that(army["morale"]).is_equal(75.0)
+	assert_that(army["commander"].name).is_equal("Test Commander")
 
 
 func test_auto_resolve_determinism():
@@ -41,9 +41,9 @@ func test_auto_resolve_determinism():
 	var r1: Dictionary = b1.auto_resolve(army_a1, army_d1, "field")
 	var r2: Dictionary = b2.auto_resolve(army_a2, army_d2, "field")
 
-	assert_eq(r1.get("winner"), r2.get("winner"))
-	assert_eq(r1.get("result"), r2.get("result"))
-	assert_eq(r1.get("phase_logs").size(), r2.get("phase_logs").size())
+	assert_that(r1["winner"]).is_equal(r2["winner"])
+	assert_that(r1["result"]).is_equal(r2["result"])
+	assert_that(r1["phase_logs"].size()).is_equal(r2["phase_logs"].size())
 
 
 func test_rout_condition():
@@ -53,7 +53,7 @@ func test_rout_condition():
 		battle_manager.make_army("enemy", "madari", 500, 80.0, {"cavalry": 1.0}, 6),
 		"field"
 	)
-	assert_eq(outcome.get("result"), "victory_rout")
+	assert_that(outcome["result"]).is_equal("victory_rout")
 
 
 func test_retreat_condition():
@@ -64,4 +64,4 @@ func test_retreat_condition():
 		battle_manager.make_army("enemy", "madari", 500, 80.0, {"cavalry": 1.0}, 6),
 		"field"
 	)
-	assert_eq(outcome.get("result"), "retreat")
+	assert_that(outcome["result"]).is_equal("retreat")

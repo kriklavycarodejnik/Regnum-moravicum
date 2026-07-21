@@ -38,7 +38,7 @@ func _make_world(seed_value: int):
 
 func _init() -> void:
 	var ok := true
-	print("=== Regnum Moravicum smoke test v5 (Devín 907) ===")
+	print("=== Regnum Moravicum smoke test v6 (Devín 907 fixed) ===")
 
 	var w = _make_world(42)
 	var state = w.state
@@ -80,8 +80,10 @@ func _init() -> void:
 	var tm: Dictionary = C.TERRAIN_MODIFIERS.get("river", C.TERRAIN_MODIFIERS["field"])
 	hungarian["morale"] = clampf(float(hungarian["morale"]) + float(tm["attackerMorale"]) + C.HUNGARIAN_RIVER_MORALE, 0.0, 100.0)
 	moravian["morale"] = clampf(float(moravian["morale"]) + float(tm["defenderMorale"]), 0.0, 100.0)
+	# Apply Greek fire bonus
+	moravian["morale"] = clampf(float(moravian["morale"]) * 1.15, 0.0, 100.0)
 	var es_hungarian: float = Formulas.calculate_effective_strength(hungarian, true, "river")
-	var es_moravian: float = Formulas.calculate_effective_strength(moravian, false, "river") * 1.15  # grécky oheň
+	var es_moravian: float = Formulas.calculate_effective_strength(moravian, false, "river")
 	print("ES Devín: magyar %.1f | moravia %.1f" % [es_hungarian, es_moravian])
 	if es_hungarian <= 0.0 or es_moravian <= 0.0:
 		print("FAIL: ES non-positive"); ok = false

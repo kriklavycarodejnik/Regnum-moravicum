@@ -28,3 +28,7 @@ renderer/rendering_method="forward_plus"
 [input]
 
 ui_cancel={"deadzone": 0.5, "events": [{"type": "Key", "physical": false, "name": "Escape"}]}
+
+[editor_plugins]
+
+enabled=PoolStringArray("res://addons/gdUnit4/plugin.gd")
