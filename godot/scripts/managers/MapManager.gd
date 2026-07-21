@@ -2,7 +2,7 @@
 class_name MapManager
 extends RefCounted
 
-const _GameState := preload("res://scripts/core/GameState.gd")
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var game_state
 var provinces: Dictionary = {}
@@ -45,6 +45,11 @@ func load_provinces_from_dir(dir_path: String) -> int:
 			file_name = dir.get_next()
 		dir.list_dir_end()
 
+	# Inicializovať neighbors pre každú provinciu, ak nie sú definované
+	for province_id in provinces:
+		var province: Dictionary = provinces[province_id]
+		if not province.has("neighbors"):
+			province["neighbors"] = []
 	game_state.set("provinces", provinces.duplicate(true))
 	return count
 

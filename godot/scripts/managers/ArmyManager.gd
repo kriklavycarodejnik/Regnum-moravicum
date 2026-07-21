@@ -36,8 +36,8 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 func _init_armies() -> void:
 	var armies: Dictionary = game_state.get("armies") or {}
 	var army_templates: Dictionary = game_state.get("army_templates") or {}
-	if armies.is_empty():
-		armies = {}
+	
+	# Inicializovať army_templates, ak nie sú definované
 	if army_templates.is_empty():
 		army_templates = {
 			"moravia_levy": {
@@ -59,8 +59,12 @@ func _init_armies() -> void:
 				"max_size": 3000
 			}
 		}
-	game_state.set("armies", armies)
-	game_state.set("army_templates", army_templates)
+		game_state.set("army_templates", army_templates)
+	
+	# Inicializovať armies, ak nie sú definované
+	if armies.is_empty():
+		armies = {}
+		game_state.set("armies", armies)
 
 
 func create_army(
