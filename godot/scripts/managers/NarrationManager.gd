@@ -2,93 +2,106 @@
 class_name NarrationManager
 extends RefCounted
 
+const _GameState := preload("res://scripts/core/GameState.gd")
+
 var game_state
 var rng: RandomNumberGenerator
 var recent_templates: Array = []
-var max_recent: int = 12
-
-var templates := {
-	"economy": [
-		"Krajina pomaly bohatne. Trhy sú plné tovaru.",
-		"Úroda bola priemerná. Zásoby vystačia na zimu.",
-		"Dane prichádzajú včas. Pokladnica dýcha."
-	],
-	"succession": [
-		"{name} zomrel. Dynastia smúti.",
-		"Smrť {name} zasiahla dvor. Prestíž klesla.",
-		"Pohreb {name} zhromaždil šľachtu z celej Moravy."
-	],
-	"event": [
-		"Dvor čaká na tvoje slovo: {title}",
-		"Poslovia priniesli správu — rozhodnutie je na tebe: {title}"
-	],
-	"generic": [
-		"Mesiac ubehol v pokoji.",
-		"Správy z hraníc sú tiché.",
-		"Dvor žije bežným rytmom."
-	]
-}
 
 
-func _init(state, rng_ref: RandomNumberGenerator) -> void:
-	game_state = state
-	rng = rng_ref
+func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> void:
+	if state != null:
+		game_state = state
+	if rng_ref != null:
+		rng = rng_ref
 
 
-func _pick_template(category: String) -> String:
-	var pool: Array = templates.get(category, templates["generic"])
-	if pool.is_empty():
-		return ""
-
-	var candidates: Array = []
-	for t in pool:
-		if not recent_templates.has(t):
-			candidates.append(t)
-	if candidates.is_empty():
-		candidates = pool
-
-	# Seeded RNG only — never global randi()
-	var idx: int = rng.randi() % candidates.size()
-	var chosen: String = str(candidates[idx])
-	recent_templates.append(chosen)
-	if recent_templates.size() > max_recent:
-		recent_templates.pop_front()
-	return chosen
-
-
-func generate_from_report(tick_report: Dictionary) -> String:
+func generate_chronicle(report: Dictionary) -> String:
 	var lines: Array = []
+	var template: String = ""
 
-	if tick_report.has("economy"):
-		lines.append(_pick_template("economy"))
+	match report.get("type", ""):
+		"economy":
+			template = _generate_economy_text(report)
+		"nobility":
+			template = _generate_nobility_text(report)
+		"diplomacy":
+			template = _generate_diplomacy_text(report)
+		"war":
+			template = _generate_war_text(report)
+		"event":
+			template = _generate_event_text(report)
+		"succession":
+			template = _generate_succession_text(report)
+		"religion":
+			template = _generate_religion_text(report)
+		"victory":
+			template = _generate_victory_text(report)
+		"armies":
+			template = _generate_armies_text(report)
+		_:
+			return ""
 
-	if tick_report.has("nobility"):
-		var deaths: Array = tick_report["nobility"].get("deaths", [])
-		for d in deaths:
-			if typeof(d) != TYPE_DICTIONARY:
-				continue
-			var t: String = _pick_template("succession")
-			t = t.replace("{name}", str(d.get("dead_noble", "šľachtic")))
-			lines.append(t)
+	# Anti-repetition
+	if recent_templates.has(template):
+		return ""
+	recent_templates.append(template)
+	if recent_templates.size() > 12:
+		recent_templates.pop_front()
 
-	if tick_report.has("event") and tick_report["event"].get("raised", false):
-		var t2: String = _pick_template("event")
-		t2 = t2.replace("{title}", str(tick_report["event"].get("title", "udalosť")))
-		lines.append(t2)
-
-	if lines.is_empty():
-		lines.append(_pick_template("generic"))
-
-	return "\n".join(lines)
+	return template
 
 
-func generate_chronicle(tick_report: Dictionary) -> String:
-	return generate_from_report(tick_report)
+func _generate_economy_text(report: Dictionary) -> String:
+	var province_id: String = report.prosperity_growth.keys()[0]
+	var prosperity: float = report.prosperity_growth[province_id]
+	return "Provincia %s: prosperita %.1f%% (upkeep: %d zlata)" % [province_id, prosperity, report.upkeep.get("nobles", 0)]
 
 
-func generate_chronicle_endgame(is_victory: bool, is_defeat: bool) -> String:
-	if is_victory:
-		return "Dynastia Mojmírovcov pretrvala. Veľká Morava stojí."
-	if is_defeat:
-		return "Dynastia zanikla. Kronika sa končí v tichu."
+func _generate_nobility_text(report: Dictionary) -> String:
+	if report.deaths.size() > 0:
+		var death = report.deaths[0]
+		return "Zomrel šľachtic %s (vek %d)" % [death.name, death.age]
+	if report.births.size() > 0:
+		var birth = report.births[0]
+		return "Narodil sa nový šľachtic: %s" % birth.name
 	return ""
+
+
+func _generate_diplomacy_text(report: Dictionary) -> String:
+	return "Diplomatické vzťahy sa menia..."
+
+
+func _generate_war_text(report: Dictionary) -> String:
+	if report.get("occupation_applied", false):
+		return "Nepriateľ obsadil provinciu!"
+	return "Vojna pokračuje..."
+
+
+func _generate_event_text(report: Dictionary) -> String:
+	return "Dôležitá udalosť: %s" % report.get("text", "?")
+
+
+func _generate_succession_text(report: Dictionary) -> String:
+	if report.get("new_ruler", null) != null:
+		var ruler = report.new_ruler
+		return "Nový vládca: %s" % ruler.name
+	return ""
+
+
+func _generate_religion_text(report: Dictionary) -> String:
+	return "Náboženská situácia: %s" % report.get("dominant_religion", "?")
+
+
+func _generate_victory_text(report: Dictionary) -> String:
+	if report.get("victory", false):
+		return "Víťazstvo! %s" % report.get("victory_type", "?")
+	return ""
+
+
+func _generate_armies_text(report: Dictionary) -> String:
+	if report.events.size() > 0:
+		var event = report.events[0]
+		if event.type == "army_desertion":
+			return "Armáda %s stráca %d vojakov kvôli nedostatku zásob!" % [event.army_id, event.size_loss]
+	return "Armády sú pripravené."

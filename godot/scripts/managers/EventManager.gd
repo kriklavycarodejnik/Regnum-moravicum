@@ -2,107 +2,62 @@
 class_name EventManager
 extends RefCounted
 
-## Minimal event system — first real player decision (gameplay milestone).
-## Full event engine (conditions, weights, historical chains) comes later (M2+/M3).
+const _GameState := preload("res://scripts/core/GameState.gd")
 
 var game_state
 var rng: RandomNumberGenerator
-var _months_since_choice: int = 0
 
 
-func _init(state, rng_ref: RandomNumberGenerator) -> void:
-	game_state = state
-	rng = rng_ref
+func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> void:
+	if state != null:
+		game_state = state
+	if rng_ref != null:
+		rng = rng_ref
 
 
 func process_events() -> Dictionary:
-	# If player already has a pending choice, do not raise another
-	if game_state.pending_event != null:
-		return {"type": "event", "raised": false, "waiting": true}
+	var pending_event: Variant = game_state.get("pending_event", null)
+	if pending_event != null:
+		return {"type": "event", "text": pending_event.text, "choices": pending_event.choices}
 
-	_months_since_choice += 1
-	# First real decision around month 3, then occasionally
-	var should_raise := false
-	if _months_since_choice == 3:
-		should_raise = true
-	elif _months_since_choice > 12 and rng.randf() < 0.08:
-		should_raise = true
+	if rng.randf_range(0.0, 1.0) < 0.08:
+		var new_event: Dictionary = _build_council_event()
+		game_state.set("pending_event", new_event)
+		return {"type": "event", "text": new_event.text, "choices": new_event.choices}
 
-	if not should_raise:
-		return {"type": "event", "raised": false}
+	return {"type": "event", "text": "", "choices": []}
 
-	var ev := _build_council_event()
-	game_state.pending_event = ev
-	_months_since_choice = 0
-	return {
-		"type": "event",
-		"raised": true,
-		"id": ev["id"],
-		"title": ev["title"]
-	}
+
+func resolve_choice(choice_id: String) -> Dictionary:
+	var pending_event: Variant = game_state.get("pending_event", null)
+	if pending_event == null or not pending_event.choices.has(choice_id):
+		return {"ok": false, "error": "invalid_choice"}
+
+	var choice: Dictionary = pending_event.choices[choice_id]
+	var effect: Dictionary = choice.get("effect", {})
+	var resources: Dictionary = game_state.get("resources", {})
+
+	if effect.has("gold"):
+		resources["gold"] = int(resources.get("gold", 1000)) + int(effect.gold)
+	if effect.has("prestige"):
+		resources["prestige"] = int(resources.get("prestige", 50)) + int(effect.prestige)
+	game_state.set("resources", resources)
+
+	game_state.set("pending_event", null)
+	return {"ok": true, "effect": effect}
 
 
 func _build_council_event() -> Dictionary:
 	return {
-		"id": "council_gift_or_fortify",
-		"title": "Rada županov",
-		"body": "Župani žiadajú tvoje slovo: poslať dary na upokojenie hraníc, alebo opevniť kľúčové hradištia?",
-		"choices": [
-			{
-				"id": "gifts",
-				"label": "Poslať dary (zlato -30, lojalita +5)",
-				"effects": {"gold": -30, "loyalty_all": 5}
+		"text": "Rada županov: Ako chcete posilniť ríšu?",
+		"choices": {
+			"gifts": {
+				"text": "Rozdať dary (500 zlata, +10 prestíž)",
+				"effect": {"gold": -500, "prestige": 10}
 			},
-			{
-				"id": "fortify",
-				"label": "Opevniť hradištia (zlato -20, drevo -10, prosperita +3)",
-				"effects": {"gold": -20, "wood": -10, "prosperity_all": 3}
+			"fortify": {
+				"text": "Postaviť opevnenie (300 zlata, +5 prestíž)",
+				"effect": {"gold": -300, "prestige": 5}
 			}
-		]
+		}
 	}
-
-
-func resolve_choice(choice_id: String) -> Dictionary:
-	if game_state.pending_event == null:
-		return {"ok": false, "error": "no_pending_event"}
-
-	var ev: Dictionary = game_state.pending_event
-	var chosen: Dictionary = {}
-	for c in ev.get("choices", []):
-		if str(c.get("id", "")) == choice_id:
-			chosen = c
-			break
-	if chosen.is_empty():
-		return {"ok": false, "error": "unknown_choice"}
-
-	var effects: Dictionary = chosen.get("effects", {})
-	_apply_effects(effects)
-	game_state.pending_event = null
-
-	var line := "Rozhodnutie: %s — %s" % [ev.get("title", "Udalosť"), chosen.get("label", choice_id)]
-	game_state.chronicle.append({
-		"year": game_state.year,
-		"month": game_state.month,
-		"text": line
-	})
-
-	return {"ok": true, "choice": choice_id, "effects": effects, "chronicle": line}
-
-
-func _apply_effects(effects: Dictionary) -> void:
-	if effects.has("gold"):
-		game_state.resources["gold"] = maxi(0, int(game_state.resources.get("gold", 0)) + int(effects["gold"]))
-	if effects.has("wood"):
-		game_state.resources["wood"] = maxi(0, int(game_state.resources.get("wood", 0)) + int(effects["wood"]))
-	if effects.has("loyalty_all"):
-		var d: int = int(effects["loyalty_all"])
-		for pid in game_state.provinces:
-			var p = game_state.provinces[pid]
-			if typeof(p) == TYPE_DICTIONARY:
-				p["loyalty"] = clampi(int(p.get("loyalty", 50)) + d, 0, 100)
-	if effects.has("prosperity_all"):
-		var d2: int = int(effects["prosperity_all"])
-		for pid2 in game_state.provinces:
-			var p2 = game_state.provinces[pid2]
-			if typeof(p2) == TYPE_DICTIONARY:
-				p2["prosperity"] = clampi(int(p2.get("prosperity", 50)) + d2, 0, 100)

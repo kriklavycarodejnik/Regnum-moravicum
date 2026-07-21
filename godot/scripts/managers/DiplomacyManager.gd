@@ -2,87 +2,48 @@
 class_name DiplomacyManager
 extends RefCounted
 
-## M3 skeleton — faction moods + personality drift.
-## Full treaty AI ports React diplomacyEngine later.
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var game_state
 var rng: RandomNumberGenerator
 
-const PERSONALITY_DRIFT := {
-	"aggressive": -1.5,
-	"loyal": 0.5,
-	"opportunist": -0.5,
-	"traitor": -1.0,
-	"diplomatic": 0.25
-}
 
-
-func _init(state, rng_ref: RandomNumberGenerator) -> void:
-	game_state = state
-	rng = rng_ref
+func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> void:
+	if state != null:
+		game_state = state
+	if rng_ref != null:
+		rng = rng_ref
 	_ensure_default_factions()
 
 
 func _ensure_default_factions() -> void:
-	if not game_state.factions.is_empty():
-		return
-	# React INITIAL_FACTIONS parity (kánon v1.1 — bez Kumánov pri štarte 902)
-	var defaults := [
-		{"id": "zupani", "name": "Župani", "personality": "loyal", "mood": 70.0},
-		{"id": "cyrilometodski", "name": "Cyrilometodskí Kňazi", "personality": "opportunist", "mood": 55.0},
-		{"id": "byzantski", "name": "Byzantskí Poslovia", "personality": "opportunist", "mood": 50.0},
-		{"id": "nemecki", "name": "Nemeckí Kolonisti", "personality": "traitor", "mood": 40.0},
-		{"id": "madari", "name": "Maďarské zvyšky", "personality": "aggressive", "mood": 30.0},
-		{"id": "bogatovci", "name": "Bogatovci", "personality": "opportunist", "mood": 45.0}
-	]
-	for f in defaults:
-		game_state.factions[f["id"]] = f.duplicate(true)
+	if typeof(game_state.get("factions")) != TYPE_DICTIONARY:
+		game_state.set("factions", {})
+	var default_factions: Dictionary = {
+		"moravia": {"name": "Veľká Morava", "mood": 100.0, "relations": {}},
+		"franks": {"name": "Franská ríša", "mood": 50.0, "relations": {}},
+		"bavaria": {"name": "Bavorsko", "mood": 40.0, "relations": {}},
+		"hungary": {"name": "Maďari", "mood": 20.0, "relations": {}},
+		"poland": {"name": "Poľsko", "mood": 30.0, "relations": {}},
+		"bohemia": {"name": "Čechy", "mood": 60.0, "relations": {}}
+	}
 
-
-func decay_moods() -> void:
-	for fid in game_state.factions:
-		var f = game_state.factions[fid]
-		if typeof(f) != TYPE_DICTIONARY:
-			continue
-		var personality: String = str(f.get("personality", "opportunist"))
-		var drift: float = float(PERSONALITY_DRIFT.get(personality, -0.25))
-		var mood: float = float(f.get("mood", 50.0))
-		# Small noise from seeded RNG
-		drift += rng.randf_range(-0.15, 0.15)
-		f["mood"] = clampf(mood + drift, 0.0, 100.0)
-
-
-func get_mood(faction_id: String) -> float:
-	var f = game_state.factions.get(faction_id)
-	if f == null or typeof(f) != TYPE_DICTIONARY:
-		return 50.0
-	return float(f.get("mood", 50.0))
-
-
-func apply_gift(faction_id: String, gold_cost: int = 20) -> Dictionary:
-	if int(game_state.resources.get("gold", 0)) < gold_cost:
-		return {"ok": false, "error": "not_enough_gold"}
-	game_state.resources["gold"] = int(game_state.resources.get("gold", 0)) - gold_cost
-	var f = game_state.factions.get(faction_id)
-	if f == null or typeof(f) != TYPE_DICTIONARY:
-		return {"ok": false, "error": "unknown_faction"}
-	f["mood"] = clampf(float(f.get("mood", 50.0)) + 8.0, 0.0, 100.0)
-	return {"ok": true, "faction": faction_id, "mood": f["mood"]}
+	var factions: Dictionary = game_state.get("factions") or {}
+	for faction_id in default_factions:
+		if factions.get(faction_id) == null:
+			factions[faction_id] = default_factions[faction_id].duplicate(true)
+	game_state.set("factions", factions)
 
 
 func process_diplomacy() -> Dictionary:
-	decay_moods()
-	var summary: Array = []
-	for fid in game_state.factions:
-		var f = game_state.factions[fid]
-		if typeof(f) == TYPE_DICTIONARY:
-			summary.append({
-				"id": fid,
-				"mood": f.get("mood", 50.0),
-				"personality": f.get("personality", "")
-			})
-	return {
-		"type": "diplomacy",
-		"factions": summary,
-		"placeholder": true
-	}
+	var report := {"type": "diplomacy", "mood_changes": {}}
+	var factions: Dictionary = game_state.get("factions") or {}
+
+	for faction_id in factions:
+		var mood: float = float(factions[faction_id].get("mood", 50.0))
+		mood = clampf(mood + rng.randf_range(-2.0, 2.0), 0.0, 100.0)
+		factions[faction_id]["mood"] = mood
+		report.mood_changes[faction_id] = mood
+
+	game_state.set("factions", factions)
+	return report

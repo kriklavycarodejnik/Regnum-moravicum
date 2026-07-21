@@ -2,61 +2,47 @@
 class_name VictoryManager
 extends RefCounted
 
-## M4 skeleton — victory conditions (prestige, provinces, religion).
-## Full port from React victoryEngine later.
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var game_state
 
-# Victory conditions
-const VICTORY_CONDITIONS := {
-	"prestige": {"threshold": 100, "description": "Dosiahnuť 100 prestíž"},
-	"provinces": {"threshold": 10, "description": "Ovládať 10 žúp"},
-	"religion": {"threshold": 1.0, "description": "Konvertovať všetky župy na dominantné náboženstvo"}
-}
 
-
-func _init(state) -> void:
-	game_state = state
+func _init(state: RefCounted = null) -> void:
+	if state != null:
+		game_state = state
 
 
 func check_victory() -> Dictionary:
-	var prestige: int = int(game_state.resources.get("prestige", 0))
+	var report := {"type": "victory", "victory": false, "victory_type": ""}
+	var resources: Dictionary = game_state.get("resources") or {}
+	var provinces: Dictionary = game_state.get("provinces") or {}
+
+	# Prestige victory
+	if int(resources.get("prestige", 0)) >= 100:
+		report.victory = true
+		report.victory_type = "prestige"
+		return report
+
+	# Province victory
 	var owned_provinces: int = 0
-	var dominant_religion: String = "pagan"  # Placeholder, should come from ReligionManager
-	var converted_provinces: int = 0
-
-	for province_id in game_state.provinces:
-		var province: Dictionary = game_state.provinces[province_id]
-		if typeof(province) == TYPE_DICTIONARY and str(province.get("owner_faction", "")) == "moravia":
+	for province_id in provinces:
+		var province: Dictionary = provinces[province_id]
+		if str(province.get("owner_faction", "")) == "moravia":
 			owned_provinces += 1
-			# Placeholder: check religion
-			if str(province.get("religion", "pagan")) == dominant_religion:
-				converted_provinces += 1
+	if owned_provinces >= 8:
+		report.victory = true
+		report.victory_type = "provinces"
+		return report
 
-	var conditions_met: Dictionary = {
-		"prestige": prestige >= VICTORY_CONDITIONS["prestige"]["threshold"],
-		"provinces": owned_provinces >= VICTORY_CONDITIONS["provinces"]["threshold"],
-		"religion": float(converted_provinces) / float(game_state.provinces.size()) >= VICTORY_CONDITIONS["religion"]["threshold"]
-	}
+	# Religion victory
+	var christian_provinces: int = 0
+	for province_id in provinces:
+		var province: Dictionary = provinces[province_id]
+		if str(province.get("religion", "")) == "christian":
+			christian_provinces += 1
+	if christian_provinces >= 6:
+		report.victory = true
+		report.victory_type = "religion"
+		return report
 
-	var victory: bool = conditions_met["prestige"] and conditions_met["provinces"] and conditions_met["religion"]
-	var victory_type: String = ""
-	if victory:
-		if conditions_met["prestige"]:
-			victory_type = "prestige"
-		elif conditions_met["provinces"]:
-			victory_type = "provinces"
-		else:
-			victory_type = "religion"
-
-	return {
-		"victory": victory,
-		"victory_type": victory_type,
-		"conditions": conditions_met,
-		"details": {
-			"prestige": prestige,
-			"owned_provinces": owned_provinces,
-			"converted_provinces": converted_provinces,
-			"total_provinces": game_state.provinces.size()
-		}
-	}
+	return report

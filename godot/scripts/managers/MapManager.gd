@@ -2,46 +2,56 @@
 class_name MapManager
 extends RefCounted
 
+const _GameState := preload("res://scripts/core/GameState.gd")
+
 var game_state
 var provinces: Dictionary = {}
 
 
-func _init(state = null) -> void:
-	game_state = state
+func _init(state: RefCounted = null) -> void:
+	if state != null:
+		game_state = state
 
 
-func load_provinces_from_dir(data_path: String = "res://data/provinces/") -> int:
-	provinces.clear()
-	var dir := DirAccess.open(data_path)
+func load_provinces_from_dir(dir_path: String) -> int:
+	var dir = DirAccess.open(dir_path)
 	if dir == null:
-		push_error("MapManager: Cannot open %s" % data_path)
 		return 0
 
-	dir.list_dir_begin()
-	var file_name := dir.get_next()
-	var count := 0
-	while file_name != "":
-		if not dir.current_is_dir() and file_name.ends_with(".json"):
-			var full_path := data_path.path_join(file_name)
-			var file := FileAccess.open(full_path, FileAccess.READ)
-			if file:
-				var data = JSON.parse_string(file.get_as_text())
-				file.close()
-				if typeof(data) == TYPE_DICTIONARY and data.has("id"):
-					provinces[str(data["id"])] = data
-					count += 1
-		file_name = dir.get_next()
-	dir.list_dir_end()
+	var count: int = 0
+	if dir.file_exists("provinces.json"):
+		var file = FileAccess.open(dir_path + "/provinces.json", FileAccess.READ)
+		if file != null:
+			var content: String = file.get_as_text()
+			var json: Dictionary = JSON.parse_string(content)
+			if typeof(json) == TYPE_DICTIONARY:
+				provinces = json.duplicate(true)
+				count = json.size()
+				game_state.set("provinces", provinces.duplicate(true))
 
-	if game_state != null:
-		game_state.provinces = provinces.duplicate(true)
+	else:
+		dir.list_dir_begin()
+		var file_name: String = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".json") and not file_name.begins_with("."):
+				var file = FileAccess.open(dir_path + "/" + file_name, FileAccess.READ)
+				if file != null:
+					var content: String = file.get_as_text()
+					var json: Dictionary = JSON.parse_string(content)
+					if typeof(json) == TYPE_DICTIONARY:
+						var province_id: String = file_name.get_basename()
+						provinces[province_id] = json.duplicate(true)
+						count += 1
+			file_name = dir.get_next()
+		dir.list_dir_end()
 
+	game_state.set("provinces", provinces.duplicate(true))
 	return count
 
 
-func get_province(id: String) -> Dictionary:
-	return provinces.get(id, {})
+func get_province(province_id: String) -> Dictionary:
+	return provinces.get(province_id, {})
 
 
-func get_all_province_ids() -> Array:
-	return provinces.keys()
+func get_provinces() -> Dictionary:
+	return provinces.duplicate(true)

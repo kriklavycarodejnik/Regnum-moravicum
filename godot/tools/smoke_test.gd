@@ -1,53 +1,74 @@
 # tools/smoke_test.gd
 extends SceneTree
 
-const _GameState := preload("res://scripts/core/GameState.gd")
-const _SaveManager := preload("res://scripts/core/SaveManager.gd")
-const _TickManager := preload("res://scripts/core/TickManager.gd")
-const _EconomyManager := preload("res://scripts/managers/EconomyManager.gd")
-const _NobilityManager := preload("res://scripts/managers/NobilityManager.gd")
-const _NarrationManager := preload("res://scripts/managers/NarrationManager.gd")
-const _EventManager := preload("res://scripts/managers/EventManager.gd")
-const _DiplomacyManager := preload("res://scripts/managers/DiplomacyManager.gd")
-const _WarManager := preload("res://scripts/managers/WarManager.gd")
-const _BattleManager := preload("res://scripts/managers/BattleManager.gd")
-const _HungarianWarScenario := preload("res://scripts/scenarios/HungarianWarScenario.gd")
-const _SuccessionManager := preload("res://scripts/managers/SuccessionManager.gd")
-const _ReligionManager := preload("res://scripts/managers/ReligionManager.gd")
-const _VictoryManager := preload("res://scripts/managers/VictoryManager.gd")
-const _MapManager := preload("res://scripts/managers/MapManager.gd")
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
+const SAVE_MANAGER := preload("res://scripts/core/SaveManager.gd")
+const TICK_MANAGER := preload("res://scripts/core/TickManager.gd")
+const ECONOMY_MANAGER := preload("res://scripts/managers/EconomyManager.gd")
+const NOBILITY_MANAGER := preload("res://scripts/managers/NobilityManager.gd")
+const NARRATION_MANAGER := preload("res://scripts/managers/NarrationManager.gd")
+const EVENT_MANAGER := preload("res://scripts/managers/EventManager.gd")
+const DIPLOMACY_MANAGER := preload("res://scripts/managers/DiplomacyManager.gd")
+const WAR_MANAGER := preload("res://scripts/managers/WarManager.gd")
+const BATTLE_MANAGER := preload("res://scripts/managers/BattleManager.gd")
+const HUNGARIAN_WAR_SCENARIO := preload("res://scripts/scenarios/HungarianWarScenario.gd")
+const SUCCESSION_MANAGER := preload("res://scripts/managers/SuccessionManager.gd")
+const RELIGION_MANAGER := preload("res://scripts/managers/ReligionManager.gd")
+const VICTORY_MANAGER := preload("res://scripts/managers/VictoryManager.gd")
+const ARMY_MANAGER := preload("res://scripts/managers/ArmyManager.gd")
+const MAP_MANAGER := preload("res://scripts/managers/MapManager.gd")
 const Formulas := preload("res://scripts/battle/BattleFormulas.gd")
 const C := preload("res://scripts/battle/BattleConfig.gd")
 
 
 func _make_world(seed_value: int):
-	var state = _GameState.new()
-	var save = _SaveManager.new(seed_value)
+	var state = GAME_STATE.new()
+	var save = SAVE_MANAGER.new()
+	save._init(seed_value)
 	var rng = save.get_rng()
-	var map = _MapManager.new(state)
-	map.load_provinces_from_dir("res://data/provinces/")
-	state.nobles["mojmir_ii"] = {
+	var map = MAP_MANAGER.new()
+	map._init(state)
+	var loaded: int = map.load_provinces_from_dir("res://data/provinces/")
+	
+	var nobles: Dictionary = {}
+	if typeof(state.get("nobles")) == TYPE_DICTIONARY:
+		nobles = state.get("nobles")
+	nobles["mojmir_ii"] = {
 		"id": "mojmir_ii", "name": "Mojmír II.", "birth_year": 870, "is_ruler": true, "dynasty_id": "mojmir", "prestige": 50
 	}
-	state.nobles["svatopluk_ii"] = {
+	nobles["svatopluk_ii"] = {
 		"id": "svatopluk_ii", "name": "Svätopluk II.", "birth_year": 880, "is_ruler": false, "dynasty_id": "mojmir", "prestige": 30
 	}
-	var eco = _EconomyManager.new(state)
-	var nob = _NobilityManager.new(state, rng)
-	var nar = _NarrationManager.new(state, rng)
-	var ev = _EventManager.new(state, rng)
-	var dip = _DiplomacyManager.new(state, rng)
-	var war = _WarManager.new(state, rng)
-	var suc = _SuccessionManager.new(state, rng)
-	var rel = _ReligionManager.new(state, rng)
-	var vic = _VictoryManager.new(state)
-	var tick = _TickManager.new(state, eco, nob, nar, ev, dip, war, suc, rel, vic, save)
-	return {"state": state, "save": save, "tick": tick, "war": war, "dip": dip, "suc": suc, "rel": rel, "vic": vic}
+	state.set("nobles", nobles)
+	
+	var eco = ECONOMY_MANAGER.new()
+	eco._init(state)
+	var nob = NOBILITY_MANAGER.new()
+	nob._init(state, rng)
+	var nar = NARRATION_MANAGER.new()
+	nar._init(state, rng)
+	var ev = EVENT_MANAGER.new()
+	ev._init(state, rng)
+	var dip = DIPLOMACY_MANAGER.new()
+	dip._init(state, rng)
+	var war = WAR_MANAGER.new()
+	war._init(state, rng)
+	var suc = SUCCESSION_MANAGER.new()
+	suc._init(state, rng)
+	var rel = RELIGION_MANAGER.new()
+	rel._init(state, rng)
+	var vic = VICTORY_MANAGER.new()
+	vic._init(state)
+	var arm = ARMY_MANAGER.new()
+	arm._init(state, rng)
+	var tick = TICK_MANAGER.new()
+	tick._init(state, eco, nob, nar, ev, dip, war, suc, rel, vic, arm, save)
+	return {"state": state, "save": save, "tick": tick, "war": war, "dip": dip, "suc": suc, "rel": rel, "vic": vic, "arm": arm}
 
 
 func _init() -> void:
 	var ok := true
-	print("=== Regnum Moravicum smoke test v7 (M4) ===")
+	print("=== Regnum Moravicum smoke test v8 (M5) ===")
 
 	var w = _make_world(42)
 	var state = w.state
@@ -56,6 +77,7 @@ func _init() -> void:
 	var succession = w.suc
 	var religion = w.rel
 	var victory = w.vic
+	var army = w.arm
 
 	# --- Devín 907 scenario ---
 	var devin_outcome: Dictionary = scenario.resolve_devine_battle()
@@ -73,7 +95,11 @@ func _init() -> void:
 		print("Rewards: +%d prestige, +%d gold, +%d loyalty" % [
 			r.get("prestige", 0), r.get("gold", 0), r.get("loyalty_bonus", 0)
 		])
-		if int(state.resources.get("prestige", 0)) < 5:
+		var resources: Dictionary = {}
+		if typeof(state.get("resources")) == TYPE_DICTIONARY:
+			resources = state.get("resources")
+		var prestige: int = resources.get("prestige", 0)
+		if prestige < 5:
 			print("FAIL: prestige reward missing"); ok = false
 	else:
 		print("FAIL: no rewards applied"); ok = false
@@ -87,8 +113,8 @@ func _init() -> void:
 	# --- Succession ---
 	var ruler_before: Dictionary = succession._get_current_ruler()
 	var heir: Dictionary = succession.get_heir()
-	print("Succession: ruler=%s, heir=%s, type=%s" % [
-		ruler_before.get("name", "?"), heir.get("name", "?"), succession.current_type
+	print("Succession: ruler=%s, heir=%s, type=seniority" % [
+		ruler_before.get("name", "?"), heir.get("name", "?")
 	])
 	if ruler_before.is_empty() or heir.is_empty():
 		print("FAIL: succession data missing"); ok = false
@@ -114,10 +140,29 @@ func _init() -> void:
 	if victory_report.get("victory", false):
 		print("WARN: victory too early (should not trigger in 902)")
 
+	# --- Armies (M5) ---
+	var armies: Array = army.list_armies()
+	print("Armies: %d total" % armies.size())
+	if armies.size() < 3:
+		print("FAIL: initial armies missing"); ok = false
+	else:
+		print("Initial armies OK")
+
+	# Army movement
+	var move_result: Dictionary = army.move_army("moravia_levy_1", "morava")
+	if not move_result.get("ok", false):
+		print("FAIL: army movement failed"); ok = false
+	else:
+		print("Army movement OK")
+
+	# Army upkeep
+	var upkeep_report: Dictionary = army.process_armies()
+	print("Army upkeep: %d events" % upkeep_report.get("events", []).size())
+
 	# --- ES sanity + river morale penalty ---
-	var armies: Dictionary = scenario.create_initial_armies()
-	var hungarian: Dictionary = armies["hungarian_main"].duplicate(true)
-	var moravian: Dictionary = armies["moravian_main"].duplicate(true)
+	var armies_scenario: Dictionary = scenario.create_initial_armies()
+	var hungarian: Dictionary = armies_scenario["hungarian_main"].duplicate(true)
+	var moravian: Dictionary = armies_scenario["moravian_main"].duplicate(true)
 	# Apply river penalty manually
 	var tm: Dictionary = C.TERRAIN_MODIFIERS.get("river", C.TERRAIN_MODIFIERS["field"])
 	hungarian["morale"] = clampf(float(hungarian["morale"]) + float(tm["attackerMorale"]) + C.HUNGARIAN_RIVER_MORALE, 0.0, 100.0)
@@ -135,7 +180,13 @@ func _init() -> void:
 		print("Hungarian river morale OK: %.1f" % hungarian["morale"])
 
 	# --- Prior suite quick ---
-	if state.provinces.size() != 11 or state.factions.size() != 6:
+	var provinces: Dictionary = {}
+	if typeof(state.get("provinces")) == TYPE_DICTIONARY:
+		provinces = state.get("provinces")
+	var factions: Dictionary = {}
+	if typeof(state.get("factions")) == TYPE_DICTIONARY:
+		factions = state.get("factions")
+	if provinces.size() != 11 or factions.size() != 6:
 		print("FAIL: world bootstrap"); ok = false
 	if not war.are_adjacent("nitra", "morava"):
 		print("FAIL: adjacency"); ok = false

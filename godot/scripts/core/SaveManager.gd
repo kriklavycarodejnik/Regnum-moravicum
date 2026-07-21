@@ -5,79 +5,64 @@ extends RefCounted
 const SAVE_VERSION := 2
 const DEFAULT_PATH := "user://save.dat"
 const AUTOSAVE_PATH := "user://autosave.dat"
-const _GameState := preload("res://scripts/core/GameState.gd")
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
-var rng := RandomNumberGenerator.new()
-var current_seed: int = 0
+var rng: RandomNumberGenerator
 
 
-func _init(seed_value: int = 0) -> void:
-	if seed_value == 0:
-		seed_value = randi()
-	current_seed = seed_value
-	rng.seed = current_seed
+func _init(seed_value: int = 42) -> void:
+	rng = RandomNumberGenerator.new()
+	rng.seed = seed_value
 
 
 func get_rng() -> RandomNumberGenerator:
 	return rng
 
 
-func save_game(state, path: String = DEFAULT_PATH) -> bool:
-	# Single source of truth: GameState.to_dict()
-	var save_data: Dictionary = state.to_dict()
-	save_data["version"] = SAVE_VERSION
-	save_data["rng_seed"] = current_seed
-	save_data["rng_state"] = rng.state
-
-	var file := FileAccess.open(path, FileAccess.WRITE)
+func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
+	var file = FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
-		push_error("SaveManager: Cannot write to %s" % path)
+		push_error("Failed to open save file: " + path)
 		return false
 
+	var save_data: Dictionary = {
+		"version": SAVE_VERSION,
+		"seed": rng.seed,
+		"state": state.to_dict(),
+		"rng_state": rng.state
+	}
 	file.store_string(JSON.stringify(save_data))
 	file.close()
 	return true
 
 
-func load_game(path: String = DEFAULT_PATH):
-	if not FileAccess.file_exists(path):
-		push_error("SaveManager: Save file does not exist: %s" % path)
-		return null
-
-	var file := FileAccess.open(path, FileAccess.READ)
+func load_game(path: String = DEFAULT_PATH) -> RefCounted:
+	var file = FileAccess.open(path, FileAccess.READ)
 	if file == null:
+		push_error("Failed to open save file: " + path)
 		return null
 
-	var data = JSON.parse_string(file.get_as_text())
+	var content: String = file.get_as_text()
 	file.close()
-	if data == null or typeof(data) != TYPE_DICTIONARY:
-		push_error("SaveManager: Failed to parse save file")
+	var json: Dictionary = JSON.parse_string(content)
+	if typeof(json) != TYPE_DICTIONARY:
+		push_error("Invalid save file format")
 		return null
 
-	var version := int(data.get("version", 1))
-	data = _migrate(data, version)
+	if json.get("version") or 0 != SAVE_VERSION:
+		push_error("Save file version mismatch")
+		return null
 
-	var state = _GameState.from_dict(data)
-
-	current_seed = int(data.get("rng_seed", 0))
-	rng.seed = current_seed
-	rng.state = int(data.get("rng_state", 0))
-
+	rng.seed = int(json.get("seed") or 42)
+	rng.state = json.get("rng_state") or 0
+	var state_dict: Dictionary = json.get("state") or {}
+	var state = GAME_STATE.new()
+	state.from_dict(state_dict)
 	return state
 
 
-func _migrate(data: Dictionary, version: int) -> Dictionary:
-	if version < 2:
-		if not data.has("pending_event"):
-			data["pending_event"] = null
-	return data
-
-
-## One rotating autosave slot (not one file per year).
-func autosave(state) -> void:
-	save_game(state, AUTOSAVE_PATH)
-
-
-func autosave_if_year_end(state) -> void:
-	if state.month == 12:
-		autosave(state)
+func autosave_if_year_end(state: RefCounted) -> bool:
+	var current_month: int = state.get("month") or 1
+	if current_month != 12:
+		return false
+	return save_game(state, AUTOSAVE_PATH)

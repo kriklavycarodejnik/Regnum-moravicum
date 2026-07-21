@@ -2,148 +2,88 @@
 class_name SuccessionManager
 extends RefCounted
 
-## M4 skeleton — succession rules (seniority, primogeniture, election).
-## Full port from React successionEngine later.
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var game_state
 var rng: RandomNumberGenerator
 
-# Succession types
-const SUCCESSION_TYPES := {
-	"seniority": "Seniority (oldest living male)",
-	"primogeniture": "Primogeniture (firstborn son)",
-	"election": "Election (nobles vote)"
-}
 
-# Current succession type (default: seniority)
-var current_type: String = "seniority"
+func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> void:
+	if state != null:
+		game_state = state
+	if rng_ref != null:
+		rng = rng_ref
 
 
-func _init(state, rng_ref: RandomNumberGenerator) -> void:
-	game_state = state
-	rng = rng_ref
-
-
-func set_succession_type(new_type: String) -> bool:
-	if SUCCESSION_TYPES.has(new_type):
-		current_type = new_type
-		return true
-	return false
-
-
-func get_heir() -> Dictionary:
+func process_succession() -> Dictionary:
+	var report := {"type": "succession", "new_ruler": null, "heir": null}
 	var ruler: Dictionary = _get_current_ruler()
-	if ruler == null:
-		return {}
+	var heir: Dictionary = get_heir()
 
-	match current_type:
-		"seniority":
-			return _find_senior_heir(ruler)
-		"primogeniture":
-			return _find_primogeniture_heir(ruler)
-		"election":
-			return _elect_heir(ruler)
-		_:
-			return {}
+	if ruler.is_empty() or ruler.get("is_ruler", false) == false:
+		# No ruler — elect new one
+		var new_ruler: Dictionary = _elect_new_ruler()
+		if not new_ruler.is_empty():
+			report.new_ruler = new_ruler
+
+	report.heir = heir
+	return report
 
 
 func _get_current_ruler() -> Dictionary:
-	for noble_id in game_state.nobles:
-		var noble: Dictionary = game_state.nobles[noble_id]
-		if typeof(noble) == TYPE_DICTIONARY and noble.get("is_ruler", false):
+	var nobles: Dictionary = game_state.get("nobles") or {}
+	for noble_id in nobles:
+		var noble: Dictionary = nobles[noble_id]
+		if noble.get("is_ruler", false):
 			return noble
 	return {}
 
 
-func _find_senior_heir(ruler: Dictionary) -> Dictionary:
-	var dynasty_id: String = str(ruler.get("dynasty_id", ""))
-	var candidates: Array = []
-	for noble_id in game_state.nobles:
-		var noble: Dictionary = game_state.nobles[noble_id]
-		if typeof(noble) == TYPE_DICTIONARY and str(noble.get("dynasty_id", "")) == dynasty_id and not noble.get("is_ruler", false):
-			candidates.append(noble)
-
-	if candidates.is_empty():
-		return {}
-
-	# Sort by age (descending)
-	candidates.sort_custom(_sort_by_age_desc)
-	return candidates[0]
-
-
-func _find_primogeniture_heir(ruler: Dictionary) -> Dictionary:
-	var dynasty_id: String = str(ruler.get("dynasty_id", ""))
-	var candidates: Array = []
-	for noble_id in game_state.nobles:
-		var noble: Dictionary = game_state.nobles[noble_id]
-		if typeof(noble) == TYPE_DICTIONARY and str(noble.get("dynasty_id", "")) == dynasty_id and not noble.get("is_ruler", false):
-			candidates.append(noble)
-
-	if candidates.is_empty():
-		return {}
-
-	# Sort by birth_year (ascending = oldest first)
-	candidates.sort_custom(_sort_by_birth_year_asc)
-	return candidates[0]
-
-
-func _elect_heir(ruler: Dictionary) -> Dictionary:
-	var nobles: Array = []
-	for noble_id in game_state.nobles:
-		var noble: Dictionary = game_state.nobles[noble_id]
-		if typeof(noble) == TYPE_DICTIONARY and not noble.get("is_ruler", false):
-			nobles.append(noble)
-
-	if nobles.is_empty():
-		return {}
-
-	# Simple weighted random (prestige-based)
-	var total_prestige: float = 0.0
-	for noble in nobles:
-		total_prestige += float(noble.get("prestige", 10.0))
-
-	var roll: float = rng.randf_range(0.0, total_prestige)
-	var cumulative: float = 0.0
-	for noble in nobles:
-		cumulative += float(noble.get("prestige", 10.0))
-		if roll <= cumulative:
-			return noble
-
-	return nobles[-1]
-
-
-func _sort_by_age_desc(a: Dictionary, b: Dictionary) -> bool:
-	var age_a: int = game_state.year - int(a.get("birth_year", 0))
-	var age_b: int = game_state.year - int(b.get("birth_year", 0))
-	return age_a > age_b
-
-
-func _sort_by_birth_year_asc(a: Dictionary, b: Dictionary) -> bool:
-	return int(a.get("birth_year", 0)) < int(b.get("birth_year", 0))
-
-
-func process_succession() -> Dictionary:
+func get_heir() -> Dictionary:
 	var ruler: Dictionary = _get_current_ruler()
-	if ruler == null:
-		return {"type": "succession", "error": "no_ruler"}
+	if ruler.is_empty():
+		return {}
 
-	var heir: Dictionary = get_heir()
-	if heir.is_empty():
-		return {
-			"type": "succession",
-			"event": "no_heir",
-			"ruler": ruler.get("name", ""),
-			"dynasty": ruler.get("dynasty_id", "")
-		}
+	var dynasty_id: String = str(ruler.get("dynasty_id", ""))
+	var nobles: Dictionary = game_state.get("nobles") or {}
+	var candidates: Array = []
+	for noble_id in nobles:
+		var noble: Dictionary = nobles[noble_id]
+		if str(noble.get("dynasty_id", "")) == dynasty_id and not noble.get("is_ruler", false):
+			candidates.append(noble)
 
-	# Apply succession
-	ruler["is_ruler"] = false
-	heir["is_ruler"] = true
+	if candidates.is_empty():
+		return {}
 
-	return {
-		"type": "succession",
-		"old_ruler": ruler.get("name", ""),
-		"new_ruler": heir.get("name", ""),
-		"succession_type": current_type,
-		"dynasty": heir.get("dynasty_id", "")
-	}
+	# Seniority: oldest candidate
+	var current_year: int = game_state.get("year") or 902
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var age_a: int = current_year - int(a.get("birth_year", 850))
+		var age_b: int = current_year - int(b.get("birth_year", 850))
+		return age_a > age_b
+	)
+	return candidates[0]
+
+
+func _elect_new_ruler() -> Dictionary:
+	var nobles: Dictionary = game_state.get("nobles") or {}
+	var candidates: Array = []
+	for noble_id in nobles:
+		var noble: Dictionary = nobles[noble_id]
+		if not noble.get("is_ruler", false):
+			candidates.append(noble)
+
+	if candidates.is_empty():
+		return {}
+
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.get("prestige", 0)) > int(b.get("prestige", 0))
+	)
+	var new_ruler: Dictionary = candidates[0]
+	new_ruler["is_ruler"] = true
+	
+	# Update nobles
+	nobles[new_ruler.id] = new_ruler
+	game_state.set("nobles", nobles)
+	
+	return new_ruler

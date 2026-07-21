@@ -2,57 +2,60 @@
 class_name NobilityManager
 extends RefCounted
 
+const GAME_STATE := preload("res://scripts/core/GameState.gd")
+
 var game_state
 var rng: RandomNumberGenerator
 
 
-func _init(state, rng_ref: RandomNumberGenerator) -> void:
-	game_state = state
-	rng = rng_ref
-
-
-func age_nobles() -> Array:
-	var deaths: Array = []
-	for noble_id in game_state.nobles.keys():
-		var n = game_state.nobles[noble_id]
-		if typeof(n) != TYPE_DICTIONARY:
-			continue
-		var birth_year: int = int(n.get("birth_year", 870))
-		var age: int = game_state.year - birth_year
-		if age >= 55:
-			var death_chance: float = (age - 54) * 0.02
-			if rng.randf() < death_chance:
-				deaths.append(noble_id)
-	return deaths
-
-
-func handle_death(noble_id: String) -> Dictionary:
-	var n = game_state.nobles.get(noble_id)
-	if n == null or typeof(n) != TYPE_DICTIONARY:
-		return {}
-
-	var report := {
-		"type": "succession",
-		"dead_noble": str(n.get("name", noble_id)),
-		"was_ruler": bool(n.get("is_ruler", false)),
-		"prestige_loss": 0
-	}
-
-	if bool(n.get("is_ruler", false)):
-		report["prestige_loss"] = 10
-		var prestige: int = int(game_state.resources.get("prestige", 0))
-		game_state.resources["prestige"] = maxi(0, prestige - 10)
-
-	game_state.nobles.erase(noble_id)
-	return report
+func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> void:
+	if state != null:
+		game_state = state
+	if rng_ref != null:
+		rng = rng_ref
 
 
 func process_nobility() -> Dictionary:
-	var deaths := age_nobles()
-	var reports: Array = []
-	for dead_id in deaths:
-		reports.append(handle_death(str(dead_id)))
-	return {
-		"type": "nobility",
-		"deaths": reports
-	}
+	var report := {"type": "nobility", "deaths": [], "births": [], "prestige_changes": {}}
+	var current_year: int = game_state.get("year") or 902
+	var nobles: Dictionary = game_state.get("nobles") or {}
+
+	# Aging and death
+	var nobles_to_remove: Array = []
+	for noble_id in nobles:
+		var noble: Dictionary = nobles[noble_id]
+		var age: int = current_year - int(noble.get("birth_year", 850))
+		if age >= 60 and rng.randf_range(0.0, 1.0) < 0.05:
+			nobles_to_remove.append(noble_id)
+			report.deaths.append({
+				"noble_id": noble_id,
+				"name": noble.get("name", "?"),
+				"age": age
+			})
+		else:
+			# Prestige decay
+			noble["prestige"] = int(noble.get("prestige", 10)) - 1
+			report.prestige_changes[noble_id] = -1
+
+	for noble_id in nobles_to_remove:
+		nobles.erase(noble_id)
+
+	# Births (simplified)
+	if rng.randf_range(0.0, 1.0) < 0.1:
+		var new_noble_id: String = "noble_" + str(nobles.size() + 1)
+		nobles[new_noble_id] = {
+			"id": new_noble_id,
+			"name": "Nový šľachtic",
+			"birth_year": current_year,
+			"is_ruler": false,
+			"dynasty_id": "mojmir",
+			"prestige": 5
+		}
+		report.births.append({
+			"noble_id": new_noble_id,
+			"name": "Nový šľachtic",
+			"dynasty": "mojmir"
+		})
+
+	game_state.set("nobles", nobles)
+	return report
