@@ -12,6 +12,9 @@ const _DiplomacyManager := preload("res://scripts/managers/DiplomacyManager.gd")
 const _WarManager := preload("res://scripts/managers/WarManager.gd")
 const _BattleManager := preload("res://scripts/managers/BattleManager.gd")
 const _HungarianWarScenario := preload("res://scripts/scenarios/HungarianWarScenario.gd")
+const _SuccessionManager := preload("res://scripts/managers/SuccessionManager.gd")
+const _ReligionManager := preload("res://scripts/managers/ReligionManager.gd")
+const _VictoryManager := preload("res://scripts/managers/VictoryManager.gd")
 const _MapManager := preload("res://scripts/managers/MapManager.gd")
 const Formulas := preload("res://scripts/battle/BattleFormulas.gd")
 const C := preload("res://scripts/battle/BattleConfig.gd")
@@ -24,7 +27,10 @@ func _make_world(seed_value: int):
 	var map = _MapManager.new(state)
 	map.load_provinces_from_dir("res://data/provinces/")
 	state.nobles["mojmir_ii"] = {
-		"id": "mojmir_ii", "name": "Mojmír II.", "birth_year": 870, "is_ruler": true
+		"id": "mojmir_ii", "name": "Mojmír II.", "birth_year": 870, "is_ruler": true, "dynasty_id": "mojmir", "prestige": 50
+	}
+	state.nobles["svatopluk_ii"] = {
+		"id": "svatopluk_ii", "name": "Svätopluk II.", "birth_year": 880, "is_ruler": false, "dynasty_id": "mojmir", "prestige": 30
 	}
 	var eco = _EconomyManager.new(state)
 	var nob = _NobilityManager.new(state, rng)
@@ -32,18 +38,24 @@ func _make_world(seed_value: int):
 	var ev = _EventManager.new(state, rng)
 	var dip = _DiplomacyManager.new(state, rng)
 	var war = _WarManager.new(state, rng)
-	var tick = _TickManager.new(state, eco, nob, nar, ev, dip, war, save)
-	return {"state": state, "save": save, "tick": tick, "war": war, "dip": dip}
+	var suc = _SuccessionManager.new(state, rng)
+	var rel = _ReligionManager.new(state, rng)
+	var vic = _VictoryManager.new(state)
+	var tick = _TickManager.new(state, eco, nob, nar, ev, dip, war, suc, rel, vic, save)
+	return {"state": state, "save": save, "tick": tick, "war": war, "dip": dip, "suc": suc, "rel": rel, "vic": vic}
 
 
 func _init() -> void:
 	var ok := true
-	print("=== Regnum Moravicum smoke test v6 (Devín 907 fixed) ===")
+	print("=== Regnum Moravicum smoke test v7 (M4) ===")
 
 	var w = _make_world(42)
 	var state = w.state
 	var war = w.war
 	var scenario = war.hungarian_war_scenario
+	var succession = w.suc
+	var religion = w.rel
+	var victory = w.vic
 
 	# --- Devín 907 scenario ---
 	var devin_outcome: Dictionary = scenario.resolve_devine_battle()
@@ -72,7 +84,37 @@ func _init() -> void:
 	else:
 		print("Occupation cleared OK")
 
-	# ES sanity + river morale penalty
+	# --- Succession ---
+	var ruler_before: Dictionary = succession._get_current_ruler()
+	var heir: Dictionary = succession.get_heir()
+	print("Succession: ruler=%s, heir=%s, type=%s" % [
+		ruler_before.get("name", "?"), heir.get("name", "?"), succession.current_type
+	])
+	if ruler_before.is_empty() or heir.is_empty():
+		print("FAIL: succession data missing"); ok = false
+	else:
+		print("Succession data OK")
+
+	# --- Religion ---
+	var religion_report: Dictionary = religion.process_religion()
+	print("Religion: dominant=%s, changes=%d" % [
+		religion_report.get("dominant_religion", "?"), religion_report.get("changes", []).size()
+	])
+	if religion_report.get("dominant_religion", "") == "":
+		print("FAIL: dominant religion missing"); ok = false
+	else:
+		print("Religion dominant OK")
+
+	# --- Victory ---
+	var victory_report: Dictionary = victory.check_victory()
+	print("Victory: %s, type=%s" % [
+		"YES" if victory_report.get("victory", false) else "NO",
+		victory_report.get("victory_type", "none")
+	])
+	if victory_report.get("victory", false):
+		print("WARN: victory too early (should not trigger in 902)")
+
+	# --- ES sanity + river morale penalty ---
 	var armies: Dictionary = scenario.create_initial_armies()
 	var hungarian: Dictionary = armies["hungarian_main"].duplicate(true)
 	var moravian: Dictionary = armies["moravian_main"].duplicate(true)

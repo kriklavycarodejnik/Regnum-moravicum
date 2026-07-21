@@ -11,7 +11,11 @@ const _EventManager := preload("res://scripts/managers/EventManager.gd")
 const _DiplomacyManager := preload("res://scripts/managers/DiplomacyManager.gd")
 const _WarManager := preload("res://scripts/managers/WarManager.gd")
 const _BattleManager := preload("res://scripts/managers/BattleManager.gd")
+const _SuccessionManager := preload("res://scripts/managers/SuccessionManager.gd")
+const _ReligionManager := preload("res://scripts/managers/ReligionManager.gd")
+const _VictoryManager := preload("res://scripts/managers/VictoryManager.gd")
 const _MapManager := preload("res://scripts/managers/MapManager.gd")
+const _HungarianWarScenario := preload("res://scripts/scenarios/HungarianWarScenario.gd")
 
 var game_state
 var save_manager
@@ -23,12 +27,15 @@ var event_manager
 var diplomacy_manager
 var war_manager
 var battle_manager
+var succession_manager
+var religion_manager
+var victory_manager
 var map_manager
 
 
 func _ready() -> void:
 	_bootstrap()
-	print("GameManager ready – M1+M2+M3 (battle+scenario) year %d provinces %d factions %d" % [
+	print("GameManager ready – M1+M2+M3+M4 (year %d, provinces %d, factions %d)" % [
 		game_state.year, game_state.provinces.size(), game_state.factions.size()
 	])
 
@@ -44,6 +51,9 @@ func _bootstrap() -> void:
 	diplomacy_manager = _DiplomacyManager.new(game_state, rng)
 	war_manager = _WarManager.new(game_state, rng)
 	battle_manager = war_manager.battle_manager
+	succession_manager = _SuccessionManager.new(game_state, rng)
+	religion_manager = _ReligionManager.new(game_state, rng)
+	victory_manager = _VictoryManager.new(game_state)
 	map_manager = _MapManager.new(game_state)
 	var loaded: int = map_manager.load_provinces_from_dir("res://data/provinces/")
 	print("MapManager loaded provinces: ", loaded)
@@ -55,6 +65,9 @@ func _bootstrap() -> void:
 		event_manager,
 		diplomacy_manager,
 		war_manager,
+		succession_manager,
+		religion_manager,
+		victory_manager,
 		save_manager
 	)
 
@@ -64,7 +77,16 @@ func _bootstrap() -> void:
 			"name": "Mojmír II.",
 			"birth_year": 870,
 			"is_ruler": true,
-			"dynasty_id": "mojmir"
+			"dynasty_id": "mojmir",
+			"prestige": 50
+		}
+		game_state.nobles["svatopluk_ii"] = {
+			"id": "svatopluk_ii",
+			"name": "Svätopluk II.",
+			"birth_year": 880,
+			"is_ruler": false,
+			"dynasty_id": "mojmir",
+			"prestige": 30
 		}
 
 
@@ -138,6 +160,9 @@ func load_save() -> bool:
 	diplomacy_manager = _DiplomacyManager.new(game_state, rng)
 	war_manager = _WarManager.new(game_state, rng)
 	battle_manager = war_manager.battle_manager
+	succession_manager = _SuccessionManager.new(game_state, rng)
+	religion_manager = _ReligionManager.new(game_state, rng)
+	victory_manager = _VictoryManager.new(game_state)
 	map_manager = _MapManager.new(game_state)
 	map_manager.provinces = game_state.provinces.duplicate(true)
 	tick_manager = _TickManager.new(
@@ -148,6 +173,9 @@ func load_save() -> bool:
 		event_manager,
 		diplomacy_manager,
 		war_manager,
+		succession_manager,
+		religion_manager,
+		victory_manager,
 		save_manager
 	)
 	return true

@@ -11,6 +11,9 @@ var narration
 var events
 var diplomacy
 var war
+var succession
+var religion
+var victory
 var save_manager
 
 
@@ -22,6 +25,9 @@ func _init(
 	ev = null,
 	dip = null,
 	w = null,
+	suc = null,
+	rel = null,
+	vic = null,
 	save = null
 ) -> void:
 	game_state = state
@@ -31,6 +37,9 @@ func _init(
 	events = ev
 	diplomacy = dip
 	war = w
+	succession = suc
+	religion = rel
+	victory = vic
 	save_manager = save
 
 
@@ -58,6 +67,12 @@ func process_tick() -> Dictionary:
 		report["war"] = war.process_wars()
 	if events != null:
 		report["event"] = events.process_events()
+	if succession != null:
+		report["succession"] = succession.process_succession()
+	if religion != null:
+		report["religion"] = religion.process_religion()
+	if victory != null:
+		report["victory"] = victory.check_victory()
 
 	var chronicle_text: String = narration.generate_chronicle(report)
 	report["chronicle"] = chronicle_text
