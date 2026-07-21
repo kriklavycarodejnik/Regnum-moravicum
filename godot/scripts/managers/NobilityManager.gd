@@ -2,11 +2,11 @@
 class_name NobilityManager
 extends RefCounted
 
-var game_state: GameState
+var game_state
 var rng: RandomNumberGenerator
 
 
-func _init(state: GameState, rng_ref: RandomNumberGenerator) -> void:
+func _init(state, rng_ref: RandomNumberGenerator) -> void:
 	game_state = state
 	rng = rng_ref
 

@@ -2,11 +2,10 @@
 class_name NarrationManager
 extends RefCounted
 
-var game_state: GameState
+var game_state
 var recent_templates: Array = []
 var max_recent: int = 12
 
-# Placeholder šablóny — neskôr z data/narration/ (126+ z Phase 2)
 var templates := {
 	"economy": [
 		"Krajina pomaly bohatne. Trhy sú plné tovaru.",
@@ -26,7 +25,7 @@ var templates := {
 }
 
 
-func _init(state: GameState) -> void:
+func _init(state) -> void:
 	game_state = state
 
 

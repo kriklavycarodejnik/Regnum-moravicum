@@ -6,7 +6,7 @@ extends Resource
 @export var name: String = ""
 @export var prosperity: int = 50
 @export var loyalty: int = 80
-@export var religion: float = 50.0  # 0 = pohanská, 100 = kresťanská
+@export var religion: float = 50.0
 @export var owner_faction: String = "moravia"
 
 
@@ -21,8 +21,9 @@ func to_dict() -> Dictionary:
 	}
 
 
-static func from_dict(data: Dictionary) -> ProvinceData:
-	var p := ProvinceData.new()
+static func from_dict(data: Dictionary):
+	var script = load("res://scripts/resources/ProvinceData.gd")
+	var p = script.new()
 	p.id = str(data.get("id", ""))
 	p.name = str(data.get("name", ""))
 	p.prosperity = int(data.get("prosperity", 50))

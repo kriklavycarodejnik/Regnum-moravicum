@@ -4,6 +4,7 @@ extends RefCounted
 
 const SAVE_VERSION := 1
 const DEFAULT_PATH := "user://save.dat"
+const _GameState := preload("res://scripts/core/GameState.gd")
 
 var rng := RandomNumberGenerator.new()
 var current_seed: int = 0
@@ -20,7 +21,7 @@ func get_rng() -> RandomNumberGenerator:
 	return rng
 
 
-func save_game(state: GameState, path: String = DEFAULT_PATH) -> bool:
+func save_game(state, path: String = DEFAULT_PATH) -> bool:
 	var save_data := {
 		"version": SAVE_VERSION,
 		"year": state.year,
@@ -44,7 +45,7 @@ func save_game(state: GameState, path: String = DEFAULT_PATH) -> bool:
 	return true
 
 
-func load_game(path: String = DEFAULT_PATH) -> GameState:
+func load_game(path: String = DEFAULT_PATH):
 	if not FileAccess.file_exists(path):
 		push_error("SaveManager: Save file does not exist: %s" % path)
 		return null
@@ -62,7 +63,7 @@ func load_game(path: String = DEFAULT_PATH) -> GameState:
 	var version := int(data.get("version", 1))
 	data = _migrate(data, version)
 
-	var state := GameState.from_dict(data)
+	var state = _GameState.from_dict(data)
 
 	current_seed = int(data.get("rng_seed", 0))
 	rng.seed = current_seed
@@ -72,12 +73,11 @@ func load_game(path: String = DEFAULT_PATH) -> GameState:
 
 
 func _migrate(data: Dictionary, version: int) -> Dictionary:
-	# Budúce migrácie save formátu
 	if version < SAVE_VERSION:
 		pass
 	return data
 
 
-func autosave_if_year_end(state: GameState) -> void:
+func autosave_if_year_end(state) -> void:
 	if state.month == 12:
 		save_game(state, "user://autosave_year_%d.dat" % state.year)

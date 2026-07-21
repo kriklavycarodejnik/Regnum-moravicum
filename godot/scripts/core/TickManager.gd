@@ -4,20 +4,14 @@ extends RefCounted
 
 signal tick_completed(tick_report: Dictionary)
 
-var game_state: GameState
-var economy: EconomyManager
-var nobility: NobilityManager
-var narration: NarrationManager
-var save_manager: SaveManager
+var game_state
+var economy
+var nobility
+var narration
+var save_manager
 
 
-func _init(
-	state: GameState,
-	eco: EconomyManager,
-	nob: NobilityManager,
-	nar: NarrationManager,
-	save: SaveManager = null
-) -> void:
+func _init(state, eco, nob, nar, save = null) -> void:
 	game_state = state
 	economy = eco
 	nobility = nob
@@ -40,11 +34,9 @@ func process_tick() -> Dictionary:
 		"month": game_state.month
 	}
 
-	# M2 fázy
 	report["economy"] = economy.process_economy()
 	report["nobility"] = nobility.process_nobility()
 
-	# Kronika po výsledkoch
 	var chronicle_text: String = narration.generate_chronicle(report)
 	report["chronicle"] = chronicle_text
 	if chronicle_text != "":
@@ -54,7 +46,6 @@ func process_tick() -> Dictionary:
 			"text": chronicle_text
 		})
 
-	# Autosave na konci roka
 	if save_manager != null and game_state.month == 12:
 		save_manager.autosave_if_year_end(game_state)
 

@@ -2,29 +2,40 @@
 # Tenký Node wrapper — logika je v RefCounted manažéroch
 extends Node
 
-var game_state: GameState
-var save_manager: SaveManager
-var tick_manager: TickManager
-var economy_manager: EconomyManager
-var nobility_manager: NobilityManager
-var narration_manager: NarrationManager
-var map_manager: MapManager
+const _GameState := preload("res://scripts/core/GameState.gd")
+const _SaveManager := preload("res://scripts/core/SaveManager.gd")
+const _TickManager := preload("res://scripts/core/TickManager.gd")
+const _EconomyManager := preload("res://scripts/managers/EconomyManager.gd")
+const _NobilityManager := preload("res://scripts/managers/NobilityManager.gd")
+const _NarrationManager := preload("res://scripts/managers/NarrationManager.gd")
+const _MapManager := preload("res://scripts/managers/MapManager.gd")
+
+var game_state
+var save_manager
+var tick_manager
+var economy_manager
+var nobility_manager
+var narration_manager
+var map_manager
 
 
 func _ready() -> void:
 	_bootstrap()
-	print("GameManager ready – M1+M2 core loaded (year %d)" % game_state.year)
+	print("GameManager ready – M1+M2 core loaded (year %d, provinces %d)" % [
+		game_state.year, game_state.provinces.size()
+	])
 
 
 func _bootstrap() -> void:
-	game_state = GameState.new()
-	save_manager = SaveManager.new(42)  # fixed seed for early testing; change later
-	economy_manager = EconomyManager.new(game_state)
-	nobility_manager = NobilityManager.new(game_state, save_manager.get_rng())
-	narration_manager = NarrationManager.new(game_state)
-	map_manager = MapManager.new(game_state)
-	map_manager.load_provinces_from_dir("res://data/provinces/")
-	tick_manager = TickManager.new(
+	game_state = _GameState.new()
+	save_manager = _SaveManager.new(42)
+	economy_manager = _EconomyManager.new(game_state)
+	nobility_manager = _NobilityManager.new(game_state, save_manager.get_rng())
+	narration_manager = _NarrationManager.new(game_state)
+	map_manager = _MapManager.new(game_state)
+	var loaded: int = map_manager.load_provinces_from_dir("res://data/provinces/")
+	print("MapManager loaded provinces: ", loaded)
+	tick_manager = _TickManager.new(
 		game_state,
 		economy_manager,
 		nobility_manager,
@@ -32,7 +43,6 @@ func _bootstrap() -> void:
 		save_manager
 	)
 
-	# Počiatočný vládca (Mojmír II.)
 	if game_state.nobles.is_empty():
 		game_state.nobles["mojmir_ii"] = {
 			"id": "mojmir_ii",
@@ -52,17 +62,16 @@ func save() -> bool:
 
 
 func load_save() -> bool:
-	var loaded := save_manager.load_game()
+	var loaded = save_manager.load_game()
 	if loaded == null:
 		return false
 	game_state = loaded
-	# Rebind managers to loaded state
-	economy_manager = EconomyManager.new(game_state)
-	nobility_manager = NobilityManager.new(game_state, save_manager.get_rng())
-	narration_manager = NarrationManager.new(game_state)
-	map_manager = MapManager.new(game_state)
+	economy_manager = _EconomyManager.new(game_state)
+	nobility_manager = _NobilityManager.new(game_state, save_manager.get_rng())
+	narration_manager = _NarrationManager.new(game_state)
+	map_manager = _MapManager.new(game_state)
 	map_manager.provinces = game_state.provinces.duplicate(true)
-	tick_manager = TickManager.new(
+	tick_manager = _TickManager.new(
 		game_state,
 		economy_manager,
 		nobility_manager,

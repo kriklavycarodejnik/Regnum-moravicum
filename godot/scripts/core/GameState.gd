@@ -16,11 +16,11 @@ var resources: Dictionary = {
 	"iron": 30,
 	"prestige": 20
 }
-var chronicle: Array = []  # textové záznamy kroniky
+var chronicle: Array = []
 
 
-func duplicate_state() -> GameState:
-	var new_state := GameState.new()
+func duplicate_state():
+	var new_state = get_script().new()
 	new_state.year = year
 	new_state.month = month
 	new_state.provinces = provinces.duplicate(true)
@@ -43,8 +43,10 @@ func to_dict() -> Dictionary:
 	}
 
 
-static func from_dict(data: Dictionary) -> GameState:
-	var s := GameState.new()
+static func from_dict(data: Dictionary):
+	# Avoid class_name return type (needs editor global class cache)
+	var script = load("res://scripts/core/GameState.gd")
+	var s = script.new()
 	s.year = int(data.get("year", 902))
 	s.month = int(data.get("month", 1))
 	s.provinces = data.get("provinces", {})

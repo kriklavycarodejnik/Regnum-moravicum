@@ -2,11 +2,11 @@
 class_name MapManager
 extends RefCounted
 
-var game_state: GameState
+var game_state
 var provinces: Dictionary = {}
 
 
-func _init(state: GameState = null) -> void:
+func _init(state = null) -> void:
 	game_state = state
 
 

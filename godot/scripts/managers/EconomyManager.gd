@@ -2,10 +2,10 @@
 class_name EconomyManager
 extends RefCounted
 
-var game_state: GameState
+var game_state
 
 
-func _init(state: GameState) -> void:
+func _init(state) -> void:
 	game_state = state
 
 
@@ -19,7 +19,6 @@ func grow_prosperity() -> void:
 
 
 func add_recruitment_pool() -> void:
-	# Placeholder — neskôr podľa prosperity a lojality
 	pass
 
 
