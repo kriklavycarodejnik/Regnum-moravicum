@@ -1,243 +1,522 @@
-/* MapView.module.css */
+/* MapView — AoE2 × Veľká Morava rich terrain */
 
 .container {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 500px;
+  min-height: 520px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
-  border: 2px solid var(--accent-gold);
-  border-radius: 8px;
+  gap: 12px;
+  background: linear-gradient(165deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  padding: 15px;
+  padding: 14px;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .container h2 {
   margin: 0;
-  color: var(--accent-gold);
-  font-size: 18px;
-  letter-spacing: 0.5px;
+  color: var(--byzantine-gold);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+}
+
+.yearBadge {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
 }
 
 .mapContainer {
   flex: 1;
   min-height: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
+  background: #0c0905;
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.mapContainer:active {
+  cursor: grabbing;
+}
+
+.mapTransform {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  will-change: transform;
 }
 
 .mapSvg {
   width: 100%;
   height: 100%;
+  min-height: 340px;
   display: block;
+  pointer-events: auto;
 }
 
-/* Parchment frame */
+.titleActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.zoomControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.zoomBtn {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--parchment);
+  background: transparent;
+}
+
+.zoomBtn:hover {
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--byzantine-gold);
+}
+
+.mapHint {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(10, 8, 5, 0.72);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  pointer-events: none;
+  z-index: 2;
+}
+
 .borderOuter {
   fill: none;
-  stroke: var(--accent-gold-dark);
+  stroke: var(--byzantine-gold-dark);
   stroke-width: 2;
+  opacity: 0.85;
 }
 
 .borderInner {
   fill: none;
-  stroke: var(--accent-gold);
+  stroke: var(--byzantine-gold);
   stroke-width: 1;
-  stroke-opacity: 0.6;
+  opacity: 0.35;
 }
 
-.river {
+/* Terrain */
+.terrainLayer {
+  opacity: 1;
+}
+
+.mountainHaze {
+  fill: #3a3040;
+  opacity: 0.35;
+}
+
+.mountainBack {
+  fill: #2a2430;
+  opacity: 0.55;
+}
+
+.forestBlob {
+  fill: #243a20;
+  opacity: 0.55;
+}
+
+.forestBlobSoft {
+  fill: #2f4a28;
+  opacity: 0.35;
+}
+
+.meadowBlob {
+  fill: #3a5228;
+  opacity: 0.28;
+}
+
+.landGlow {
+  fill: #c9a227;
+  opacity: 0.03;
+}
+
+.riverWide {
   fill: none;
-  stroke: #3a5a6b;
-  stroke-width: 5;
+  stroke: #1a3a45;
+  stroke-width: 14;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.riverCore {
+  fill: none;
+  stroke: url(#riverGrad);
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.85;
+  stroke-dasharray: 2 6;
+  animation: riverFlow 8s linear infinite;
+}
+
+.riverBranch {
+  fill: none;
+  stroke: #3a6b7a;
+  stroke-width: 4;
   stroke-linecap: round;
   opacity: 0.45;
 }
 
-/* Roads between neighboring župy */
 .road {
   fill: none;
-  stroke: var(--text-secondary);
-  stroke-width: 1.5;
-  stroke-dasharray: 4, 4;
-  opacity: 0.5;
+  stroke: #8a7a5a;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  opacity: 0.4;
 }
 
-/* Settlement group */
+/* Settlements */
 .zupaGroup {
   cursor: pointer;
-}
-
-.zupaGroup:hover .towerBody,
-.zupaGroup:hover .towerGate {
-  filter: brightness(1.25);
-}
-
-.tower {
   transition: filter 0.2s ease;
 }
 
+.zupaGroup:hover .towerBody,
+.zupaGroup:hover .wallBody,
+.zupaGroup:hover .keep {
+  filter: brightness(1.2);
+}
+
+.zupaGroup:active {
+  filter: brightness(1.1);
+}
+
+.tower {
+  transition: transform 0.2s ease;
+}
+
+.loyaltyRing {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.35;
+}
+
+.towerHigh .loyaltyRing {
+  stroke: var(--color-success);
+  color: var(--color-success);
+}
+.towerMid .loyaltyRing {
+  stroke: var(--color-warning);
+  color: var(--color-warning);
+}
+.towerLow .loyaltyRing {
+  stroke: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.selectPulse {
+  fill: none;
+  stroke: var(--byzantine-gold);
+  stroke-width: 1.5;
+  opacity: 0.7;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.mound {
+  fill: #1a140c;
+  opacity: 0.55;
+}
+
 .towerBody,
-.towerGate {
-  stroke: var(--bg-darker);
+.wallBody,
+.keep,
+.merlon {
+  stroke: #0a0805;
   stroke-width: 0.75;
 }
 
-.towerHigh .towerBody { fill: var(--color-success); }
-.towerMid .towerBody { fill: var(--color-warning); }
-.towerLow .towerBody { fill: var(--color-danger); }
-.towerGate { fill: var(--bg-darker); }
+.towerHigh .towerBody,
+.towerHigh .wallBody,
+.towerHigh .keep,
+.towerHigh .merlon {
+  fill: #5a9c5a;
+}
+.towerMid .towerBody,
+.towerMid .wallBody,
+.towerMid .keep,
+.towerMid .merlon {
+  fill: #c9902f;
+}
+.towerLow .towerBody,
+.towerLow .wallBody,
+.towerLow .keep,
+.towerLow .merlon {
+  fill: #b8453f;
+}
+
+.towerOccupied .towerBody,
+.towerOccupied .wallBody,
+.towerOccupied .keep {
+  fill: var(--magyar-steppe);
+}
+
+.towerGate {
+  fill: #0d0904;
+  stroke: #0a0805;
+  stroke-width: 0.5;
+}
+
+.rotunda {
+  fill: #d8c8a8;
+  stroke: #0a0805;
+  stroke-width: 0.6;
+  opacity: 0.9;
+}
+
+.rotundaRoof {
+  fill: var(--moravia-crimson);
+  stroke: #0a0805;
+  stroke-width: 0.5;
+}
 
 .towerFlagpole {
-  stroke: var(--text-secondary);
-  stroke-width: 1;
+  stroke: #c8b898;
+  stroke-width: 1.25;
 }
 
 .towerFlag {
-  fill: var(--accent-gold);
+  fill: var(--moravia-crimson);
+  stroke: #0a0805;
+  stroke-width: 0.4;
+  transform-origin: 0px 0px;
+  animation: bannerFlutter 2.6s ease-in-out infinite;
 }
 
-.towerSelected .towerBody {
-  stroke: var(--accent-gold-light);
-  stroke-width: 2;
+.towerOccupied .towerFlag {
+  fill: var(--magyar-steppe);
 }
 
-/* Labels */
+.towerSelected .towerBody,
+.towerSelected .wallBody,
+.towerSelected .keep {
+  filter: brightness(1.25) drop-shadow(0 0 4px rgba(201, 162, 39, 0.6));
+}
+
+.smokePuff {
+  fill: #8a8a8a;
+  opacity: 0.45;
+  animation: dustPuff 2.4s ease-out infinite;
+}
+
 .labelBanner {
-  fill: var(--bg-panel-dark);
-  stroke: var(--accent-gold);
+  fill: rgba(10, 8, 5, 0.78);
+  stroke: rgba(201, 162, 39, 0.35);
   stroke-width: 0.75;
-  opacity: 0.9;
-  rx: 3;
-  pointer-events: none;
 }
 
 .zupaText {
-  fill: var(--text-primary);
+  fill: var(--parchment);
   font-size: 11px;
-  font-weight: 600;
   font-family: var(--font-main);
+  font-weight: 600;
+  letter-spacing: 0.03em;
   pointer-events: none;
-  user-select: none;
 }
 
 .ownerText {
-  fill: var(--accent-gold);
-  font-size: 9px;
-  font-family: var(--font-main);
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Compass rose */
-.compass .compassRing {
-  fill: none;
-  stroke: var(--accent-gold);
-  stroke-width: 1;
-  opacity: 0.6;
-}
-
-.compass .compassLine {
-  stroke: var(--accent-gold);
-  stroke-width: 1;
-  opacity: 0.5;
-}
-
-.compass .compassNeedle {
-  fill: var(--accent-gold);
-}
-
-.compass .compassLabel {
   fill: var(--text-secondary);
-  font-size: 11px;
-  font-family: var(--font-main);
+  font-size: 9px;
+  font-family: var(--font-ui);
+  opacity: 0.85;
+  pointer-events: none;
 }
 
-/* Selected zupa "royal charter" details card */
+/* Compass */
+.compass {
+  opacity: 0.9;
+}
+
+.compassRing {
+  fill: rgba(10, 8, 5, 0.65);
+  stroke: var(--byzantine-gold);
+  stroke-width: 1.5;
+}
+
+.compassInner {
+  fill: none;
+  stroke: rgba(201, 162, 39, 0.25);
+  stroke-width: 1;
+}
+
+.compassLine {
+  stroke: rgba(232, 220, 196, 0.25);
+  stroke-width: 1;
+}
+
+.compassNeedle {
+  fill: var(--moravia-crimson);
+}
+
+.compassNeedleSouth {
+  fill: #6b6560;
+}
+
+.compassLabel {
+  fill: var(--byzantine-gold);
+  font-size: 10px;
+  font-family: var(--font-main);
+  font-weight: 700;
+}
+
+/* Legend */
+.legendBg {
+  fill: rgba(10, 8, 5, 0.72);
+  stroke: rgba(201, 162, 39, 0.25);
+  stroke-width: 1;
+}
+
+.legendHigh {
+  fill: var(--color-success);
+}
+.legendMid {
+  fill: var(--color-warning);
+}
+.legendLow {
+  fill: var(--color-danger);
+}
+
+.legendText {
+  fill: var(--text-secondary);
+  font-size: 10px;
+  font-family: var(--font-ui);
+}
+
+/* Detail charter card */
 .zupaDetails {
-  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-dark) 100%);
-  border: 1px solid var(--accent-gold);
-  border-radius: 6px;
-  padding: 15px 18px;
-  animation: fadeIn 0.25s ease-out;
+  background: linear-gradient(165deg, #2c2118 0%, #1a130d 100%);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-md);
 }
 
 .charterHeader {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .charterHeader h3 {
   margin: 0;
-  color: var(--accent-gold);
-  font-size: 16px;
+  font-size: 1.15rem;
+  color: var(--byzantine-gold);
+}
+
+.charterSub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
 }
 
 .wax {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--color-danger-light), var(--color-danger) 60%, var(--color-danger-dark) 100%);
-  color: #fff0e8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-danger-dark);
+  font-weight: 800;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--parchment);
+  background: radial-gradient(circle at 35% 30%, #c43a4a, var(--moravia-crimson) 55%, #5a1018);
+  border: 2px solid var(--byzantine-gold-dark);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .detailsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px 14px;
 }
 
 .detailItem {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(201, 162, 39, 0.08);
 }
 
 .detailLabel {
-  font-size: 11px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 600;
 }
 
 .detailValue {
   font-size: 14px;
-  font-weight: 600;
   color: var(--text-primary);
+  font-weight: 600;
+  font-family: var(--font-ui);
 }
 
 .ownerRow {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  .zupaText {
-    font-size: 10px;
+  .container {
+    min-height: 420px;
+    padding: 10px;
   }
-
-  .charterHeader h3 {
-    font-size: 14px;
+  .mapSvg {
+    min-height: 280px;
+  }
+  .detailsGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

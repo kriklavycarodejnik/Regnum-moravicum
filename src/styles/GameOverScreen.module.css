@@ -1,79 +1,125 @@
-/* GameOverScreen.module.css */
+/* GameOverScreen v3 */
 
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+  padding: 24px;
+}
+
+.victory {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 30%, rgba(201, 162, 39, 0.22), transparent 55%),
+    var(--bg-darker);
+}
+
+.defeat {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 30%, rgba(139, 30, 45, 0.28), transparent 55%),
+    var(--bg-darker);
 }
 
 .content {
   text-align: center;
-  padding: 40px;
-  max-width: 480px;
+  padding: 32px 28px;
+  max-width: 440px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(165deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .content h1 {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
-  letter-spacing: 1px;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  margin: 0 0 12px;
+  letter-spacing: 0.04em;
 }
 
 .victory .content h1 {
-  color: var(--accent-gold);
+  color: var(--byzantine-gold);
+  text-shadow: 0 0 24px rgba(201, 162, 39, 0.35);
 }
 
 .defeat .content h1 {
-  color: var(--color-danger);
+  color: var(--moravia-crimson-light);
 }
 
 .reason {
   color: var(--text-secondary);
-  font-size: 1.05rem;
-  line-height: 1.5;
-  margin-bottom: 30px;
+  font-size: 1rem;
+  line-height: 1.55;
+  margin: 0 0 24px;
+  font-family: var(--font-ui);
 }
 
 .stats {
-  display: flex;
-  justify-content: center;
-  gap: 25px;
-  margin-bottom: 35px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
 }
 
 .stat {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 12px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(201, 162, 39, 0.1);
 }
 
-.stat .label {
+.label {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  font-family: var(--font-ui);
 }
 
-.stat .value {
-  color: var(--text-primary);
-  font-size: 1.4rem;
-  font-weight: 700;
+.value {
+  color: var(--parchment);
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
 }
 
 .menuButton {
-  padding: 12px 30px;
-  background: var(--accent-gold);
-  border: 1px solid var(--accent-gold);
-  border-radius: 4px;
+  min-height: var(--touch-min);
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(
+    180deg,
+    var(--byzantine-gold-light) 0%,
+    var(--byzantine-gold) 55%,
+    var(--byzantine-gold-dark) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
   color: var(--text-dark);
   cursor: pointer;
   font-size: 15px;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  font-weight: 800;
+  font-family: var(--font-ui);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: filter var(--transition-fast), transform var(--transition-fast);
 }
 
 .menuButton:hover {
-  background: var(--accent-gold-light);
-  border-color: var(--accent-gold-light);
+  filter: brightness(1.06);
+}
+
+.menuButton:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 480px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
 }

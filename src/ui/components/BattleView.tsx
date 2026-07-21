@@ -83,7 +83,14 @@ export function BattleView({ gameState, onStartWar, onStartBattle, onPlayBattleP
           </span>
         </div>
         <div className={styles.content}>
-          <BattleScene terrain={battle.terrain} />
+          <BattleScene
+            terrain={battle.terrain}
+            attackerComposition={attackerArmy.composition}
+            defenderComposition={defenderArmy.composition}
+            intensity={isFinished ? 0.35 : battle.phaseLogs.length > 0 ? 0.95 : 0.55}
+            attackerLabel="Maďari"
+            defenderLabel="Moravania"
+          />
           <div className={styles.battleInfo}>
             <div className={`${styles.battleSide} ${styles.sideAttacker}`}>
               <div className={styles.sideHeader}>

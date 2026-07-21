@@ -1,4 +1,4 @@
-// Regnum Moravicum v2.1 - Game Screen Page
+// Regnum Moravicum v3.0 - Game Screen (iOS tab chrome)
 import { useState } from 'react';
 import type { GameState } from '../../core/types/gameState';
 import type { BattleAction } from '../../battle/types';
@@ -27,6 +27,15 @@ interface GameScreenProps {
   onPerformDiplomaticAction: (factionId: string, action: DiplomaticActionType) => void;
 }
 
+const NAV: { id: ActivePanel; label: string; icon: string }[] = [
+  { id: 'map', label: 'Mapa', icon: '🗺' },
+  { id: 'events', label: 'Udalosti', icon: '📜' },
+  { id: 'diplomacy', label: 'Diplomacia', icon: '🕊' },
+  { id: 'army', label: 'Armády', icon: '🛡' },
+  { id: 'battle', label: 'Bitky', icon: '⚔' },
+  { id: 'chronicle', label: 'Kronika', icon: '📖' },
+];
+
 export function GameScreen({
   gameState,
   onTick,
@@ -40,6 +49,9 @@ export function GameScreen({
 }: GameScreenProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel>('map');
 
+  const pendingEvents = gameState.events.filter((e) => !e.triggered).length;
+  const warActive = Boolean(gameState.warCampaign && gameState.warCampaign.war.result === 'ongoing');
+
   const renderPanel = () => {
     switch (activePanel) {
       case 'map':
@@ -47,7 +59,12 @@ export function GameScreen({
       case 'events':
         return <EventPanel gameState={gameState} onResolveEvent={onResolveEvent} />;
       case 'diplomacy':
-        return <DiplomacyPanel gameState={gameState} onPerformDiplomaticAction={onPerformDiplomaticAction} />;
+        return (
+          <DiplomacyPanel
+            gameState={gameState}
+            onPerformDiplomaticAction={onPerformDiplomaticAction}
+          />
+        );
       case 'army':
         return <ArmyPanel gameState={gameState} />;
       case 'chronicle':
@@ -70,58 +87,38 @@ export function GameScreen({
   return (
     <div className={styles.container}>
       <StatusBar gameState={gameState} onTick={onTick} />
-      
+
       <div className={styles.mainContent}>
-        <nav className={styles.sidebar}>
-          <button
-            className={`${styles.navButton} ${activePanel === 'map' ? styles.active : ''}`}
-            onClick={() => setActivePanel('map')}
-          >
-            Mapa
-          </button>
-          <button
-            className={`${styles.navButton} ${activePanel === 'events' ? styles.active : ''}`}
-            onClick={() => setActivePanel('events')}
-          >
-            Udalosti
-          </button>
-          <button
-            className={`${styles.navButton} ${activePanel === 'diplomacy' ? styles.active : ''}`}
-            onClick={() => setActivePanel('diplomacy')}
-          >
-            Diplomacia
-          </button>
-          <button
-            className={`${styles.navButton} ${activePanel === 'army' ? styles.active : ''}`}
-            onClick={() => setActivePanel('army')}
-          >
-            Armády
-          </button>
-          <button
-            className={`${styles.navButton} ${activePanel === 'battle' ? styles.active : ''}`}
-            onClick={() => setActivePanel('battle')}
-          >
-            Bitky
-          </button>
-          <button
-            className={`${styles.navButton} ${activePanel === 'chronicle' ? styles.active : ''}`}
-            onClick={() => setActivePanel('chronicle')}
-          >
-            Kronika
+        <nav className={styles.sidebar} aria-label="Hlavná navigácia">
+          {NAV.map((item) => {
+            const badge =
+              item.id === 'events' && pendingEvents > 0
+                ? pendingEvents
+                : item.id === 'battle' && warActive
+                  ? '!'
+                  : null;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`${styles.navButton} ${activePanel === item.id ? styles.active : ''}`}
+                onClick={() => setActivePanel(item.id)}
+              >
+                <span className={styles.navIcon} aria-hidden>
+                  {item.icon}
+                </span>
+                <span className={styles.navLabel}>{item.label}</span>
+                {badge !== null && <span className={styles.navBadge}>{badge}</span>}
+              </button>
+            );
+          })}
+          <button type="button" className={styles.menuLink} onClick={onBackToMenu}>
+            ← Menu
           </button>
         </nav>
-        
-        <div className={styles.content}>
-          {renderPanel()}
-        </div>
-      </div>
 
-      <button 
-        className={styles.backButton}
-        onClick={onBackToMenu}
-      >
-        Späť do menu
-      </button>
+        <div className={styles.content}>{renderPanel()}</div>
+      </div>
     </div>
   );
 }

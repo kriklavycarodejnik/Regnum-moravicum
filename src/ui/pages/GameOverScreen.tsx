@@ -1,4 +1,4 @@
-// Regnum Moravicum v2.1 - Game Over Screen Page
+// Regnum Moravicum v3.0 — Game Over
 import type { GameState } from '../../core/types/gameState';
 import styles from '../../styles/GameOverScreen.module.css';
 
@@ -9,11 +9,15 @@ interface GameOverScreenProps {
 
 export function GameOverScreen({ gameState, onBackToMenu }: GameOverScreenProps) {
   const victory = gameState.gameOverVictory === true;
+  const zupaCount = Object.values(gameState.zupy).filter((z) =>
+    gameState.nobles.some((n) => n.id === z.owner && n.familyId === gameState.player.dynasty)
+  ).length;
+  const totalZupy = Object.values(gameState.zupy).length;
 
   return (
     <div className={`${styles.container} ${victory ? styles.victory : styles.defeat}`}>
       <div className={styles.content}>
-        <h1>{victory ? 'Víťazstvo' : 'Koniec hry'}</h1>
+        <h1>{victory ? 'Víťazstvo dynastie' : 'Koniec vlády'}</h1>
         <p className={styles.reason}>{gameState.gameOverReason}</p>
 
         <div className={styles.stats}>
@@ -26,18 +30,14 @@ export function GameOverScreen({ gameState, onBackToMenu }: GameOverScreenProps)
             <span className={styles.value}>{gameState.player.prestige}</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.label}>Žúp pod vládou</span>
+            <span className={styles.label}>Župy</span>
             <span className={styles.value}>
-              {Object.values(gameState.zupy).filter((z) =>
-                gameState.nobles.some((n) => n.id === z.owner && n.familyId === gameState.player.dynasty)
-              ).length}
-              {' / '}
-              {Object.values(gameState.zupy).length}
+              {zupaCount}/{totalZupy}
             </span>
           </div>
         </div>
 
-        <button className={styles.menuButton} onClick={onBackToMenu}>
+        <button type="button" className={styles.menuButton} onClick={onBackToMenu}>
           Späť do menu
         </button>
       </div>

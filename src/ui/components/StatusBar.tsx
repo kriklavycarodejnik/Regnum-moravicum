@@ -1,4 +1,4 @@
-// Regnum Moravicum v2.1 - Status Bar Component
+// Regnum Moravicum v3.0 - Status Bar (iOS premium resource chips)
 import type { GameState } from '../../core/types/gameState';
 import styles from '../../styles/StatusBar.module.css';
 
@@ -7,67 +7,70 @@ interface StatusBarProps {
   onTick: () => void;
 }
 
+const RESOURCES: { key: keyof GameState['resources']; label: string; icon: string }[] = [
+  { key: 'gold', label: 'Zlato', icon: '◆' },
+  { key: 'food', label: 'Potrava', icon: '❀' },
+  { key: 'wood', label: 'Drevo', icon: '♣' },
+  { key: 'stone', label: 'Kameň', icon: '▲' },
+  { key: 'iron', label: 'Železo', icon: '⚒' },
+];
+
 export function StatusBar({ gameState, onTick }: StatusBarProps) {
   const religionLabel = gameState.religion.value >= 0 ? 'Konštantínopol' : 'Rím';
   const religionPercent = Math.abs(gameState.religion.value);
+  const month = (gameState.tick % 12) + 1;
 
   return (
-    <div className={styles.container}>
+    <header className={styles.container}>
       <div className={styles.leftSection}>
-        <div className={styles.yearTick}>
-          <span className={styles.label}>Rok:</span>
-          <span className={styles.value}>{gameState.year}</span>
-        </div>
-        <div className={styles.yearTick}>
-          <span className={styles.label}>Mesiac:</span>
-          <span className={styles.value}>{gameState.tick + 1}/12</span>
+        <div className={styles.brand}>
+          <span className={styles.eagle} aria-hidden>
+            ✠
+          </span>
+          <div className={styles.brandText}>
+            <span className={styles.brandTitle}>Regnum Moravicum</span>
+            <span className={styles.dateLine}>
+              Rok {gameState.year} · mesiac {month}
+            </span>
+          </div>
         </div>
       </div>
 
       <div className={styles.centerSection}>
         <div className={styles.resources}>
-          <div className={styles.resource}>
-            <span className={styles.label}>Zlato:</span>
-            <span className={styles.value}>{gameState.resources.gold}</span>
-          </div>
-          <div className={styles.resource}>
-            <span className={styles.label}>Potrava:</span>
-            <span className={styles.value}>{gameState.resources.food}</span>
-          </div>
-          <div className={styles.resource}>
-            <span className={styles.label}>Drevo:</span>
-            <span className={styles.value}>{gameState.resources.wood}</span>
-          </div>
-          <div className={styles.resource}>
-            <span className={styles.label}>Kameň:</span>
-            <span className={styles.value}>{gameState.resources.stone}</span>
-          </div>
-          <div className={styles.resource}>
-            <span className={styles.label}>Železo:</span>
-            <span className={styles.value}>{gameState.resources.iron}</span>
-          </div>
+          {RESOURCES.map((r) => (
+            <div key={r.key} className={styles.resourceChip} title={r.label}>
+              <span className={styles.chipIcon} aria-hidden>
+                {r.icon}
+              </span>
+              <span className={styles.chipValue}>{gameState.resources[r.key]}</span>
+              <span className={styles.chipLabel}>{r.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className={styles.rightSection}>
-        <div className={styles.prestige}>
-          <span className={styles.label}>Prestíž:</span>
-          <span className={styles.value}>{gameState.player.prestige}</span>
+        <div className={styles.metaChip}>
+          <span className={styles.metaLabel}>Prestíž</span>
+          <span className={styles.metaValue}>{gameState.player.prestige}</span>
         </div>
-        <div className={styles.religion}>
-          <span className={styles.label}>Náboženstvo:</span>
-          <span className={styles.value}>
-            {religionLabel} ({religionPercent}%)
+        <div className={styles.metaChip}>
+          <span className={styles.metaLabel}>Náboženstvo</span>
+          <span className={styles.metaValue}>
+            {religionLabel} {religionPercent}%
           </span>
         </div>
-        <button 
+        <button
+          type="button"
           className={styles.tickButton}
           onClick={onTick}
+          disabled={gameState.gameOver}
         >
-          Ďalší mesiac
+          Ďalší mesiac →
         </button>
       </div>
-    </div>
+    </header>
   );
 }
 

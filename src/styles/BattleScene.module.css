@@ -1,13 +1,14 @@
-/* BattleScene.module.css */
+/* BattleScene — AoE2-inspired illustrated combat */
 
 .container {
   width: 100%;
-  height: 130px;
-  border: 1px solid var(--accent-gold);
-  border-radius: 6px;
+  height: 200px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  margin-bottom: 15px;
-  box-shadow: var(--shadow-md);
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: #1a1520;
 }
 
 .svg {
@@ -16,110 +17,290 @@
   display: block;
 }
 
-/* Field terrain */
-.grassBand {
+.distantHills {
+  fill: #241c28;
+  opacity: 0.85;
+}
+
+.ground {
   fill: #3a4a2a;
 }
 
 .grassBlade {
-  stroke: #5a7040;
+  stroke: #6a8a48;
   stroke-width: 2;
+  stroke-linecap: round;
 }
 
-/* Forest terrain */
+.cropRow {
+  stroke: #4a6230;
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+/* Forest */
 .tree {
-  fill: #2a3a1f;
-  stroke: #1a2513;
-  stroke-width: 1;
+  fill: #1e3218;
+  stroke: #0f1a0c;
+  stroke-width: 0.75;
 }
 
-.groundLine {
-  fill: #3a4a2a;
+.treeLight {
+  fill: #2f4a28;
+  opacity: 0.7;
 }
 
-/* Fortress terrain */
-.wall {
-  fill: #4a4238;
-  stroke: #2a241d;
-  stroke-width: 1;
+.trunk {
+  fill: #3a2a18;
 }
 
-.merlon {
-  fill: #4a4238;
-  stroke: #2a241d;
-  stroke-width: 1;
-}
-
-.tower {
-  fill: #55493a;
+/* Fortress */
+.wall,
+.merlon,
+.gateTower {
+  fill: #5a5348;
   stroke: #2a241d;
   stroke-width: 1;
 }
 
 .towerRoof {
-  fill: var(--accent-gold-dark);
+  fill: var(--moravia-crimson);
+  stroke: #2a1414;
+  stroke-width: 0.75;
 }
 
-/* River terrain */
+.gateDoor {
+  fill: #1a120c;
+}
+
+/* River */
 .riverBand {
-  fill: none;
-  stroke: #3a5a6b;
-  stroke-width: 18;
-  opacity: 0.7;
+  fill: #2a5565;
+  opacity: 0.85;
 }
 
 .riverHighlight {
   fill: none;
-  stroke: #5a8aa0;
-  stroke-width: 3;
-  opacity: 0.5;
+  stroke: #6aacc0;
+  stroke-width: 2.5;
+  opacity: 0.45;
+  stroke-dasharray: 8 10;
+  animation: riverFlow 6s linear infinite;
 }
 
-/* Hill terrain */
+/* Hill */
+.hillBack {
+  fill: #2c3a24;
+}
+
 .hillShape {
   fill: #3a4a2a;
 }
 
-.hillShapeBack {
-  fill: #2c3a20;
-  opacity: 0.8;
-}
-
 /* Banners */
 .pole {
-  stroke: #6b5d4b;
-  stroke-width: 2;
+  stroke: #8a7a5a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
 }
 
 .pennant {
-  transform-origin: 0px 24px;
-  animation: flutter 2.4s ease-in-out infinite;
+  transform-origin: 0px 28px;
+  animation: bannerFlutter 2.4s ease-in-out infinite;
+  stroke: #0a0805;
+  stroke-width: 0.6;
 }
 
 .attackerColor {
-  fill: var(--color-danger);
-  stroke: var(--text-dark);
-  stroke-width: 0.5;
+  fill: var(--magyar-steppe);
 }
 
 .defenderColor {
-  fill: var(--color-success);
-  stroke: var(--text-dark);
-  stroke-width: 0.5;
+  fill: var(--moravia-crimson);
 }
 
-@keyframes flutter {
-  0%, 100% { transform: skewY(0deg) scaleX(1); }
-  50% { transform: skewY(3deg) scaleX(0.96); }
+.sideLabel {
+  fill: var(--parchment);
+  font-size: 11px;
+  font-family: var(--font-main);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.9;
 }
 
-/* Center clash emblem */
+/* Units */
+.unit {
+  animation: unitBob 1.8s ease-in-out infinite;
+}
+
+.unitShadow {
+  fill: #000;
+  opacity: 0.35;
+}
+
+.unitBody {
+  stroke: #0a0805;
+  stroke-width: 0.7;
+}
+
+.unitHead {
+  stroke: #0a0805;
+  stroke-width: 0.7;
+}
+
+.unitAttacker .unitBody,
+.unitAttacker .unitHead {
+  fill: #a67c52;
+}
+
+.unitDefender .unitBody,
+.unitDefender .unitHead {
+  fill: #6b8f5a;
+}
+
+.unitDefender .unitHead {
+  fill: #d4c4a0;
+}
+
+.unitAttacker .unitHead {
+  fill: #c4a878;
+}
+
+.weapon,
+.spear {
+  stroke: #c8b898;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.spearTip {
+  fill: #d0d0d0;
+  stroke: #0a0805;
+  stroke-width: 0.4;
+}
+
+.bow {
+  fill: none;
+  stroke: #8a6a40;
+  stroke-width: 1.75;
+}
+
+.shield {
+  fill: #4a3a28;
+  stroke: var(--byzantine-gold-dark);
+  stroke-width: 1;
+}
+
+.unitDefender .shield {
+  fill: var(--moravia-crimson);
+  opacity: 0.9;
+}
+
+/* Dust / clash */
+.dust {
+  fill: #c4b090;
+  opacity: 0;
+  animation: dustPuff 2s ease-out infinite;
+}
+
 .clash {
-  opacity: 0.55;
+  opacity: 0.75;
+}
+
+.clashGlow {
+  fill: var(--byzantine-gold);
+  opacity: 0.15;
+  animation: pulse 1.2s ease-in-out infinite;
 }
 
 .swordBlade {
-  stroke: var(--accent-gold);
-  stroke-width: 2;
+  stroke: var(--byzantine-gold-light);
+  stroke-width: 2.5;
   stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(232, 200, 74, 0.6));
+}
+
+.terrainBadge {
+  fill: rgba(10, 8, 5, 0.7);
+  stroke: rgba(201, 162, 39, 0.35);
+  stroke-width: 1;
+}
+
+.terrainLabel {
+  fill: var(--byzantine-gold);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 768px) {
+  .container {
+    height: 160px;
+  }
+}
+
+
+/* Aliases used by composition-aware BattleScene */
+.groundField { fill: #3a4a2a; }
+.groundForest { fill: #243a20; }
+.groundHill { fill: #2c3a24; }
+.groundHillFront { fill: #3a4a2a; }
+.groundStone { fill: #3a3834; }
+.river {
+  fill: #2a5565;
+  opacity: 0.9;
+}
+.terrainForest {}
+.banner {}
+.bannerPoleAttacker,
+.bannerPoleDefender {
+  stroke: #8a7a5a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.bannerClothAttacker {
+  fill: var(--magyar-steppe);
+  stroke: #0a0805;
+  stroke-width: 0.6;
+}
+.bannerClothDefender {
+  fill: var(--moravia-crimson);
+  stroke: #0a0805;
+  stroke-width: 0.6;
+}
+.bannerLabel {
+  fill: var(--parchment);
+  font-size: 11px;
+  font-family: var(--font-main);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.9;
+}
+.dustPuff {
+  fill: #c4b090;
+  opacity: 0;
+  animation: dustPuff 2s ease-out infinite;
+}
+
+@keyframes unitBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes dustPuff {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  30% { opacity: 0.45; }
+  100% { opacity: 0; transform: translateY(-14px) scale(1.4); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.28; }
+}
+@keyframes riverFlow {
+  to { stroke-dashoffset: -36; }
+}
+@keyframes bannerFlutter {
+  0%, 100% { transform: skewY(0deg); }
+  50% { transform: skewY(-4deg); }
 }

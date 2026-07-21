@@ -1,31 +1,86 @@
-/* Regnum Moravicum v2.1 - Main Menu Styles */
+/* MainMenu — splash hero + scenario cards */
 
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+  background: var(--bg-darker);
 }
 
-.header {
+.hero {
+  position: relative;
+  height: clamp(200px, 36vh, 340px);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-lg);
+}
+
+.splashArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.heroOverlay {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 40px 20px;
-  border-bottom: 2px solid var(--accent-gold);
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+  padding: 24px 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 8, 6, 0.15) 0%,
+    rgba(10, 8, 6, 0.35) 45%,
+    rgba(10, 8, 6, 0.82) 100%
+  );
 }
 
-.header h1 {
-  font-size: 3rem;
-  color: var(--accent-gold);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  margin-bottom: 10px;
-  letter-spacing: 1px;
+.crest {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--byzantine-gold);
+  background: radial-gradient(circle at 30% 25%, #3a2418, #120c08);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-glow-gold);
+  margin-bottom: 12px;
 }
 
-.header p {
-  color: var(--text-secondary);
+.heroOverlay h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  color: var(--byzantine-gold);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.65);
+  letter-spacing: 0.04em;
+}
+
+.tagline {
+  margin: 8px 0 0;
+  color: var(--parchment);
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
   font-style: italic;
-  font-size: 1.2rem;
+  opacity: 0.92;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .main {
@@ -33,174 +88,229 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  gap: 40px;
+  padding: 28px 16px 40px;
+  gap: 24px;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sectionHead h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.sectionHint {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .scenarios {
   width: 100%;
-  max-width: 800px;
-  text-align: center;
-}
-
-.scenarios h2 {
-  color: var(--accent-gold);
-  margin-bottom: 20px;
-  font-size: 1.5rem;
 }
 
 .scenarioList {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
 }
 
 .scenarioButton {
-  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-hover) 100%);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
-  cursor: pointer;
-  transition: all var(--transition-normal);
   text-align: left;
+  padding: 16px;
+  min-height: 140px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(165deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  font-family: inherit;
+  color: inherit;
 }
 
 .scenarioButton:hover {
-  border-color: var(--accent-gold);
-  transform: translateY(-4px);
+  transform: translateY(-3px);
+  border-color: rgba(201, 162, 39, 0.45);
   box-shadow: var(--shadow-md);
 }
 
 .scenarioButton.selected {
-  border-color: var(--accent-gold);
-  background: linear-gradient(135deg, var(--bg-panel-hover) 0%, var(--border-color) 100%);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  border-color: var(--byzantine-gold);
+  background: linear-gradient(165deg, rgba(201, 162, 39, 0.16), rgba(139, 30, 45, 0.12), var(--bg-panel));
+  box-shadow: var(--shadow-glow-gold), inset 0 0 0 1px rgba(201, 162, 39, 0.2);
+}
+
+.scenarioTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.scenarioIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  font-size: 16px;
+}
+
+.scenarioYear {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .scenarioButton h3 {
-  color: var(--accent-gold);
-  margin-bottom: 8px;
-  font-size: 1.2rem;
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  color: var(--byzantine-gold);
 }
 
 .scenarioButton p {
+  margin: 0;
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  font-family: var(--font-ui);
 }
 
 .options {
   width: 100%;
-  max-width: 600px;
-  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-hover) 100%);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.optionGroup {
+  max-width: 560px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border-soft);
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
-.optionGroup label {
+.checkRow {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
   cursor: pointer;
 }
 
-.optionGroup label:hover {
-  color: var(--accent-gold);
-}
-
-.optionGroup input[type="checkbox"] {
+.checkRow input {
   width: 18px;
   height: 18px;
-  accent-color: var(--accent-gold);
-  cursor: pointer;
+  accent-color: var(--byzantine-gold);
 }
 
 .seedInput {
   background: var(--bg-darker);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 10px;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 1rem;
-  transition: border-color var(--transition-fast);
+  font-size: 0.95rem;
 }
 
 .seedInput:focus {
   outline: none;
-  border-color: var(--accent-gold);
+  border-color: var(--byzantine-gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
 }
 
 .buttons {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
 }
 
 .primaryButton,
 .secondaryButton {
-  padding: 15px 30px;
-  border-radius: 6px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  transition: all var(--transition-normal);
+  min-height: var(--touch-min);
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-family: var(--font-ui);
+  transition: transform var(--transition-fast), filter var(--transition-fast);
 }
 
 .primaryButton {
-  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-hover) 100%);
-  color: var(--accent-gold);
-  border: 2px solid var(--accent-gold);
+  color: var(--text-dark);
+  background: linear-gradient(
+    180deg,
+    var(--byzantine-gold-light) 0%,
+    var(--byzantine-gold) 55%,
+    var(--byzantine-gold-dark) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .primaryButton:hover {
-  background: linear-gradient(135deg, var(--bg-panel-hover) 0%, var(--border-color) 100%);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  filter: brightness(1.06);
+}
+
+.primaryButton:active {
+  transform: scale(0.98);
 }
 
 .secondaryButton {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  color: var(--parchment);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-soft);
 }
 
 .secondaryButton:hover {
-  color: var(--accent-gold);
-  border-color: var(--accent-gold);
-  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--byzantine-gold);
+  color: var(--byzantine-gold);
 }
 
 .footer {
   text-align: center;
-  padding: 20px;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--safe-bottom));
   color: var(--text-muted);
-  font-size: 0.9rem;
-  border-top: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  border-top: 1px solid rgba(201, 162, 39, 0.12);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  .header h1 {
-    font-size: 2rem;
+  .main {
+    padding: 18px 12px 28px;
+    gap: 18px;
   }
-  
   .scenarioList {
     grid-template-columns: 1fr;
   }
-  
   .buttons {
-    width: 100%;
     max-width: 100%;
   }
 }

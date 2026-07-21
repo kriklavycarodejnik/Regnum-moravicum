@@ -1,4 +1,4 @@
-/* Regnum Moravicum v2.1 - Global Styles */
+/* Regnum Moravicum v3.0 — AoE2 × Veľká Morava × iOS premium */
 
 * {
   margin: 0;
@@ -7,29 +7,54 @@
 }
 
 :root {
-  --bg-dark: #0a0a0a;
-  --bg-darker: #050505;
-  --bg-panel: #1a120b;
-  --bg-panel-hover: #2d241c;
-  --border-color: #3a3329;
-  --text-primary: #e0d8c0;
-  --text-secondary: #8b7d6b;
-  --text-muted: #6b5d4b;
-  --accent-gold: #d4af37;
-  --accent-gold-light: #f4d03f;
-  --accent-gold-dark: #a3811f;
-  --accent-red: #6b4a4a;
-  --accent-green: #4a6b4a;
-  --accent-purple: #8b5fbf;
-  --font-main: 'Georgia', serif;
-  --font-mono: 'Courier New', monospace;
+  /* Core surfaces */
+  --bg-dark: #14100c;
+  --bg-darker: #0a0806;
+  --bg-panel: #231a12;
+  --bg-panel-hover: #342618;
+  --bg-panel-dark: #1a130d;
+  --bg-panel-darker: #100c08;
+  --bg-elevated: #2c2118;
+  --border-color: #4a3a28;
+  --border-soft: rgba(201, 162, 39, 0.22);
 
-  /* Darker panel tiers (headers, wells, recessed surfaces) */
-  --bg-panel-dark: #120c07;
-  --bg-panel-darker: #0d0904;
+  /* Text */
+  --text-primary: #f0e6d2;
+  --text-secondary: #b5a48a;
+  --text-muted: #7a6b55;
   --text-dark: #1a120b;
 
-  /* Semantic status colors */
+  /* Great Moravia brand */
+  --moravia-crimson: #8b1e2d;
+  --moravia-crimson-light: #c43a4a;
+  --byzantine-gold: #c9a227;
+  --byzantine-gold-light: #e8c84a;
+  --byzantine-gold-dark: #8a6e18;
+  --parchment: #e8dcc4;
+  --oak-dark: #2a1f14;
+  --oak-mid: #3d2e1f;
+
+  /* Terrain */
+  --forest-canopy: #2f4a28;
+  --meadow: #5a7a3a;
+  --danube: #3a6b7a;
+  --stone-wall: #6b6560;
+  --magyar-steppe: #a67c52;
+  --sky-dusk-top: #3a2a3a;
+  --sky-dusk-bot: #1e1824;
+
+  /* Compat aliases (existing components) */
+  --accent-gold: var(--byzantine-gold);
+  --accent-gold-light: var(--byzantine-gold-light);
+  --accent-gold-dark: var(--byzantine-gold-dark);
+  --accent-red: var(--moravia-crimson);
+  --accent-green: var(--meadow);
+  --accent-purple: #8b5fbf;
+
+  --font-main: 'Georgia', 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Menlo', 'Courier New', monospace;
+
   --color-success: #5a9c5a;
   --color-warning: #c9902f;
   --color-danger: #b8453f;
@@ -38,109 +63,161 @@
   --color-info: #4a7a9c;
   --color-pink: #c97ba0;
 
-  /* Player vs. rival territory/army markers */
-  --faction-primary: #d4af37;
-  --faction-primary-light: #f4d03f;
-  --faction-secondary: #8b4a3a;
-  --faction-secondary-light: #b56a52;
+  --faction-primary: var(--byzantine-gold);
+  --faction-primary-light: var(--byzantine-gold-light);
+  --faction-secondary: var(--moravia-crimson);
+  --faction-secondary-light: var(--moravia-crimson-light);
 
-  /* Faction badge colors (background / readable text) */
-  --faction-zupani: rgba(212, 175, 55, 0.25);
-  --faction-zupani-text: #d4af37;
+  --faction-zupani: rgba(201, 162, 39, 0.28);
+  --faction-zupani-text: #e8c84a;
   --faction-cyrilometodski: rgba(107, 74, 139, 0.35);
   --faction-cyrilometodski-text: #d9c3f0;
   --faction-byzantski: rgba(74, 90, 139, 0.35);
   --faction-byzantski-text: #cdd6f0;
   --faction-nemecki: rgba(90, 107, 122, 0.35);
   --faction-nemecki-text: #dfe6ec;
-  --faction-madarski: rgba(139, 58, 58, 0.35);
-  --faction-madarski-text: #f0d0d0;
+  --faction-madarski: rgba(166, 124, 82, 0.4);
+  --faction-madarski-text: #f0dcc0;
   --faction-kumani: rgba(139, 106, 58, 0.35);
   --faction-kumani-text: #f0e0c0;
-  
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-  
+
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-glow-gold: 0 0 20px rgba(201, 162, 39, 0.25);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
   --transition-fast: 0.15s ease;
-  --transition-normal: 0.3s ease;
+  --transition-normal: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   --transition-slow: 0.5s ease;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --touch-min: 44px;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body {
-  font-family: var(--font-main);
-  background-color: var(--bg-dark);
+  font-family: var(--font-ui);
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(139, 30, 45, 0.12), transparent 50%),
+    radial-gradient(ellipse 80% 60% at 100% 100%, rgba(201, 162, 39, 0.06), transparent 45%),
+    var(--bg-dark);
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
 #root {
   height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
-/* Scrollbar styling */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-main);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--byzantine-gold);
+}
+
+/* Scrollbar — thin iOS-like */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--bg-darker);
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
+  background: rgba(201, 162, 39, 0.35);
+  border-radius: 99px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-gold);
+  background: var(--byzantine-gold);
 }
 
-/* Selection styling */
 ::selection {
-  background: var(--accent-gold);
-  color: var(--bg-dark);
+  background: rgba(201, 162, 39, 0.45);
+  color: var(--text-dark);
 }
 
-/* Focus styling */
 :focus-visible {
-  outline: 2px solid var(--accent-gold);
+  outline: 2px solid var(--byzantine-gold);
   outline-offset: 2px;
 }
 
-/* Button base styles */
 button {
   font-family: inherit;
   cursor: pointer;
   border: none;
   background: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* Link styles */
 a {
-  color: var(--accent-gold);
+  color: var(--byzantine-gold);
   text-decoration: none;
 }
-
 a:hover {
   text-decoration: underline;
 }
 
-/* Utility classes */
+/* Premium panel primitive */
+.panel {
+  background: linear-gradient(165deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.btn-primary {
+  min-height: var(--touch-min);
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, var(--byzantine-gold-light) 0%, var(--byzantine-gold) 55%, var(--byzantine-gold-dark) 100%);
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.95);
+}
+
+.btn-danger {
+  min-height: var(--touch-min);
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, var(--moravia-crimson-light) 0%, var(--moravia-crimson) 100%);
+  color: #fff;
+  font-weight: 700;
+}
+
 .container {
   max-width: 1400px;
   margin: 0 auto;
@@ -159,22 +236,20 @@ a:hover {
   border: 0;
 }
 
-/* Animation utilities */
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
     opacity: 0.5;
   }
 }
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -183,57 +258,86 @@ a:hover {
     opacity: 1;
   }
 }
-
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+@keyframes dustPuff {
+  0% {
+    opacity: 0.7;
+    transform: translateY(0) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(1.4);
+  }
+}
+@keyframes bannerFlutter {
+  0%,
+  100% {
+    transform: skewY(0deg) scaleX(1);
+  }
+  50% {
+    transform: skewY(4deg) scaleX(0.94);
+  }
+}
+@keyframes unitBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes riverFlow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
 
 .animateSpin {
   animation: spin 1s linear infinite;
 }
-
 .animatePulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
 .animateFadeIn {
   animation: fadeIn 0.3s ease-out;
 }
-
 .animateSlideIn {
   animation: slideIn 0.4s ease-out;
 }
 
-/* Responsive breakpoints */
 @media (max-width: 1024px) {
   .container {
     padding: 15px;
   }
 }
-
 @media (max-width: 768px) {
   .container {
     padding: 10px;
   }
-  
   html {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
-
 @media (max-width: 480px) {
   .container {
     padding: 8px;
-  }
-  
-  html {
-    font-size: 12px;
   }
 }

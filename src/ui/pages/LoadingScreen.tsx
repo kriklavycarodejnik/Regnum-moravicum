@@ -1,12 +1,18 @@
-// Regnum Moravicum v2.1 - Loading Screen Page
+// Regnum Moravicum v3.0 - Loading Screen
 import styles from '../../styles/LoadingScreen.module.css';
 
 export function LoadingScreen() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <h1>Regnum Moravicum v2.1</h1>
-        <p>Načítavam hru...</p>
+        <div className={styles.crest} aria-hidden>
+          ✠
+        </div>
+        <h1>Regnum Moravicum</h1>
+        <p>Pripravujem kráľovstvo…</p>
+        <div className={styles.barTrack} aria-hidden>
+          <div className={styles.barFill} />
+        </div>
         <div className={styles.spinner} />
       </div>
     </div>
