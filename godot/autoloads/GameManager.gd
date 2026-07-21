@@ -8,6 +8,8 @@ const _EconomyManager := preload("res://scripts/managers/EconomyManager.gd")
 const _NobilityManager := preload("res://scripts/managers/NobilityManager.gd")
 const _NarrationManager := preload("res://scripts/managers/NarrationManager.gd")
 const _EventManager := preload("res://scripts/managers/EventManager.gd")
+const _DiplomacyManager := preload("res://scripts/managers/DiplomacyManager.gd")
+const _WarManager := preload("res://scripts/managers/WarManager.gd")
 const _MapManager := preload("res://scripts/managers/MapManager.gd")
 
 var game_state
@@ -17,23 +19,28 @@ var economy_manager
 var nobility_manager
 var narration_manager
 var event_manager
+var diplomacy_manager
+var war_manager
 var map_manager
 
 
 func _ready() -> void:
 	_bootstrap()
-	print("GameManager ready – M1+M2+events (year %d, provinces %d)" % [
-		game_state.year, game_state.provinces.size()
+	print("GameManager ready – M1+M2+M3skel (year %d, provinces %d, factions %d)" % [
+		game_state.year, game_state.provinces.size(), game_state.factions.size()
 	])
 
 
 func _bootstrap() -> void:
 	game_state = _GameState.new()
 	save_manager = _SaveManager.new(42)
+	var rng = save_manager.get_rng()
 	economy_manager = _EconomyManager.new(game_state)
-	nobility_manager = _NobilityManager.new(game_state, save_manager.get_rng())
-	narration_manager = _NarrationManager.new(game_state, save_manager.get_rng())
-	event_manager = _EventManager.new(game_state, save_manager.get_rng())
+	nobility_manager = _NobilityManager.new(game_state, rng)
+	narration_manager = _NarrationManager.new(game_state, rng)
+	event_manager = _EventManager.new(game_state, rng)
+	diplomacy_manager = _DiplomacyManager.new(game_state, rng)
+	war_manager = _WarManager.new(game_state, rng)
 	map_manager = _MapManager.new(game_state)
 	var loaded: int = map_manager.load_provinces_from_dir("res://data/provinces/")
 	print("MapManager loaded provinces: ", loaded)
@@ -43,6 +50,8 @@ func _bootstrap() -> void:
 		nobility_manager,
 		narration_manager,
 		event_manager,
+		diplomacy_manager,
+		war_manager,
 		save_manager
 	)
 
@@ -81,10 +90,13 @@ func load_save() -> bool:
 	if loaded == null:
 		return false
 	game_state = loaded
+	var rng = save_manager.get_rng()
 	economy_manager = _EconomyManager.new(game_state)
-	nobility_manager = _NobilityManager.new(game_state, save_manager.get_rng())
-	narration_manager = _NarrationManager.new(game_state, save_manager.get_rng())
-	event_manager = _EventManager.new(game_state, save_manager.get_rng())
+	nobility_manager = _NobilityManager.new(game_state, rng)
+	narration_manager = _NarrationManager.new(game_state, rng)
+	event_manager = _EventManager.new(game_state, rng)
+	diplomacy_manager = _DiplomacyManager.new(game_state, rng)
+	war_manager = _WarManager.new(game_state, rng)
 	map_manager = _MapManager.new(game_state)
 	map_manager.provinces = game_state.provinces.duplicate(true)
 	tick_manager = _TickManager.new(
@@ -93,6 +105,8 @@ func load_save() -> bool:
 		nobility_manager,
 		narration_manager,
 		event_manager,
+		diplomacy_manager,
+		war_manager,
 		save_manager
 	)
 	return true

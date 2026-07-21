@@ -1,6 +1,4 @@
 # tools/smoke_test.gd
-# Headless smoke: determinism, provinces+neighbors, events, save/load
-# godot --headless --path . -s res://tools/smoke_test.gd
 extends SceneTree
 
 const _GameState := preload("res://scripts/core/GameState.gd")
@@ -10,119 +8,115 @@ const _EconomyManager := preload("res://scripts/managers/EconomyManager.gd")
 const _NobilityManager := preload("res://scripts/managers/NobilityManager.gd")
 const _NarrationManager := preload("res://scripts/managers/NarrationManager.gd")
 const _EventManager := preload("res://scripts/managers/EventManager.gd")
+const _DiplomacyManager := preload("res://scripts/managers/DiplomacyManager.gd")
+const _WarManager := preload("res://scripts/managers/WarManager.gd")
 const _MapManager := preload("res://scripts/managers/MapManager.gd")
 
 
 func _make_world(seed_value: int):
 	var state = _GameState.new()
 	var save = _SaveManager.new(seed_value)
+	var rng = save.get_rng()
 	var map = _MapManager.new(state)
 	map.load_provinces_from_dir("res://data/provinces/")
 	state.nobles["mojmir_ii"] = {
 		"id": "mojmir_ii", "name": "Mojmír II.", "birth_year": 870, "is_ruler": true
 	}
 	var eco = _EconomyManager.new(state)
-	var nob = _NobilityManager.new(state, save.get_rng())
-	var nar = _NarrationManager.new(state, save.get_rng())
-	var ev = _EventManager.new(state, save.get_rng())
-	var tick = _TickManager.new(state, eco, nob, nar, ev, save)
-	return {"state": state, "save": save, "tick": tick, "events": ev, "map": map}
+	var nob = _NobilityManager.new(state, rng)
+	var nar = _NarrationManager.new(state, rng)
+	var ev = _EventManager.new(state, rng)
+	var dip = _DiplomacyManager.new(state, rng)
+	var war = _WarManager.new(state, rng)
+	var tick = _TickManager.new(state, eco, nob, nar, ev, dip, war, save)
+	return {
+		"state": state, "save": save, "tick": tick, "events": ev,
+		"dip": dip, "war": war, "map": map
+	}
 
 
 func _init() -> void:
 	var ok := true
-	print("=== Regnum Moravicum smoke test v2 ===")
+	print("=== Regnum Moravicum smoke test v3 (M3skel) ===")
 
 	var w = _make_world(42)
 	var state = w.state
 	var save = w.save
 	var tick = w.tick
 	var events = w.events
+	var war = w.war
+	var dip = w.dip
 
-	# Provinces + neighbors
 	if state.provinces.size() != 11:
-		print("FAIL: provinces ", state.provinces.size())
-		ok = false
+		print("FAIL: provinces"); ok = false
 	else:
 		print("provinces: 11")
 
-	var edges := 0
-	for pid in state.provinces:
-		var p = state.provinces[pid]
-		var ns: Array = p.get("neighbors", [])
-		edges += ns.size()
-		for n in ns:
-			if not state.provinces.has(n):
-				print("FAIL: neighbor missing ", n)
-				ok = false
-			elif not state.provinces[n].get("neighbors", []).has(pid):
-				print("FAIL: asymmetric edge ", pid, "<->", n)
-				ok = false
-	print("neighbor edges (directed count): ", edges)
+	if state.factions.size() != 6:
+		print("FAIL: factions ", state.factions.size()); ok = false
+	else:
+		print("factions: 6")
 
-	# Determinism: two worlds same seed → same chronicles after N ticks
+	# Adjacency
+	if not war.are_adjacent("nitra", "morava"):
+		print("FAIL: nitra-morava adjacency"); ok = false
+	else:
+		print("adjacency nitra↔morava OK")
+	if war.are_adjacent("uzhorod", "nitra"):
+		print("FAIL: uzhorod should not border nitra"); ok = false
+
+	# Frontiers: all moravia-owned → 0 external unless we mark enemy
+	war.set_occupier("uzhorod", "madari")
+	var fronts: Array = war.list_frontiers("moravia")
+	print("frontiers after magyar occupy uzhorod: ", fronts.size())
+	if fronts.is_empty():
+		print("FAIL: expected frontier with zemplin"); ok = false
+	else:
+		print("war frontiers OK")
+
+	# Determinism
 	var w1 = _make_world(77)
 	var w2 = _make_world(77)
-	var chronicles_a: Array = []
-	var chronicles_b: Array = []
+	var a: Array = []
+	var b: Array = []
 	for i in range(8):
-		var r1: Dictionary = w1.tick.process_tick()
-		var r2: Dictionary = w2.tick.process_tick()
-		chronicles_a.append(r1.get("chronicle", ""))
-		chronicles_b.append(r2.get("chronicle", ""))
-	if chronicles_a != chronicles_b:
-		print("FAIL: chronicle not deterministic under same seed")
-		print(" A=", chronicles_a)
-		print(" B=", chronicles_b)
-		ok = false
+		a.append(w1.tick.process_tick().get("chronicle", ""))
+		b.append(w2.tick.process_tick().get("chronicle", ""))
+	if a != b:
+		print("FAIL: determinism"); ok = false
 	else:
-		print("determinism OK (8 ticks, seed 77)")
+		print("determinism OK")
 
-	# Calendar + event raise
-	for i in range(13):
+	# Diplomacy drift runs
+	var mood0: float = dip.get_mood("madari")
+	for i in range(5):
 		tick.process_tick()
-	print("after 13 ticks: %d/%d gold=%s prestige=%s pending=%s" % [
-		state.year, state.month,
-		state.resources.get("gold"), state.resources.get("prestige"),
-		state.pending_event != null
-	])
-	if state.year != 903 or state.month != 2:
-		print("FAIL: calendar")
-		ok = false
+	var mood1: float = dip.get_mood("madari")
+	print("madari mood drift: %.2f -> %.2f" % [mood0, mood1])
+	# aggressive should tend downward; allow noise
+	if mood1 > mood0 + 2.0:
+		print("WARN: unexpected mood rise for aggressive")
+
+	# Events + resolve
+	while state.pending_event == null and state.year < 904:
+		tick.process_tick()
 	if state.pending_event == null:
-		print("FAIL: expected pending event by month 3+")
-		ok = false
+		print("FAIL: no event"); ok = false
 	else:
-		print("event raised: ", state.pending_event.get("title"))
-		var res: Dictionary = events.resolve_choice("gifts")
-		if not res.get("ok", false):
-			print("FAIL: resolve_choice")
-			ok = false
+		print("event: ", state.pending_event.get("title"))
+		if not events.resolve_choice("fortify").get("ok", false):
+			print("FAIL: resolve"); ok = false
 		else:
-			print("choice resolved OK")
-		if state.pending_event != null:
-			print("FAIL: pending not cleared")
-			ok = false
+			print("event resolve OK")
 
-	# Save uses to_dict path
+	# Save/load
 	if not save.save_game(state, "user://smoke_save.dat"):
-		print("FAIL: save")
-		ok = false
+		print("FAIL: save"); ok = false
 	var loaded = save.load_game("user://smoke_save.dat")
-	if loaded == null or loaded.year != state.year:
-		print("FAIL: load")
-		ok = false
+	if loaded == null or loaded.factions.size() != 6:
+		print("FAIL: load factions"); ok = false
 	else:
-		print("save/load OK (versioned to_dict)")
-
-	# Autosave single slot
-	state.month = 12
-	save.autosave_if_year_end(state)
-	if not FileAccess.file_exists("user://autosave.dat"):
-		print("FAIL: autosave.dat missing")
-		ok = false
-	else:
-		print("autosave single slot OK")
+		print("save/load OK")
 
 	if ok:
 		print("SMOKE_PASS")

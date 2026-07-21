@@ -9,15 +9,28 @@ var economy
 var nobility
 var narration
 var events
+var diplomacy
+var war
 var save_manager
 
 
-func _init(state, eco, nob, nar, ev = null, save = null) -> void:
+func _init(
+	state,
+	eco,
+	nob,
+	nar,
+	ev = null,
+	dip = null,
+	w = null,
+	save = null
+) -> void:
 	game_state = state
 	economy = eco
 	nobility = nob
 	narration = nar
 	events = ev
+	diplomacy = dip
+	war = w
 	save_manager = save
 
 
@@ -36,8 +49,13 @@ func process_tick() -> Dictionary:
 		"month": game_state.month
 	}
 
+	# Order aligned with architecture (subset of full 14 phases)
 	report["economy"] = economy.process_economy()
 	report["nobility"] = nobility.process_nobility()
+	if diplomacy != null:
+		report["diplomacy"] = diplomacy.process_diplomacy()
+	if war != null:
+		report["war"] = war.process_wars()
 	if events != null:
 		report["event"] = events.process_events()
 
