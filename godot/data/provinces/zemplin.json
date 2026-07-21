@@ -4,5 +4,10 @@
   "prosperity": 45,
   "loyalty": 65,
   "religion": 30,
-  "owner_faction": "moravia"
+  "owner_faction": "moravia",
+  "neighbors": [
+    "gemer",
+    "spis",
+    "uzhorod"
+  ]
 }

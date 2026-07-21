@@ -4,5 +4,8 @@
   "prosperity": 40,
   "loyalty": 60,
   "religion": 25,
-  "owner_faction": "moravia"
+  "owner_faction": "moravia",
+  "neighbors": [
+    "zemplin"
+  ]
 }

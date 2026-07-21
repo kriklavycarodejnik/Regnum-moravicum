@@ -2,8 +2,9 @@
 class_name SaveManager
 extends RefCounted
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 const DEFAULT_PATH := "user://save.dat"
+const AUTOSAVE_PATH := "user://autosave.dat"
 const _GameState := preload("res://scripts/core/GameState.gd")
 
 var rng := RandomNumberGenerator.new()
@@ -22,18 +23,11 @@ func get_rng() -> RandomNumberGenerator:
 
 
 func save_game(state, path: String = DEFAULT_PATH) -> bool:
-	var save_data := {
-		"version": SAVE_VERSION,
-		"year": state.year,
-		"month": state.month,
-		"rng_seed": current_seed,
-		"rng_state": rng.state,
-		"resources": state.resources,
-		"provinces": state.provinces,
-		"nobles": state.nobles,
-		"factions": state.factions,
-		"chronicle": state.chronicle
-	}
+	# Single source of truth: GameState.to_dict()
+	var save_data: Dictionary = state.to_dict()
+	save_data["version"] = SAVE_VERSION
+	save_data["rng_seed"] = current_seed
+	save_data["rng_state"] = rng.state
 
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
@@ -73,11 +67,17 @@ func load_game(path: String = DEFAULT_PATH):
 
 
 func _migrate(data: Dictionary, version: int) -> Dictionary:
-	if version < SAVE_VERSION:
-		pass
+	if version < 2:
+		if not data.has("pending_event"):
+			data["pending_event"] = null
 	return data
+
+
+## One rotating autosave slot (not one file per year).
+func autosave(state) -> void:
+	save_game(state, AUTOSAVE_PATH)
 
 
 func autosave_if_year_end(state) -> void:
 	if state.month == 12:
-		save_game(state, "user://autosave_year_%d.dat" % state.year)
+		autosave(state)

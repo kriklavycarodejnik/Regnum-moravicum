@@ -4,5 +4,12 @@
   "prosperity": 65,
   "loyalty": 85,
   "religion": 45,
-  "owner_faction": "moravia"
+  "owner_faction": "moravia",
+  "neighbors": [
+    "morava",
+    "bratislava",
+    "trencin",
+    "tekov",
+    "hont"
+  ]
 }

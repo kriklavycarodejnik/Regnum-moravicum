@@ -8,14 +8,16 @@ var game_state
 var economy
 var nobility
 var narration
+var events
 var save_manager
 
 
-func _init(state, eco, nob, nar, save = null) -> void:
+func _init(state, eco, nob, nar, ev = null, save = null) -> void:
 	game_state = state
 	economy = eco
 	nobility = nob
 	narration = nar
+	events = ev
 	save_manager = save
 
 
@@ -36,6 +38,8 @@ func process_tick() -> Dictionary:
 
 	report["economy"] = economy.process_economy()
 	report["nobility"] = nobility.process_nobility()
+	if events != null:
+		report["event"] = events.process_events()
 
 	var chronicle_text: String = narration.generate_chronicle(report)
 	report["chronicle"] = chronicle_text

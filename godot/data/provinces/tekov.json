@@ -4,5 +4,11 @@
   "prosperity": 52,
   "loyalty": 72,
   "religion": 42,
-  "owner_faction": "moravia"
+  "owner_faction": "moravia",
+  "neighbors": [
+    "nitra",
+    "trencin",
+    "hont",
+    "gemer"
+  ]
 }

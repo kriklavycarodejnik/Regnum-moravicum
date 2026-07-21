@@ -9,14 +9,16 @@ var provinces: Dictionary = {}
 var nobles: Dictionary = {}
 var factions: Dictionary = {}
 var resources: Dictionary = {
-	"gold": 100,
+	"gold": 1000,
 	"food": 100,
 	"wood": 50,
-	"stone": 40,
+	"stone": 50,
 	"iron": 30,
-	"prestige": 20
+	"prestige": 10
 }
 var chronicle: Array = []
+## Pending player decision (null = none). Blocks free progression flavor until resolved.
+var pending_event: Variant = null
 
 
 func duplicate_state():
@@ -28,6 +30,7 @@ func duplicate_state():
 	new_state.factions = factions.duplicate(true)
 	new_state.resources = resources.duplicate(true)
 	new_state.chronicle = chronicle.duplicate(true)
+	new_state.pending_event = pending_event.duplicate(true) if typeof(pending_event) == TYPE_DICTIONARY else pending_event
 	return new_state
 
 
@@ -39,12 +42,12 @@ func to_dict() -> Dictionary:
 		"nobles": nobles,
 		"factions": factions,
 		"resources": resources,
-		"chronicle": chronicle
+		"chronicle": chronicle,
+		"pending_event": pending_event
 	}
 
 
 static func from_dict(data: Dictionary):
-	# Avoid class_name return type (needs editor global class cache)
 	var script = load("res://scripts/core/GameState.gd")
 	var s = script.new()
 	s.year = int(data.get("year", 902))
@@ -54,4 +57,5 @@ static func from_dict(data: Dictionary):
 	s.factions = data.get("factions", {})
 	s.resources = data.get("resources", s.resources)
 	s.chronicle = data.get("chronicle", [])
+	s.pending_event = data.get("pending_event", null)
 	return s

@@ -1,5 +1,4 @@
 # autoloads/GameManager.gd
-# Tenký Node wrapper — logika je v RefCounted manažéroch
 extends Node
 
 const _GameState := preload("res://scripts/core/GameState.gd")
@@ -8,6 +7,7 @@ const _TickManager := preload("res://scripts/core/TickManager.gd")
 const _EconomyManager := preload("res://scripts/managers/EconomyManager.gd")
 const _NobilityManager := preload("res://scripts/managers/NobilityManager.gd")
 const _NarrationManager := preload("res://scripts/managers/NarrationManager.gd")
+const _EventManager := preload("res://scripts/managers/EventManager.gd")
 const _MapManager := preload("res://scripts/managers/MapManager.gd")
 
 var game_state
@@ -16,12 +16,13 @@ var tick_manager
 var economy_manager
 var nobility_manager
 var narration_manager
+var event_manager
 var map_manager
 
 
 func _ready() -> void:
 	_bootstrap()
-	print("GameManager ready – M1+M2 core loaded (year %d, provinces %d)" % [
+	print("GameManager ready – M1+M2+events (year %d, provinces %d)" % [
 		game_state.year, game_state.provinces.size()
 	])
 
@@ -31,7 +32,8 @@ func _bootstrap() -> void:
 	save_manager = _SaveManager.new(42)
 	economy_manager = _EconomyManager.new(game_state)
 	nobility_manager = _NobilityManager.new(game_state, save_manager.get_rng())
-	narration_manager = _NarrationManager.new(game_state)
+	narration_manager = _NarrationManager.new(game_state, save_manager.get_rng())
+	event_manager = _EventManager.new(game_state, save_manager.get_rng())
 	map_manager = _MapManager.new(game_state)
 	var loaded: int = map_manager.load_provinces_from_dir("res://data/provinces/")
 	print("MapManager loaded provinces: ", loaded)
@@ -40,6 +42,7 @@ func _bootstrap() -> void:
 		economy_manager,
 		nobility_manager,
 		narration_manager,
+		event_manager,
 		save_manager
 	)
 
@@ -57,6 +60,18 @@ func process_next_month() -> Dictionary:
 	return tick_manager.process_tick()
 
 
+func resolve_event_choice(choice_id: String) -> Dictionary:
+	return event_manager.resolve_choice(choice_id)
+
+
+func has_pending_event() -> bool:
+	return game_state.pending_event != null
+
+
+func get_pending_event() -> Variant:
+	return game_state.pending_event
+
+
 func save() -> bool:
 	return save_manager.save_game(game_state)
 
@@ -68,7 +83,8 @@ func load_save() -> bool:
 	game_state = loaded
 	economy_manager = _EconomyManager.new(game_state)
 	nobility_manager = _NobilityManager.new(game_state, save_manager.get_rng())
-	narration_manager = _NarrationManager.new(game_state)
+	narration_manager = _NarrationManager.new(game_state, save_manager.get_rng())
+	event_manager = _EventManager.new(game_state, save_manager.get_rng())
 	map_manager = _MapManager.new(game_state)
 	map_manager.provinces = game_state.provinces.duplicate(true)
 	tick_manager = _TickManager.new(
@@ -76,6 +92,7 @@ func load_save() -> bool:
 		economy_manager,
 		nobility_manager,
 		narration_manager,
+		event_manager,
 		save_manager
 	)
 	return true

@@ -3,6 +3,7 @@ class_name NarrationManager
 extends RefCounted
 
 var game_state
+var rng: RandomNumberGenerator
 var recent_templates: Array = []
 var max_recent: int = 12
 
@@ -17,6 +18,10 @@ var templates := {
 		"Smrť {name} zasiahla dvor. Prestíž klesla.",
 		"Pohreb {name} zhromaždil šľachtu z celej Moravy."
 	],
+	"event": [
+		"Dvor čaká na tvoje slovo: {title}",
+		"Poslovia priniesli správu — rozhodnutie je na tebe: {title}"
+	],
 	"generic": [
 		"Mesiac ubehol v pokoji.",
 		"Správy z hraníc sú tiché.",
@@ -25,8 +30,9 @@ var templates := {
 }
 
 
-func _init(state) -> void:
+func _init(state, rng_ref: RandomNumberGenerator) -> void:
 	game_state = state
+	rng = rng_ref
 
 
 func _pick_template(category: String) -> String:
@@ -41,7 +47,9 @@ func _pick_template(category: String) -> String:
 	if candidates.is_empty():
 		candidates = pool
 
-	var chosen: String = str(candidates[randi() % candidates.size()])
+	# Seeded RNG only — never global randi()
+	var idx: int = rng.randi() % candidates.size()
+	var chosen: String = str(candidates[idx])
 	recent_templates.append(chosen)
 	if recent_templates.size() > max_recent:
 		recent_templates.pop_front()
@@ -62,6 +70,11 @@ func generate_from_report(tick_report: Dictionary) -> String:
 			var t: String = _pick_template("succession")
 			t = t.replace("{name}", str(d.get("dead_noble", "šľachtic")))
 			lines.append(t)
+
+	if tick_report.has("event") and tick_report["event"].get("raised", false):
+		var t2: String = _pick_template("event")
+		t2 = t2.replace("{title}", str(tick_report["event"].get("title", "udalosť")))
+		lines.append(t2)
 
 	if lines.is_empty():
 		lines.append(_pick_template("generic"))
