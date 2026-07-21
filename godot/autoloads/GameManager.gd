@@ -10,6 +10,7 @@ const _NarrationManager := preload("res://scripts/managers/NarrationManager.gd")
 const _EventManager := preload("res://scripts/managers/EventManager.gd")
 const _DiplomacyManager := preload("res://scripts/managers/DiplomacyManager.gd")
 const _WarManager := preload("res://scripts/managers/WarManager.gd")
+const _BattleManager := preload("res://scripts/managers/BattleManager.gd")
 const _MapManager := preload("res://scripts/managers/MapManager.gd")
 
 var game_state
@@ -21,12 +22,13 @@ var narration_manager
 var event_manager
 var diplomacy_manager
 var war_manager
+var battle_manager
 var map_manager
 
 
 func _ready() -> void:
 	_bootstrap()
-	print("GameManager ready – M1+M2+M3skel (year %d, provinces %d, factions %d)" % [
+	print("GameManager ready – M1+M2+M3 (battle) year %d provinces %d factions %d" % [
 		game_state.year, game_state.provinces.size(), game_state.factions.size()
 	])
 
@@ -41,6 +43,7 @@ func _bootstrap() -> void:
 	event_manager = _EventManager.new(game_state, rng)
 	diplomacy_manager = _DiplomacyManager.new(game_state, rng)
 	war_manager = _WarManager.new(game_state, rng)
+	battle_manager = war_manager.battle_manager
 	map_manager = _MapManager.new(game_state)
 	var loaded: int = map_manager.load_provinces_from_dir("res://data/provinces/")
 	print("MapManager loaded provinces: ", loaded)
@@ -81,6 +84,23 @@ func get_pending_event() -> Variant:
 	return game_state.pending_event
 
 
+func run_skirmish(province_id: String = "nitra", terrain: String = "field") -> Dictionary:
+	var outcome: Dictionary = war_manager.resolve_skirmish(province_id, terrain)
+	var line := "Bitka pri %s (%s): víťaz %s — výsledok %s" % [
+		province_id,
+		terrain,
+		str(outcome.get("winner", "?")),
+		str(outcome.get("result", "?"))
+	]
+	game_state.chronicle.append({
+		"year": game_state.year,
+		"month": game_state.month,
+		"text": line
+	})
+	outcome["chronicle"] = line
+	return outcome
+
+
 func save() -> bool:
 	return save_manager.save_game(game_state)
 
@@ -97,6 +117,7 @@ func load_save() -> bool:
 	event_manager = _EventManager.new(game_state, rng)
 	diplomacy_manager = _DiplomacyManager.new(game_state, rng)
 	war_manager = _WarManager.new(game_state, rng)
+	battle_manager = war_manager.battle_manager
 	map_manager = _MapManager.new(game_state)
 	map_manager.provinces = game_state.provinces.duplicate(true)
 	tick_manager = _TickManager.new(

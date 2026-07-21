@@ -2,16 +2,17 @@
 class_name WarManager
 extends RefCounted
 
-## M3 skeleton — adjacency + occupation stubs.
-## Full battle resolution ports Phase 2 React battle engine later.
+const _BattleManager := preload("res://scripts/managers/BattleManager.gd")
 
 var game_state
 var rng: RandomNumberGenerator
+var battle_manager
 
 
 func _init(state, rng_ref: RandomNumberGenerator) -> void:
 	game_state = state
 	rng = rng_ref
+	battle_manager = _BattleManager.new(state, rng_ref)
 
 
 func get_neighbors(province_id: String) -> Array:
@@ -49,7 +50,6 @@ func clear_occupation(province_id: String) -> void:
 
 
 func list_frontiers(faction_id: String = "moravia") -> Array:
-	## Provinces owned by faction that border a different owner/occupier.
 	var frontiers: Array = []
 	for pid in game_state.provinces:
 		var p = game_state.provinces[pid]
@@ -68,12 +68,16 @@ func list_frontiers(faction_id: String = "moravia") -> Array:
 	return frontiers
 
 
+## Trigger a skirmish on a frontier province (Magyar attacker default).
+func resolve_skirmish(province_id: String, terrain: String = "field") -> Dictionary:
+	return battle_manager.resolve_border_skirmish(province_id, terrain)
+
+
 func process_wars() -> Dictionary:
-	## Placeholder monthly war tick — no auto battles yet.
 	var frontiers := list_frontiers("moravia")
 	return {
 		"type": "war",
 		"frontier_count": frontiers.size(),
 		"frontiers_sample": frontiers.slice(0, mini(3, frontiers.size())),
-		"placeholder": true
+		"placeholder": frontiers.is_empty()
 	}

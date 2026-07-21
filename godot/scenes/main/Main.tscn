@@ -105,6 +105,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Voľba B"
 
+[node name="SkirmishButton" type="Button" parent="UI"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Bitka pri Nitre (skirmish)"
+
 [node name="NextMonthButton" type="Button" parent="UI"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
