@@ -9,14 +9,12 @@ var _title: Label
 var _body: RichTextLabel
 var _art: TextureRect
 
-
 func _ready() -> void:
 	if theme == null:
 		theme = _ThemeFactory.build()
 	custom_minimum_size = Vector2(0, 120)
 	_build()
 	hide_battle()
-
 
 func _build() -> void:
 	for c in get_children():
@@ -50,7 +48,6 @@ func _build() -> void:
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(_body)
 
-
 func show_outcome(title: String, outcome: Dictionary, art_path: String = "") -> void:
 	visible = true
 	if _title:
@@ -76,13 +73,12 @@ func show_outcome(title: String, outcome: Dictionary, art_path: String = "") -> 
 						phase,
 						int(log.get("attacker_losses", 0)),
 						int(log.get("defender_losses", 0)),
-						float(log.get("ratio", 0.0)),
+						float(log.get("ratio", 0.0))
 					])
 				elif phase == "decision":
 					_body.append_text("· decision: %s\n" % str(log.get("winner", "?")))
 		if outcome.has("chronicle"):
 			_body.append_text("\n%s\n" % str(outcome.get("chronicle")))
-
 
 func hide_battle() -> void:
 	visible = false

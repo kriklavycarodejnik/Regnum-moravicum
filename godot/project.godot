@@ -9,6 +9,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameManager="*res://autoloads/GameManager.gd"
+ArtCatalog="*res://scripts/ui/ArtCatalog.gd"
 
 [display]
 
