@@ -44,6 +44,8 @@ func _bootstrap() -> void:
 	var CampaignManager = preload("res://scripts/managers/CampaignManager.gd")
 
 	game_state = GameState.new()
+	if game_state.has_method("ensure_resources"):
+		game_state.ensure_resources()
 	save_manager = SaveManager.new()
 	save_manager._init(42)
 	var rng = save_manager.get_rng()
@@ -133,6 +135,8 @@ func load_save() -> bool:
 	if loaded == null:
 		return false
 	game_state = loaded
+	if game_state.has_method("ensure_resources"):
+		game_state.ensure_resources()
 	var rng = save_manager.get_rng()
 
 	var EconomyManager = preload("res://scripts/managers/EconomyManager.gd")

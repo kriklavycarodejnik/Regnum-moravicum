@@ -186,3 +186,4 @@ Stavy: `Planned → Generating → Review → Approved → Implemented`.
 | staršie | AoE2 × iOS × Veľká Morava baseline |
 
 *Posledná aktualizácia: 22. júl 2026*
+| 2026-07-22 | MapView + ReligionAxis + MainMenu wired into Godot shell |

@@ -1,9 +1,9 @@
 # M6 — UI/UX + Art scope (napojenie na grafiku)
 
-> **Stav logiky:** M1–M5 kompletné, `SMOKE_PASS`, Devín 907 = Maďari (`winner=attacker`).  
-> **Stav grafiky (A):** Style Master **Approved**; G2 masters **Approved**.  
-> **Stav grafiky (C):** Theme + fonty Implemented; UI ikony MVP 12 **Review** (G3).  
-> **Cieľ M6:** hrateľná verzia s plnými panelmi na živej simulácii — nie nová herná logika od nuly.
+> **Stav logiky:** M1–M5 + M6 UI shell — hrateľné. `SMOKE_PASS` + `SMOKE_M6_PASS`. Devín 907 = Maďari.  
+> **Art A:** Style Master + G2 masters **Approved**.  
+> **Art C:** Theme/fonty + UI icons 12 **Approved**.  
+> **M6 UI:** MainMenu, StatusBar, ReligionAxis, MapView, Army/Diplomacy tabs, Event+art, BattleView, NotificationFeed, EndScreen, full resources.
 
 **Súvisiace:**  
 `docs/ART_PROMPT_CANON.md` · `docs/VISUAL_DIRECTION.md` · `docs/ASSET_MANIFEST.md` ·  
@@ -16,10 +16,10 @@
 | Vrstva | Fakt v repo |
 |--------|-------------|
 | Župy | **12** JSON (`godot/data/provinces/`), vrátane **devin** (nie 11) |
-| `GameState.resources` | dnes len `gold`, `prestige` |
+| `GameState.resources` | **gold, food, wood, stone, iron, prestige** |
 | Main UI | flat VBox: Title, StatusBar (rok + resources text), Chronicle, EventPanel 2 voľby, Devín/Skirmish/NextMonth |
-| ArmyUI | `godot/ui/ArmyUI.*` (theme wired); **nie** inštancovaná v Main |
-| Art | Style Master Approved; 9× G2 Review; `godot/data/art_map.json` |
+| ArmyUI | Inštancovaná v Main SideTabs spolu s DiplomacyPanel |
+| Art | Style Master + G2 Approved; art_map; 12 UI icons |
 | Theme | `RegnumColors` + `RegnumThemeFactory` na Main |
 | React | **ARCHIVED** — žiadna web parity práca |
 
@@ -195,17 +195,17 @@ G2 mastery **neslúžia** ako map tiles — len event/loading/end screens.
 
 ## 8. Definition of Done — M6 vizuál (hrateľná)
 
-- [ ] StatusBar: 6 resource chips + religion axis + Next month (48px)  
-- [ ] MapView: 12 žúp, loyalty tint, select, tooltip  
-- [ ] EventDialog: 2–4 choices, optional art plate  
-- [ ] ArmyPanel inštancovaný v shelli  
-- [ ] DiplomacyPanel zoznam frakcií + základné akcie  
-- [ ] BattlePanel alebo expanded battle chrome  
-- [ ] Victory + GameOver screens  
-- [ ] MainMenu New/Load/Quit + Save v hre  
-- [ ] 12 UI icons Approved + v theme  
+- [x] StatusBar: 6 resource chips + religion axis + Next/Save/Menu (48px)  
+- [x] MapView: 12 žúp, loyalty tint, select, tooltip  
+- [x] EventDialog: 2 choices + optional art plate  
+- [x] ArmyPanel inštancovaný v shelli  
+- [x] DiplomacyPanel zoznam frakcií + základné akcie  
+- [x] BattleView chrome  
+- [x] Victory + GameOver (EndScreen)  
+- [x] MainMenu New/Load/Quit + Save v hre  
+- [x] 12 UI icons Approved + v StatusBar  
 - [x] G2 masters Approved alebo explicitne rejectnuté s regen  
-- [ ] `smoke_test` (a neskôr `smoke_test.m6.gd`) PASS  
+- [x] smoke_test + smoke_test.m6 PASS  
 - [ ] Touch targets ≥ 48  
 
 ---
@@ -226,3 +226,5 @@ G2 mastery **neslúžia** ako map tiles — len event/loading/end screens.
 | dátum | zmena |
 |-------|--------|
 | 2026-07-22 | v1 — M6 scope zohľadnený voči AS-IS kódu (12 žúp, gold+prestige only, G2 Review, theme done) |
+| 2026-07-22 | MapView + ReligionAxis + MainMenu wired into Godot shell |
+| 2026-07-22 | M6 shell complete: NotificationFeed + BattleView + smoke_test.m6 |

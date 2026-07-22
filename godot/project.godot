@@ -2,7 +2,7 @@
 
 config/name="Regnum Moravicum"
 config/description="Ťahová historická stratégia — Veľká Morava (Mojmír II., 902–1000 MVP)"
-run/main_scene="res://scenes/main/Main.tscn"
+run/main_scene="res://scenes/menu/MainMenu.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
 

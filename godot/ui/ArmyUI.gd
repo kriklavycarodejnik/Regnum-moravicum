@@ -1,148 +1,138 @@
 # ui/ArmyUI.gd
-extends Control
+extends VBoxContainer
 
-@onready var army_list = $ArmyList
-@onready var army_info = $ArmyInfo
-@onready var move_button = $MoveButton
-@onready var battle_button = $BattleButton
-@onready var siege_button = $SiegeButton
+const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 
-var army_manager: ArmyManager
-var map_manager: MapManager
+@onready var army_list: VBoxContainer = $ArmyList
+@onready var army_info: Label = $ArmyInfo
+@onready var move_button: Button = $Actions/MoveButton
+@onready var battle_button: Button = $Actions/BattleButton
+@onready var siege_button: Button = $Actions/SiegeButton
+
+var army_manager
+var map_manager
 var selected_army_id: String = ""
 
 
 func _ready() -> void:
 	_apply_regnum_theme()
-	army_manager = get_node("/root/GameManager").army_manager
-	map_manager = get_node("/root/GameManager").map_manager
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		army_manager = gm.army_manager
+		map_manager = gm.map_manager
+	if move_button:
+		move_button.pressed.connect(_on_move_button_pressed)
+	if battle_button:
+		battle_button.pressed.connect(_on_battle_button_pressed)
+	if siege_button:
+		siege_button.pressed.connect(_on_siege_button_pressed)
 	_update_army_list()
-	
-	# Pripojiť signály
-	move_button.pressed.connect(_on_move_button_pressed)
-	battle_button.pressed.connect(_on_battle_button_pressed)
-	siege_button.pressed.connect(_on_siege_button_pressed)
-
 
 
 func _apply_regnum_theme() -> void:
 	if theme == null:
-		theme = RegnumThemeFactory.build()
+		theme = _ThemeFactory.build()
+
+
+func _clear_list() -> void:
+	if army_list == null:
+		return
+	for c in army_list.get_children():
+		c.queue_free()
 
 
 func _update_army_list() -> void:
-	army_list.clear()
+	if army_list == null:
+		return
+	_clear_list()
+	if army_manager == null:
+		if army_info:
+			army_info.text = "ArmyManager nie je pripravený."
+		return
 	var armies = army_manager.list_armies()
-	for army in armies:
-		var button = Button.new()
-		button.text = "%s (%s)" % [army.get("id", "?"), army.get("province_id", "?")]
-		button.pressed.connect(_on_army_selected.bind(army.get("id")))
+	var list: Array = []
+	if typeof(armies) == TYPE_ARRAY:
+		list = armies
+	elif typeof(armies) == TYPE_DICTIONARY:
+		for k in armies:
+			var a = armies[k]
+			if typeof(a) == TYPE_DICTIONARY:
+				if not a.has("id"):
+					a = a.duplicate()
+					a["id"] = k
+				list.append(a)
+	for army in list:
+		if typeof(army) != TYPE_DICTIONARY:
+			continue
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(0, 40)
+		button.text = "%s (%s)" % [str(army.get("id", "?")), str(army.get("province_id", "?"))]
+		var aid: String = str(army.get("id", ""))
+		button.pressed.connect(_on_army_selected.bind(aid))
 		army_list.add_child(button)
+	if list.is_empty() and army_info:
+		army_info.text = "Žiadne armády."
 
 
 func _on_army_selected(army_id: String) -> void:
 	selected_army_id = army_id
+	if army_manager == null or army_info == null:
+		return
 	var army = army_manager.get_army(army_id)
-	army_info.text = """
-		Armáda: %s
-		Provincia: %s
-		Veľkosť: %d
-		Morálka: %.1f
-		Zásoby: %.1f
-		Status: %s
-	""" % [
-		army.get("id", "?"),
-		army.get("province_id", "?"),
-		army.get("size", 0),
-		army.get("morale", 0.0),
-		army.get("supply", 0.0),
-		army.get("status", "?")
+	if typeof(army) != TYPE_DICTIONARY:
+		army_info.text = "Armáda nenájdená."
+		return
+	army_info.text = "Armáda: %s\nProvincia: %s\nVeľkosť: %s\nMorálka: %s\nZásoby: %s\nStatus: %s" % [
+		str(army.get("id", "?")),
+		str(army.get("province_id", "?")),
+		str(army.get("size", army.get("strength", "?"))),
+		str(army.get("morale", "?")),
+		str(army.get("supply", "?")),
+		str(army.get("status", "?")),
 	]
 
 
 func _on_move_button_pressed() -> void:
-	if selected_army_id == "":
+	if selected_army_id == "" or army_manager == null or map_manager == null:
 		return
-	
 	var army = army_manager.get_army(selected_army_id)
-	var current_province = army.get("province_id", "")
-	var neighbors = map_manager.get_province(current_province).get("neighbors", [])
-	
-	# Zobraziť dialóg pre výber cieľovej provincie
-	var dialog = AcceptDialog.new()
-	dialog.title = "Vyber cieľovú provinciu"
-	var vbox = VBoxContainer.new()
+	if typeof(army) != TYPE_DICTIONARY:
+		return
+	var current_province: String = str(army.get("province_id", ""))
+	var province = map_manager.get_province(current_province)
+	var neighbors: Array = []
+	if typeof(province) == TYPE_DICTIONARY:
+		neighbors = province.get("neighbors", [])
+	var dialog := AcceptDialog.new()
+	dialog.title = "Cieľová provincia"
+	var vbox := VBoxContainer.new()
 	dialog.add_child(vbox)
-	
 	for province_id in neighbors:
-		var button = Button.new()
-		button.text = province_id
-		button.pressed.connect(_on_target_province_selected.bind(selected_army_id, province_id))
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(0, 40)
+		button.text = str(province_id)
+		button.pressed.connect(_on_target_province_selected.bind(selected_army_id, str(province_id)))
 		vbox.add_child(button)
-	
 	add_child(dialog)
 	dialog.popup_centered()
 
 
 func _on_target_province_selected(army_id: String, target_province_id: String) -> void:
+	if army_manager == null:
+		return
 	var result = army_manager.move_army(army_id, target_province_id)
-	if result.get("ok", false):
-		print("Armáda %s presunutá do %s" % [army_id, target_province_id])
+	if typeof(result) == TYPE_DICTIONARY and result.get("ok", false):
 		_update_army_list()
-	else:
-		print("Chyba: %s" % result.get("error", "neznáma chyba"))
+		_on_army_selected(army_id)
 
 
 func _on_battle_button_pressed() -> void:
-	if selected_army_id == "":
+	if selected_army_id == "" or army_manager == null or army_info == null:
 		return
-	
-	var army = army_manager.get_army(selected_army_id)
-	var province_id = army.get("province_id", "")
-	var enemies = army_manager.list_armies("", province_id)
-	
-	# Odstrániť vlastnú armádu zo zoznamu
-	enemies.erase(selected_army_id)
-	
-	if enemies.is_empty():
-		print("Žiadne nepriateľské armády v provincii!")
-		return
-	
-	# Zobraziť dialóg pre výber nepriateľskej armády
-	var dialog = AcceptDialog.new()
-	dialog.title = "Vyber nepriateľskú armádu"
-	var vbox = VBoxContainer.new()
-	dialog.add_child(vbox)
-	
-	for enemy in enemies:
-		var button = Button.new()
-		button.text = "%s (%s)" % [enemy.get("id", "?"), enemy.get("faction_id", "?")]
-		button.pressed.connect(_on_enemy_army_selected.bind(selected_army_id, enemy.get("id")))
-		vbox.add_child(button)
-	
-	add_child(dialog)
-	dialog.popup_centered()
-
-
-func _on_enemy_army_selected(army_id: String, enemy_army_id: String) -> void:
-	var result = army_manager.start_battle(army_id, enemy_army_id)
-	if result.get("ok", false):
-		print("Bitka medzi %s a %s začatá!" % [army_id, enemy_army_id])
-	else:
-		print("Chyba: %s" % result.get("error", "neznáma chyba"))
+	army_info.text = "Bitka: použi Skirmish/Devín tlačidlá alebo Campaign AI."
 
 
 func _on_siege_button_pressed() -> void:
-	if selected_army_id == "":
+	if selected_army_id == "" or army_info == null:
 		return
-	
-	var army = army_manager.get_army(selected_army_id)
-	var province_id = army.get("province_id", "")
-	var province = map_manager.get_province(province_id)
-	
-	if province.get("owner_faction", "") == army.get("faction_id", ""):
-		print("Nemôžeš obliehať vlastnú provinciu!")
-		return
-	
-	print("Obliehanie provincie %s začaté!" % province_id)
-	# TODO: Implementovať logiku obliehania v CampaignManager.gd
+	army_info.text = "Obliehanie — CampaignManager (M6+)."

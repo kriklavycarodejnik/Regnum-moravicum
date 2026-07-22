@@ -51,7 +51,10 @@ func load_provinces_from_dir(dir_path: String) -> int:
 		if not province.has("neighbors"):
 			province["neighbors"] = []
 		if not province.has("religion"):
-			province["religion"] = "pagan"
+			province["religion"] = 50
+		elif typeof(province["religion"]) == TYPE_STRING:
+			# legacy string labels — nechaj; numeric 0-100 je preferované
+			pass
 	game_state.provinces = provinces.duplicate(true)
 	return count
 

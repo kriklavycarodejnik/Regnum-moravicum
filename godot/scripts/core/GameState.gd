@@ -1,18 +1,34 @@
 # scripts/core/GameState.gd
-class_name GameState
 extends RefCounted
+
+const DEFAULT_RESOURCES: Dictionary = {
+	"gold": 1000,
+	"food": 500,
+	"wood": 300,
+	"stone": 200,
+	"iron": 100,
+	"prestige": 50,
+}
 
 var year: int = 902
 var month: int = 1
-
 var provinces: Dictionary = {}
 var nobles: Dictionary = {}
 var factions: Dictionary = {}
-var resources: Dictionary = {"gold": 1000, "prestige": 50}
+var resources: Dictionary = {
+	"gold": 1000,
+	"food": 500,
+	"wood": 300,
+	"stone": 200,
+	"iron": 100,
+	"prestige": 50,
+}
 var armies: Dictionary = {}
 var army_templates: Dictionary = {}
 var chronicle: Array = []
 var pending_event = null
+var game_over: bool = false
+var ending: Dictionary = {}
 
 
 func to_dict() -> Dictionary:
@@ -26,18 +42,66 @@ func to_dict() -> Dictionary:
 		"armies": armies.duplicate(true),
 		"army_templates": army_templates.duplicate(true),
 		"chronicle": chronicle.duplicate(true),
-		"pending_event": pending_event
+		"pending_event": pending_event,
+		"game_over": game_over,
+		"ending": ending.duplicate(true),
 	}
 
 
 func from_dict(data: Dictionary) -> void:
-	year = data.get("year", 902)
-	month = data.get("month", 1)
-	provinces = data.get("provinces", {}).duplicate(true)
-	nobles = data.get("nobles", {}).duplicate(true)
-	factions = data.get("factions", {}).duplicate(true)
-	resources = data.get("resources", {"gold": 1000, "prestige": 50}).duplicate(true)
-	armies = data.get("armies", {}).duplicate(true)
-	army_templates = data.get("army_templates", {}).duplicate(true)
-	chronicle = data.get("chronicle", []).duplicate(true)
+	year = int(data.get("year", 902))
+	month = int(data.get("month", 1))
+	provinces = data.get("provinces", {}) as Dictionary
+	if provinces == null:
+		provinces = {}
+	else:
+		provinces = provinces.duplicate(true)
+	nobles = data.get("nobles", {}) as Dictionary
+	if nobles == null:
+		nobles = {}
+	else:
+		nobles = nobles.duplicate(true)
+	factions = data.get("factions", {}) as Dictionary
+	if factions == null:
+		factions = {}
+	else:
+		factions = factions.duplicate(true)
+	var loaded_res = data.get("resources", {})
+	resources = _merge_resources(loaded_res)
+	armies = data.get("armies", {}) as Dictionary
+	if armies == null:
+		armies = {}
+	else:
+		armies = armies.duplicate(true)
+	army_templates = data.get("army_templates", {}) as Dictionary
+	if army_templates == null:
+		army_templates = {}
+	else:
+		army_templates = army_templates.duplicate(true)
+	var chron = data.get("chronicle", [])
+	chronicle = chron if typeof(chron) == TYPE_ARRAY else []
 	pending_event = data.get("pending_event", null)
+	game_over = bool(data.get("game_over", false))
+	var endv = data.get("ending", {})
+	ending = endv.duplicate(true) if typeof(endv) == TYPE_DICTIONARY else {}
+
+
+func _merge_resources(loaded) -> Dictionary:
+	var out: Dictionary = {
+		"gold": 1000,
+		"food": 500,
+		"wood": 300,
+		"stone": 200,
+		"iron": 100,
+		"prestige": 50,
+	}
+	if typeof(loaded) != TYPE_DICTIONARY:
+		return out
+	var ld: Dictionary = loaded
+	for k in ld.keys():
+		out[str(k)] = ld[k]
+	return out
+
+
+func ensure_resources() -> void:
+	resources = _merge_resources(resources)
