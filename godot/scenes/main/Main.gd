@@ -15,7 +15,6 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var menu_btn: Button = $UI/ButtonRow/MenuButton
 @onready var provinces_label: Label = $UI/Body/MainColumn/ProvincesLabel
 @onready var selection_label: Label = $UI/Body/MainColumn/SelectionLabel
-@onready var selection_art: TextureRect = $UI/Body/MainColumn/SelectionArt  # NEW: for province art
 @onready var event_panel: PanelContainer = $UI/Body/MainColumn/EventPanel
 @onready var event_title: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventTitle
 @onready var event_body: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventBody
@@ -28,6 +27,8 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var event_art: TextureRect = $UI/Body/MainColumn/EventPanel/EventVBox/EventArt
 @onready var notification_feed: Node = $UI/Body/MainColumn/NotificationFeed
 @onready var battle_view: Node = $UI/Body/MainColumn/BattleView
+
+var selection_art_id: String = ""
 
 func _ready() -> void:
 	_apply_regnum_theme()
@@ -48,8 +49,92 @@ func _ready() -> void:
 	_refresh_ui()
 	_append_chronicle("Kronika sa začína. Mojmír II. vládne Veľkej Morave.")
 
-# New: track the current selection for art
-var selection_art_id: String = ""
+func _apply_regnum_theme() -> void:
+	var built: Theme = _ThemeFactory.build()
+	theme = built
+	if background:
+		background.color = _Colors.BG_DARKER
+	if title_label:
+		title_label.theme_type_variation = &"TitleLabel"
+	if event_title:
+		event_title.theme_type_variation = &"SubtitleLabel"
+	if provinces_label:
+		provinces_label.theme_type_variation = &"MutedLabel"
+	if selection_label:
+		selection_label.theme_type_variation = &"MutedLabel"
+
+func _on_next_month() -> void:
+	if GameManager.has_pending_event():
+		_show_event(GameManager.get_pending_event())
+		return
+	var report: Dictionary = GameManager.process_next_month()
+	_refresh_ui()
+	if report.has("chronicle") and str(report["chronicle"]) != "":
+		_append_chronicle("[%d/%02d] %s" % [
+			report.get("year", 0),
+			report.get("month", 0),
+			report["chronicle"]
+		])
+	_check_ending()
+	if GameManager.has_pending_event():
+		_show_event(GameManager.get_pending_event())
+
+func _on_skirmish() -> void:
+	var outcome: Dictionary = GameManager.run_skirmish("nitra", "field")
+	_refresh_ui()
+	if outcome.has("chronicle"):
+		_append_chronicle(str(outcome["chronicle"]))
+	_show_battle("Bitka pri Nitre", outcome)
+	_log_battle_phases(outcome)
+
+func _on_devine() -> void:
+	var outcome: Dictionary = GameManager.run_devine_battle()
+	_refresh_ui()
+	if outcome.has("chronicle"):
+		_append_chronicle(str(outcome["chronicle"]))
+	_update_battle_art("battle_danube_composition")
+	_show_battle("Bitka pri Devíne (907)", outcome, "battle_danube_composition")
+	_log_battle_phases(outcome)
+
+func _on_save() -> void:
+	GameManager.save()
+
+func _on_menu() -> void:
+	GameManager.save()
+	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
+
+func _show_battle(title: String, outcome: Dictionary, art_id: String = "") -> void:
+	var path := ""
+	if art_id != "":
+		path = ArtCatalog.path(art_id)
+	if battle_view and battle_view.has_method("show_outcome"):
+		battle_view.call("show_outcome", title, outcome, path)
+
+func _log_battle_phases(outcome: Dictionary) -> void:
+	var logs: Array = outcome.get("phase_logs", [])
+	for log in logs:
+		if typeof(log) != TYPE_DICTIONARY:
+			continue
+		var phase: String = str(log.get("phase", "?"))
+		if phase in ["attack", "counterattack"]:
+			_append_chronicle("  · %s: A-%d D-%d (ratio %.2f)" % [
+				phase,
+				int(log.get("attacker_losses", 0)),
+				int(log.get("defender_losses", 0)),
+				float(log.get("ratio", 0.0))
+			])
+		elif phase == "decision":
+			_append_chronicle("  · decision: %s" % str(log.get("winner", "?")))
+
+func _update_battle_art(art_id: String) -> void:
+	if event_art == null:
+		return
+	var tex = ArtCatalog.texture(art_id)
+	if tex != null:
+		event_art.texture = tex
+		event_art.visible = true
+	else:
+		event_art.visible = false
 
 func _on_province_selected(province_id: String) -> void:
 	var p = GameManager.game_state.provinces.get(province_id, {})
@@ -62,7 +147,6 @@ func _on_province_selected(province_id: String) -> void:
 		str(p.get("loyalty", "?")),
 		str(p.get("prosperity", "?"))
 	]
-	# Determine the art id for this province
 	var art_id := ""
 	match province_id:
 		"nitra":
@@ -74,9 +158,8 @@ func _on_province_selected(province_id: String) -> void:
 		"morava":
 			art_id = "moravian_court_interior"
 		_:
-			art_id = "mojmir_dynasty_emblem"  # default to dynasty emblem
+			art_id = "mojmir_dynasty_emblem"
 	selection_art_id = art_id
-	# If no event is showing, update the event_art with the selection art
 	if not event_panel.visible:
 		_update_selection_art()
 
@@ -111,7 +194,6 @@ func _show_event(ev: Variant) -> void:
 		else:
 			event_art.visible = false
 	else:
-		# No art_id in event, use fallback (try to guess from body)
 		var fallback_art_id := _get_event_fallback_art(ev)
 		if fallback_art_id != "":
 			var tex = ArtCatalog.texture(fallback_art_id)
@@ -131,11 +213,9 @@ func _show_event(ev: Variant) -> void:
 		choice_b_btn.set_meta("choice_id", str(choices[1].get("id", "")))
 
 func _get_event_fallback_art(ev: Dictionary) -> String:
-	# Check if the event is related to a ruler/dynasty
-	var text := str(ev.get("body", ""))  # using body as the text source
+	var text := str(ev.get("body", ""))
 	if "Mojmír" in text or "Svätopluk" in text or "Rastislav" in text:
 		return "mojmir_ii_master_portrait"
-	# Check if it's about a province
 	if "Nitra" in text:
 		return "nitra_master_hero"
 	if "Devín" in text:
@@ -144,8 +224,7 @@ func _get_event_fallback_art(ev: Dictionary) -> String:
 		return "bratislava_master_river"
 	if "Morava" in text:
 		return "moravian_court_interior"
-	# If it's a battle event, we might have a battle art
-	if "bitka" in text.lower() or "battle" in text.lower():
+	if "bitka" in text.to_lower() or "battle" in text.to_lower():
 		return "battle_danube_composition"
 	return ""
 
@@ -159,14 +238,13 @@ func _resolve(choice_id: String) -> void:
 	var result: Dictionary = GameManager.resolve_event_choice(choice_id)
 	event_panel.visible = false
 	if event_art:
-		event_art.visible = false  # clear event art
+		event_art.visible = false
 	next_month_btn.disabled = false
 	skirmish_btn.disabled = false
 	devine_btn.disabled = false
 	_refresh_ui()
 	if result.get("ok", false) and result.has("chronicle"):
 		_append_chronicle(str(result["chronicle"]))
-	# After resolving an event, if there is a selected province, show its art again
 	if selection_art_id != "":
 		_update_selection_art()
 
@@ -212,4 +290,3 @@ func _check_ending() -> void:
 		if GameManager.has_method("save"):
 			GameManager.save()
 		get_tree().change_scene_to_file("res://scenes/end/EndScreen.tscn")
-EOF

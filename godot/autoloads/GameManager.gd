@@ -211,4 +211,3 @@ func load_save() -> bool:
 		save_manager
 	)
 	return true
-EOF

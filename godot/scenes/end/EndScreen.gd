@@ -42,4 +42,3 @@ func _on_restart() -> void:
 	if gm and gm.has_method("_bootstrap"):
 		gm._bootstrap()
 	get_tree().change_scene_to_file("res://scenes/main/Main.tscn")
-EOF
