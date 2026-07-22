@@ -28,7 +28,7 @@ func _init(
 		rng = rng_ref
 
 
-const PROVINCE_DEVIN := "bratislava"
+const PROVINCE_DEVIN := "devin"
 const TERRAIN_DEVIN := "river"
 const HUNGARIAN_MAIN_ARMY_SIZE := 12000
 const MORAVIAN_MAIN_ARMY_SIZE := 8000
@@ -75,6 +75,9 @@ func create_initial_armies() -> Dictionary:
 
 
 func resolve_devine_battle() -> Dictionary:
+	# P-1.1 guard — Devín max 1× za run
+	if game_state.devine_resolved:
+		return {"result": "already_resolved"}
 	var armies: Dictionary = create_initial_armies()
 	var hungarian: Dictionary = armies["hungarian_main"].duplicate(true)
 	var moravian: Dictionary = armies["moravian_main"].duplicate(true)
@@ -103,7 +106,7 @@ func resolve_devine_battle() -> Dictionary:
 		game_state.resources = resources
 		
 		var provinces: Dictionary = game_state.provinces
-		for province_id in ["nitra", "bratislava"]:
+		for province_id in ["nitra", "devin"]:
 			if provinces.has(province_id):
 				var province: Dictionary = provinces[province_id]
 				province["loyalty"] = province.get("loyalty", 50) + rewards["loyalty_bonus"]

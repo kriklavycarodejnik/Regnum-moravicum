@@ -20,6 +20,7 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var event_body: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventBody
 @onready var choice_a_btn: Button = $UI/Body/MainColumn/EventPanel/EventVBox/Choices/ChoiceA
 @onready var choice_b_btn: Button = $UI/Body/MainColumn/EventPanel/EventVBox/Choices/ChoiceB
+@onready var choice_c_btn: Button = $UI/Body/MainColumn/EventPanel/EventVBox/Choices/ChoiceC
 @onready var title_label: Label = $UI/Header/Title
 @onready var background: ColorRect = $Background
 @onready var bg_art: TextureRect = $BackgroundArt
@@ -48,6 +49,7 @@ func _ready() -> void:
 	menu_btn.pressed.connect(_on_menu)
 	choice_a_btn.pressed.connect(_on_choice_a)
 	choice_b_btn.pressed.connect(_on_choice_b)
+	choice_c_btn.pressed.connect(_on_choice_c)
 	if map_view and map_view.has_signal("province_selected"):
 		map_view.province_selected.connect(_on_province_selected)
 	if diplomacy_panel and diplomacy_panel.has_signal("action_done"):
@@ -120,7 +122,10 @@ func _update_story_line() -> void:
 		return
 	var y: int = int(GameManager.game_state.year)
 	var m: int = int(GameManager.game_state.month)
-	if y < 907:
+	var gs = GameManager.game_state
+	if gs.devine_resolved and y < 907:
+		story_line.text = "Devín už rozhodol osud ríše  ·  cieľ: prežiť do 1000  ·  ťah = Ďalší mesiac"
+	elif y < 907:
 		var months_left: int = (907 - y) * 12 + (7 - m)
 		if months_left <= 0:
 			months_left = 1
@@ -287,6 +292,18 @@ func _show_event(ev: Variant) -> void:
 		choice_b_btn.visible = true
 	else:
 		choice_b_btn.visible = false
+	if choices.size() >= 3 and typeof(choices[2]) == TYPE_DICTIONARY:
+		choice_c_btn.text = str(choices[2].get("label", "C"))
+		choice_c_btn.set_meta("choice_id", str(choices[2].get("id", "")))
+		choice_c_btn.visible = true
+	else:
+		choice_c_btn.visible = false
+	if choices.size() >= 3 and typeof(choices[2]) == TYPE_DICTIONARY:
+		choice_c_btn.text = str(choices[2].get("label", "C"))
+		choice_c_btn.set_meta("choice_id", str(choices[2].get("id", "")))
+		choice_c_btn.visible = true
+	else:
+		choice_c_btn.visible = false
 
 
 func _normalize_event(ev: Dictionary) -> Dictionary:
@@ -340,6 +357,9 @@ func _on_choice_a() -> void:
 func _on_choice_b() -> void:
 	_resolve(str(choice_b_btn.get_meta("choice_id", "")))
 
+func _on_choice_c() -> void:
+	_resolve(str(choice_c_btn.get_meta("choice_id", "")))
+
 
 func _resolve(choice_id: String) -> void:
 	var result: Dictionary = GameManager.resolve_event_choice(choice_id)
@@ -379,13 +399,18 @@ func _refresh_ui() -> void:
 	if diplomacy_panel and diplomacy_panel.has_method("refresh"):
 		diplomacy_panel.call("refresh")
 	_update_story_line()
-	# Year-gate Devín hint on button
+	# Year-gate Devín button + hint
 	if devine_btn and GameManager and GameManager.game_state:
 		var y: int = int(GameManager.game_state.year)
-		if y >= 906 and y <= 908:
-			devine_btn.text = "★ Scénár: Devín 907 (odporúčané)"
+		if y < 906:
+			devine_btn.disabled = true
+			devine_btn.text = "Scénár: Devín 907 (od roku 906)"
 		else:
-			devine_btn.text = "Scénár: Devín 907"
+			devine_btn.disabled = false
+			if y >= 906 and y <= 908:
+				devine_btn.text = "★ Scénár: Devín 907 (odporúčané)"
+			else:
+				devine_btn.text = "Scénár: Devín 907"
 
 
 func _append_chronicle(text: String) -> void:

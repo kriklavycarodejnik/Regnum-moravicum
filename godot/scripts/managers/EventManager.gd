@@ -209,6 +209,25 @@ func resolve_choice(choice_id: String) -> Dictionary:
 			var cur: int = int(resources.get(res_key, 0))
 			resources[res_key] = cur + int(effect[res_key])
 
+	# Apply zupaLoyalty effect
+	if choice_dict.has("zupaLoyalty"):
+		var zl_v = choice_dict.get("zupaLoyalty", {})
+		if typeof(zl_v) == TYPE_DICTIONARY:
+			var zl: Dictionary = zl_v
+			var provs: Dictionary = game_state.provinces
+			for pid in zl.keys():
+				if provs.has(pid):
+					var delta: int = int(zl.get(pid, 0))
+					var p: Dictionary = provs[pid]
+					p["loyalty"] = clampf(float(p.get("loyalty", 50)) + float(delta), 0.0, 100.0)
+
+	# Apply moodChanges to factions
+	if choice_dict.has("moodChanges"):
+		var mc_v = choice_dict.get("moodChanges", {})
+		if typeof(mc_v) == TYPE_DICTIONARY:
+			var mc: Dictionary = mc_v
+			_lookup_and_apply_mood(mc)
+
 	# Handle nextEvent chain
 	if choice_dict.has("next_event"):
 		var next_id: String = str(choice_dict["next_event"])
@@ -287,3 +306,46 @@ func _build_council_event() -> Dictionary:
 			},
 		},
 	}
+
+
+func _lookup_and_apply_mood(mc: Dictionary) -> void:
+	var factions: Dictionary = game_state.factions
+	for faction_key in mc.keys():
+		var fid: String = _resolve_faction_id(str(faction_key))
+		if fid == "" or not factions.has(fid):
+			continue
+		var mood_mods: Dictionary = mc[faction_key] if typeof(mc[faction_key]) == TYPE_DICTIONARY else {}
+		var f: Dictionary = factions[fid]
+		var mood: float = float(f.get("mood", 50))
+		if mood_mods.has("trust"):
+			mood += float(mood_mods["trust"]) * 0.3
+		if mood_mods.has("loyalty"):
+			mood += float(mood_mods["loyalty"]) * 0.4
+		if mood_mods.has("fear"):
+			mood += float(mood_mods["fear"]) * 0.15
+		if mood_mods.has("anger"):
+			mood -= float(mood_mods["anger"]) * 0.3
+		f["mood"] = clampf(mood, 0.0, 100.0)
+
+
+func _resolve_faction_id(name_or_id: String) -> String:
+	# Direct match first
+	if game_state.factions.has(name_or_id):
+		return name_or_id
+	# Common aliases
+	var lower: String = name_or_id.to_lower()
+	if lower in ["byzantium", "byzantskí", "konštantínopol"]:
+		return ""
+	if lower in ["franks", "franky", "frankia", "nemeckí"]:
+		return "franks"
+	if lower in ["hungary", "maďari", "bogatovci"]:
+		return "hungary"
+	if lower in ["moravia", "hráč", "župani"]:
+		return "moravia"
+	if lower in ["bavaria", "bavorsko"]:
+		return "bavaria"
+	if lower in ["poland", "poľsko"]:
+		return "poland"
+	if lower in ["bohemia", "čechy"]:
+		return "bohemia"
+	return ""
