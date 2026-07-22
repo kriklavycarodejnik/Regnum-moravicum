@@ -65,7 +65,7 @@ func _update_army_list() -> void:
 		if typeof(army) != TYPE_DICTIONARY:
 			continue
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(0, 40)
+		button.custom_minimum_size = Vector2(0, 48)
 		button.text = "%s (%s)" % [str(army.get("id", "?")), str(army.get("province_id", "?"))]
 		var aid: String = str(army.get("id", ""))
 		button.pressed.connect(_on_army_selected.bind(aid))
@@ -109,7 +109,7 @@ func _on_move_button_pressed() -> void:
 	dialog.add_child(vbox)
 	for province_id in neighbors:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(0, 40)
+		button.custom_minimum_size = Vector2(0, 48)
 		button.text = str(province_id)
 		button.pressed.connect(_on_target_province_selected.bind(selected_army_id, str(province_id)))
 		vbox.add_child(button)

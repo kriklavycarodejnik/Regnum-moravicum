@@ -2,22 +2,34 @@
 extends VBoxContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const C = preload("res://assets/theme/colors.gd")
 
-signal action_done(chronicle_line: String)
+signal action_done
 
 var _list: VBoxContainer
 var _info: Label
 var _selected: String = ""
+var _emblem: TextureRect
 var gift_btn: Button
 var threat_btn: Button
 var nap_btn: Button
 var trade_btn: Button
 var pact_btn: Button
 
+const FACTION_ART := {
+	"moravia": "mojmir_dynasty_emblem",
+	"hungary": "arpad_master_portrait",
+	"frankia": "mojmir_dynasty_emblem",
+	"bavaria": "mojmir_dynasty_emblem",
+	"poland": "mojmir_dynasty_emblem",
+	"bohemia": "mojmir_dynasty_emblem",
+}
+
 
 func _ready() -> void:
 	if theme == null:
 		theme = _ThemeFactory.build()
+	add_theme_constant_override("separation", 8)
 	_build()
 	call_deferred("refresh")
 
@@ -30,6 +42,13 @@ func _build() -> void:
 	header.text = "Diplomacia"
 	header.theme_type_variation = &"SubtitleLabel"
 	add_child(header)
+
+	_emblem = TextureRect.new()
+	_emblem.custom_minimum_size = Vector2(0, 120)
+	_emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_emblem.visible = false
+	add_child(_emblem)
 
 	_list = VBoxContainer.new()
 	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -55,7 +74,7 @@ func _build() -> void:
 
 func _mk_btn(text: String, cb: Callable) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 44)
+	b.custom_minimum_size = Vector2(0, 48)
 	b.text = text
 	b.pressed.connect(cb)
 	return b
@@ -74,14 +93,28 @@ func refresh() -> void:
 	for f in factions:
 		if typeof(f) != TYPE_DICTIONARY:
 			continue
+		var fid: String = str(f.get("id", ""))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		var thumb := TextureRect.new()
+		thumb.custom_minimum_size = Vector2(32, 32)
+		thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var art_id := FACTION_ART.get(fid, "")
+		if art_id != "":
+			var thumb_tex := ArtCatalog.texture(art_id)
+			if thumb_tex != null:
+				thumb.texture = thumb_tex
+		row.add_child(thumb)
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, 40)
+		b.custom_minimum_size = Vector2(0, 48)
 		var mood: float = float(f.get("mood", 50))
 		var stance := "nepriateľ" if mood < 35.0 else ("spojenec" if mood > 65.0 else "neutrál")
 		b.text = "%s · %.0f (%s)" % [str(f.get("name", f.get("id", "?"))), mood, stance]
-		var fid: String = str(f.get("id", ""))
 		b.pressed.connect(_on_select.bind(fid))
-		_list.add_child(b)
+		row.add_child(b)
+		_list.add_child(row)
 	if _selected != "":
 		_on_select(_selected)
 
@@ -94,7 +127,20 @@ func _on_select(faction_id: String) -> void:
 	var f = gm.game_state.factions.get(faction_id, {})
 	if typeof(f) != TYPE_DICTIONARY:
 		_info.text = "Neznáma frakcia."
+		if _emblem:
+			_emblem.visible = false
 		return
+	var art_id := FACTION_ART.get(faction_id, "")
+	if art_id != "" and _emblem != null:
+		var tex := ArtCatalog.texture(art_id)
+		if tex != null:
+			_emblem.texture = tex
+			_emblem.visible = true
+		else:
+			_emblem.visible = false
+	else:
+		if _emblem:
+			_emblem.visible = false
 	var rel: Dictionary = f.get("relations", {}) if typeof(f.get("relations", {})) == TYPE_DICTIONARY else {}
 	_info.text = "%s\nNálada: %.0f\nNAP: %s · Obchod: %s · Pakt: %s" % [
 		str(f.get("name", faction_id)),
@@ -110,7 +156,7 @@ func _run(result: Dictionary) -> void:
 		_info.text = "Chyba: %s" % str(result.get("error", "?"))
 		return
 	if result.has("chronicle"):
-		action_done.emit(str(result["chronicle"]))
+		action_done.emit()
 	refresh()
 
 

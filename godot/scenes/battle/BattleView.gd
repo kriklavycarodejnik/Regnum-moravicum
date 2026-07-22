@@ -1,5 +1,5 @@
 # scenes/battle/BattleView.gd
-# Jednoduchý battle chrome — dusk + text fáz (siluety neskôr).
+# Battle chrome — dusk + text phase + optional art plate via ArtCatalog.
 extends Control
 
 const C = preload("res://assets/theme/colors.gd")
@@ -48,14 +48,18 @@ func _build() -> void:
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(_body)
 
-func show_outcome(title: String, outcome: Dictionary, art_path: String = "") -> void:
+func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> void:
 	visible = true
 	if _title:
 		_title.text = title
 	if _art:
-		if art_path != "" and ResourceLoader.exists(art_path):
-			_art.texture = load(art_path) as Texture2D
-			_art.visible = true
+		if art_id != "":
+			var tex: Texture2D = ArtCatalog.texture(art_id)
+			if tex != null:
+				_art.texture = tex
+				_art.visible = true
+			else:
+				_art.visible = false
 		else:
 			_art.visible = false
 	if _body:

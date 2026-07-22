@@ -93,7 +93,19 @@ static func _button_style(bg: Color, border: Color) -> StyleBoxFlat:
 	s.set_border_width_all(1)
 	s.set_corner_radius_all(12)
 	s.content_margin_left = 16
-	s.content_margin_top = 10
+	s.content_margin_top = 14
 	s.content_margin_right = 16
-	s.content_margin_bottom = 10
+	s.content_margin_bottom = 14
+	return s
+
+static func resource_chip_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color(0.15, 0.11, 0.07, 0.85)
+	s.border_color = Color(C.BYZANTINE_GOLD.r, C.BYZANTINE_GOLD.g, C.BYZANTINE_GOLD.b, 0.3)
+	s.set_border_width_all(1)
+	s.set_corner_radius_all(8)
+	s.content_margin_left = 6
+	s.content_margin_top = 4
+	s.content_margin_right = 8
+	s.content_margin_bottom = 4
 	return s

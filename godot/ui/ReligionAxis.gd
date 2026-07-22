@@ -3,7 +3,6 @@
 extends HBoxContainer
 
 const C = preload("res://assets/theme/colors.gd")
-const ICON_DIR := "res://assets/icons/ui/"
 
 var _bar: ProgressBar
 var _label: Label
@@ -22,7 +21,7 @@ func _build() -> void:
 	for c in get_children():
 		c.queue_free()
 
-	_icon_rome = _make_icon("icon_cross_latin_64.png")
+	_icon_rome = _make_icon("icon_cross_latin_64")
 	add_child(_icon_rome)
 
 	var mid := VBoxContainer.new()
@@ -44,18 +43,18 @@ func _build() -> void:
 	mid.add_child(_bar)
 	add_child(mid)
 
-	_icon_byz = _make_icon("icon_cross_patriarchal_64.png")
+	_icon_byz = _make_icon("icon_cross_patriarchal_64")
 	add_child(_icon_byz)
 
 
-func _make_icon(file: String) -> TextureRect:
+func _make_icon(art_id: String) -> TextureRect:
 	var t := TextureRect.new()
 	t.custom_minimum_size = Vector2(28, 28)
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var path := ICON_DIR + file
-	if ResourceLoader.exists(path):
-		t.texture = load(path) as Texture2D
+	var tex := ArtCatalog.texture(art_id)
+	if tex != null:
+		t.texture = tex
 	return t
 
 
