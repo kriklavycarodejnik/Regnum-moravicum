@@ -298,12 +298,6 @@ func _show_event(ev: Variant) -> void:
 		choice_c_btn.visible = true
 	else:
 		choice_c_btn.visible = false
-	if choices.size() >= 3 and typeof(choices[2]) == TYPE_DICTIONARY:
-		choice_c_btn.text = str(choices[2].get("label", "C"))
-		choice_c_btn.set_meta("choice_id", str(choices[2].get("id", "")))
-		choice_c_btn.visible = true
-	else:
-		choice_c_btn.visible = false
 
 
 func _normalize_event(ev: Dictionary) -> Dictionary:
