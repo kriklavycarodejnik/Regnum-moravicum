@@ -109,7 +109,19 @@ func process_next_month() -> Dictionary:
 
 
 func has_pending_event() -> bool:
-	return game_state.chronicle.size() > 0
+	return game_state.pending_event != null
+
+func get_pending_event() -> Variant:
+	return game_state.pending_event
+
+func run_skirmish(province_id: String, terrain: String = "field") -> Dictionary:
+	return war_manager.resolve_skirmish(province_id, terrain)
+
+func run_devine_battle() -> Dictionary:
+	return war_manager.resolve_devine_battle()
+
+func resolve_event_choice(choice_id: String) -> Dictionary:
+	return event_manager.resolve_choice(choice_id)
 
 
 func save() -> bool:
