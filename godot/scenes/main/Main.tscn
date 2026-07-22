@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/Main.gd" id="1"]
 [ext_resource type="Script" path="res://ui/StatusBar.gd" id="2"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://ui/DiplomacyPanel.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://ui/NotificationFeed.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/battle/BattleView.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://ui/ObjectivesPanel.tscn" id="9"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -37,43 +38,43 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1, 1, 1, 0.22)
+modulate = Color(1, 1, 1, 0.18)
 
 [node name="UI" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = -12.0
-offset_bottom = -8.0
+offset_left = 10.0
+offset_top = 6.0
+offset_right = -10.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 5
 
-[node name="Title" type="Label" parent="UI"]
+[node name="Header" type="HBoxContainer" parent="UI"]
 layout_mode = 2
-theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 28
-text = "Regnum Moravicum"
-horizontal_alignment = 1
 
-[node name="HelpBar" type="Label" parent="UI"]
+[node name="Title" type="Label" parent="UI/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 24
+text = "Regnum Moravicum — Mojmír II."
+
+[node name="StoryLine" type="Label" parent="UI/Header"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-theme_override_font_sizes/font_size = 12
-text = "Ako hrať: ① Klikni župu  ② Zdroje hore  ③ Ďalší mesiac = ťah  ④ Event = 2 voľby  ⑤ Devín 907 / Skirmish = bitka"
-autowrap_mode = 3
+text = "Cieľ: prežiť do roku 1000"
 
 [node name="StatusBarRow" type="HBoxContainer" parent="UI"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="StatusBar" type="HBoxContainer" parent="UI/StatusBarRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 10
 script = ExtResource("2")
 
 [node name="ReligionAxis" type="HBoxContainer" parent="UI/StatusBarRow"]
@@ -83,28 +84,28 @@ script = ExtResource("5")
 [node name="Body" type="HBoxContainer" parent="UI"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="MainColumn" type="VBoxContainer" parent="UI/Body"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="ProvincesLabel" type="Label" parent="UI/Body/MainColumn"]
+[node name="MapLabel" type="Label" parent="UI/Body/MainColumn"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Župy: 0"
+text = "Mapa ríše — klikni župu"
 
 [node name="MapView" parent="UI/Body/MainColumn" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 300)
+custom_minimum_size = Vector2(0, 280)
 
 [node name="SelectionLabel" type="Label" parent="UI/Body/MainColumn"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Klikni na župu na mape — vpravo sa ukáže ilustrácia."
+text = "Zatiaľ nič nevybrané — klikni napr. Nitra alebo Devín."
 
 [node name="BattleView" parent="UI/Body/MainColumn" instance=ExtResource("8")]
 visible = false
@@ -114,7 +115,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="Chronicle" type="RichTextLabel" parent="UI/Body/MainColumn"]
-custom_minimum_size = Vector2(0, 90)
+custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
@@ -136,7 +137,7 @@ text = "Udalosť"
 
 [node name="EventArt" type="TextureRect" parent="UI/Body/MainColumn/EventPanel/EventVBox"]
 visible = false
-custom_minimum_size = Vector2(0, 160)
+custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
@@ -163,17 +164,20 @@ size_flags_horizontal = 3
 text = "Voľba B"
 
 [node name="SidePanel" type="VBoxContainer" parent="UI/Body"]
-custom_minimum_size = Vector2(340, 0)
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="ObjectivesPanel" parent="UI/Body/SidePanel" instance=ExtResource("9")]
+layout_mode = 2
 
 [node name="RulerRow" type="HBoxContainer" parent="UI/Body/SidePanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="RulerArt" type="TextureRect" parent="UI/Body/SidePanel/RulerRow"]
-custom_minimum_size = Vector2(72, 72)
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
@@ -182,8 +186,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"SubtitleLabel"
-text = "Mojmír II.
-Veľká Morava"
+text = "Mojmír II. · tvoje knieža"
 autowrap_mode = 3
 
 [node name="HeroPanel" type="PanelContainer" parent="UI/Body/SidePanel"]
@@ -194,7 +197,7 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="HeroArt" type="TextureRect" parent="UI/Body/SidePanel/HeroPanel/HeroBox"]
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 6
@@ -202,12 +205,13 @@ stretch_mode = 6
 [node name="HeroCaption" type="Label" parent="UI/Body/SidePanel/HeroPanel/HeroBox"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Vyber župu — ukáže sa ilustrácia."
+text = "Ilustrácia výberu"
 autowrap_mode = 3
 
 [node name="SideTabs" type="TabContainer" parent="UI/Body/SidePanel"]
 layout_mode = 2
 size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 140)
 
 [node name="Armády" parent="UI/Body/SidePanel/SideTabs" instance=ExtResource("3")]
 layout_mode = 2
@@ -215,36 +219,46 @@ layout_mode = 2
 [node name="Diplomacia" parent="UI/Body/SidePanel/SideTabs" instance=ExtResource("6")]
 layout_mode = 2
 
-[node name="ButtonRow" type="HBoxContainer" parent="UI"]
+[node name="PrimaryRow" type="HBoxContainer" parent="UI"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NextMonthButton" type="Button" parent="UI/PrimaryRow"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "▶  Ďalší mesiac  (hlavný ťah)"
+
+[node name="SaveButton" type="Button" parent="UI/PrimaryRow"]
+custom_minimum_size = Vector2(120, 56)
+layout_mode = 2
+text = "Uložiť"
+
+[node name="MenuButton" type="Button" parent="UI/PrimaryRow"]
+custom_minimum_size = Vector2(120, 56)
+layout_mode = 2
+text = "Menu"
+
+[node name="ToolsRow" type="HBoxContainer" parent="UI"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DevineButton" type="Button" parent="UI/ButtonRow"]
-custom_minimum_size = Vector2(0, 48)
+[node name="ToolsHint" type="Label" parent="UI/ToolsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Devín 907"
+theme_type_variation = &"MutedLabel"
+theme_override_font_sizes/font_size = 11
+text = "Voliteľné nástroje (nie každý ťah):"
 
-[node name="SkirmishButton" type="Button" parent="UI/ButtonRow"]
-custom_minimum_size = Vector2(0, 48)
+[node name="DevineButton" type="Button" parent="UI/ToolsRow"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Skirmish Nitra"
+text = "Scénár: Devín 907"
 
-[node name="NextMonthButton" type="Button" parent="UI/ButtonRow"]
-custom_minimum_size = Vector2(0, 48)
+[node name="SkirmishButton" type="Button" parent="UI/ToolsRow"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Ďalší mesiac"
-
-[node name="SaveButton" type="Button" parent="UI/ButtonRow"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Uložiť"
-
-[node name="MenuButton" type="Button" parent="UI/ButtonRow"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Menu"
+text = "Cvičná bitka (Nitra)"

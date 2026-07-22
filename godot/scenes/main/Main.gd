@@ -8,24 +8,24 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var religion_axis: HBoxContainer = $UI/StatusBarRow/ReligionAxis
 @onready var map_view: Control = $UI/Body/MainColumn/MapView
 @onready var chronicle_label: RichTextLabel = $UI/Body/MainColumn/Chronicle
-@onready var next_month_btn: Button = $UI/ButtonRow/NextMonthButton
-@onready var skirmish_btn: Button = $UI/ButtonRow/SkirmishButton
-@onready var devine_btn: Button = $UI/ButtonRow/DevineButton
-@onready var save_btn: Button = $UI/ButtonRow/SaveButton
-@onready var menu_btn: Button = $UI/ButtonRow/MenuButton
-@onready var provinces_label: Label = $UI/Body/MainColumn/ProvincesLabel
+@onready var next_month_btn: Button = $UI/PrimaryRow/NextMonthButton
+@onready var skirmish_btn: Button = $UI/ToolsRow/SkirmishButton
+@onready var devine_btn: Button = $UI/ToolsRow/DevineButton
+@onready var save_btn: Button = $UI/PrimaryRow/SaveButton
+@onready var menu_btn: Button = $UI/PrimaryRow/MenuButton
 @onready var selection_label: Label = $UI/Body/MainColumn/SelectionLabel
-@onready var help_label: Label = $UI/HelpBar
+@onready var story_line: Label = $UI/Header/StoryLine
 @onready var event_panel: PanelContainer = $UI/Body/MainColumn/EventPanel
 @onready var event_title: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventTitle
 @onready var event_body: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventBody
 @onready var choice_a_btn: Button = $UI/Body/MainColumn/EventPanel/EventVBox/Choices/ChoiceA
 @onready var choice_b_btn: Button = $UI/Body/MainColumn/EventPanel/EventVBox/Choices/ChoiceB
-@onready var title_label: Label = $UI/Title
+@onready var title_label: Label = $UI/Header/Title
 @onready var background: ColorRect = $Background
 @onready var bg_art: TextureRect = $BackgroundArt
 @onready var army_ui: Control = $UI/Body/SidePanel/SideTabs/Armády
 @onready var diplomacy_panel: Control = $"UI/Body/SidePanel/SideTabs/Diplomacia"
+@onready var objectives_panel: Node = $UI/Body/SidePanel/ObjectivesPanel
 @onready var event_art: TextureRect = $UI/Body/MainColumn/EventPanel/EventVBox/EventArt
 @onready var hero_art: TextureRect = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroArt
 @onready var hero_caption: Label = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroCaption
@@ -34,6 +34,7 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var battle_view: Node = $UI/Body/MainColumn/BattleView
 
 var selection_art_id: String = "mojmir_ii_master_portrait"
+var _months_played: int = 0
 
 
 func _ready() -> void:
@@ -54,11 +55,10 @@ func _ready() -> void:
 	event_panel.visible = false
 	if event_art:
 		event_art.visible = false
-	if help_label:
-		help_label.text = "Ako hrať: ① Klikni župu na mape  ② Sleduj zdroje hore  ③ Ďalší mesiac = ťah  ④ Eventy majú 2 voľby  ⑤ Devín 907 / Skirmish = bitka"
 	_refresh_ui()
-	_append_chronicle("Kronika sa začína. Mojmír II. vládne Veľkej Morave.")
-	_notify("Vitaj v Regnum Moravicum — rok 902.")
+	_append_chronicle("Rok 902. Mojmír II. zasadá na trón Veľkej Moravy. Kronika sa otvára.")
+	_append_chronicle("Tvoj cieľ: udržať dynastiu a aspoň jednu župu do roku 1000.")
+	_notify("Hlavný ťah = tlačidlo „Ďalší mesiac“.")
 
 
 func _apply_regnum_theme() -> void:
@@ -70,12 +70,10 @@ func _apply_regnum_theme() -> void:
 		title_label.theme_type_variation = &"TitleLabel"
 	if event_title:
 		event_title.theme_type_variation = &"SubtitleLabel"
-	if provinces_label:
-		provinces_label.theme_type_variation = &"MutedLabel"
 	if selection_label:
 		selection_label.theme_type_variation = &"MutedLabel"
-	if help_label:
-		help_label.theme_type_variation = &"MutedLabel"
+	if story_line:
+		story_line.theme_type_variation = &"MutedLabel"
 	if hero_caption:
 		hero_caption.theme_type_variation = &"MutedLabel"
 
@@ -88,7 +86,7 @@ func _setup_background_art() -> void:
 		tex = ArtCatalog.texture("moravian_court_interior")
 	if tex != null:
 		bg_art.texture = tex
-		bg_art.modulate = Color(1, 1, 1, 0.22)
+		bg_art.modulate = Color(1, 1, 1, 0.18)
 		bg_art.visible = true
 	else:
 		bg_art.visible = false
@@ -96,7 +94,7 @@ func _setup_background_art() -> void:
 
 func _setup_default_hero() -> void:
 	selection_art_id = "mojmir_ii_master_portrait"
-	_set_hero_art(selection_art_id, "Mojmír II. · knieža Veľkej Moravy")
+	_set_hero_art(selection_art_id, "Mojmír II. — ty vládneš")
 	if ruler_art:
 		var rt: Texture2D = ArtCatalog.texture("mojmir_ii_master_portrait")
 		if rt != null:
@@ -117,11 +115,21 @@ func _set_hero_art(art_id: String, caption: String = "") -> void:
 		hero_caption.text = caption if caption != "" else art_id
 
 
+func _update_story_line() -> void:
+	if story_line == null or GameManager == null or GameManager.game_state == null:
+		return
+	var y: int = int(GameManager.game_state.year)
+	var left: int = maxi(0, 1000 - y)
+	story_line.text = "Cieľ: prežiť do 1000  ·  zostáva ~%d r.  ·  ťah = Ďalší mesiac" % left
+
+
 func _on_next_month() -> void:
 	if GameManager.has_pending_event():
 		_show_event(GameManager.get_pending_event())
+		_notify("Najprv vyrieš udalosť — vyber voľbu A alebo B.")
 		return
 	var report: Dictionary = GameManager.process_next_month()
+	_months_played += 1
 	_refresh_ui()
 	if report.has("chronicle") and str(report["chronicle"]) != "":
 		_append_chronicle("[%d/%02d] %s" % [
@@ -129,9 +137,16 @@ func _on_next_month() -> void:
 			report.get("month", 0),
 			report["chronicle"]
 		])
+	else:
+		_append_chronicle("[%d/%02d] Mesiac uplynul v tichu dvorov a polí." % [
+			GameManager.game_state.year, GameManager.game_state.month
+		])
 	_check_ending()
 	if GameManager.has_pending_event():
 		_show_event(GameManager.get_pending_event())
+		_notify("Udalosť! Vyber jednu z dvoch volieb.")
+	elif GameManager.game_state.year == 907 and GameManager.game_state.month == 1:
+		_notify("Rok 907 — zváž scenár Devín 907 (nástroje dole).")
 
 
 func _on_skirmish() -> void:
@@ -139,9 +154,10 @@ func _on_skirmish() -> void:
 	_refresh_ui()
 	if outcome.has("chronicle"):
 		_append_chronicle(str(outcome["chronicle"]))
-	_set_hero_art("nitra_master_hero", "Bitka / skirmish · Nitra")
-	_show_battle("Bitka pri Nitre", outcome, "nitra_master_hero")
+	_set_hero_art("nitra_master_hero", "Cvičná bitka · Nitra")
+	_show_battle("Cvičná bitka pri Nitre", outcome, "nitra_master_hero")
 	_log_battle_phases(outcome)
+	_notify("Cvičná bitka hotová — späť k mesačným ťahom.")
 
 
 func _on_devine() -> void:
@@ -149,9 +165,10 @@ func _on_devine() -> void:
 	_refresh_ui()
 	if outcome.has("chronicle"):
 		_append_chronicle(str(outcome["chronicle"]))
-	_set_hero_art("battle_danube_composition", "Kríza 907 · Bitka pri Devíne (Maďari)")
+	_set_hero_art("battle_danube_composition", "Kríza 907 · Devín (Maďari útočia)")
 	_show_battle("Bitka pri Devíne (907)", outcome, "battle_danube_composition")
 	_log_battle_phases(outcome)
+	_notify("Scénár 907 odohraný. Pokračuj „Ďalší mesiac“.")
 
 
 func _on_save() -> void:
@@ -179,14 +196,13 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 			continue
 		var phase: String = str(log.get("phase", "?"))
 		if phase in ["attack", "counterattack"]:
-			_append_chronicle("  · %s: A-%d D-%d (ratio %.2f)" % [
+			_append_chronicle("  · %s: A-%d D-%d" % [
 				phase,
 				int(log.get("attacker_losses", 0)),
 				int(log.get("defender_losses", 0)),
-				float(log.get("ratio", 0.0))
 			])
 		elif phase == "decision":
-			_append_chronicle("  · decision: %s" % str(log.get("winner", "?")))
+			_append_chronicle("  · výsledok: %s" % str(log.get("winner", "?")))
 
 
 func _on_province_selected(province_id: String) -> void:
@@ -194,7 +210,7 @@ func _on_province_selected(province_id: String) -> void:
 	if typeof(p) != TYPE_DICTIONARY:
 		selection_label.text = "Župa: %s" % province_id
 		return
-	selection_label.text = "Vybrané: %s · vlastník %s · lojalita %s · prosperita %s" % [
+	selection_label.text = "Župa %s · vlastník %s · lojalita %s · prosperita %s  →  ďalej: Ďalší mesiac alebo Diplomacia" % [
 		str(p.get("name", province_id)),
 		str(p.get("owner_faction", "?")),
 		str(p.get("loyalty", "?")),
@@ -204,21 +220,18 @@ func _on_province_selected(province_id: String) -> void:
 	if art_id == "":
 		art_id = "mojmir_dynasty_emblem"
 	selection_art_id = art_id
-	var cap: String = "%s · %s" % [str(p.get("name", province_id)), str(p.get("owner_faction", "?"))]
-	_set_hero_art(art_id, cap)
-	_notify("Župa: %s" % str(p.get("name", province_id)))
+	_set_hero_art(art_id, "%s · tvoja ríša" % str(p.get("name", province_id)))
 
 
 func _show_event(ev: Variant) -> void:
 	if ev == null or typeof(ev) != TYPE_DICTIONARY:
 		return
-	# Normalize legacy EventManager shape {text, choices: Dictionary}
 	var norm: Dictionary = _normalize_event(ev)
 	event_panel.visible = true
 	next_month_btn.disabled = true
 	skirmish_btn.disabled = true
 	devine_btn.disabled = true
-	event_title.text = str(norm.get("title", "Udalosť"))
+	event_title.text = str(norm.get("title", "Udalosť na dvore"))
 	event_body.text = str(norm.get("body", ""))
 	var art_id: String = str(norm.get("art_id", ""))
 	if art_id == "":
@@ -247,7 +260,6 @@ func _show_event(ev: Variant) -> void:
 
 
 func _normalize_event(ev: Dictionary) -> Dictionary:
-	# Target shape: {title, body, art_id, choices: Array[{id,label,effect?}]}
 	var out: Dictionary = {
 		"title": str(ev.get("title", "")),
 		"body": str(ev.get("body", "")),
@@ -280,17 +292,13 @@ func _normalize_event(ev: Dictionary) -> Dictionary:
 func _get_event_fallback_art(ev: Dictionary) -> String:
 	var text: String = str(ev.get("body", "")) + " " + str(ev.get("title", ""))
 	var low: String = text.to_lower()
-	if "mojmír" in low or "mojmir" in low or "svätopluk" in low:
-		return "mojmir_ii_master_portrait"
+	if "rada" in low or "župan" in low:
+		return "moravian_court_interior"
 	if "nitra" in low:
 		return "nitra_master_hero"
 	if "devín" in low or "devin" in low:
 		return "devin_master_fortress"
-	if "bratislava" in low:
-		return "bratislava_master_river"
-	if "rada" in low or "župan" in low:
-		return "moravian_court_interior"
-	if "bitka" in low or "battle" in low:
+	if "bitka" in low:
 		return "battle_danube_composition"
 	return "moravian_court_interior"
 
@@ -312,8 +320,10 @@ func _resolve(choice_id: String) -> void:
 	skirmish_btn.disabled = false
 	devine_btn.disabled = false
 	_refresh_ui()
-	if result.get("ok", false) and result.has("chronicle"):
-		_append_chronicle(str(result["chronicle"]))
+	if result.get("ok", false):
+		if result.has("chronicle"):
+			_append_chronicle(str(result["chronicle"]))
+		_notify("Voľba prijatá. Môžeš ísť „Ďalší mesiac“.")
 	if selection_art_id != "":
 		_set_hero_art(selection_art_id, "")
 
@@ -322,6 +332,7 @@ func _on_diplomacy_action(line: String = "") -> void:
 	if line != "":
 		_append_chronicle(line)
 	_refresh_ui()
+	_notify("Diplomacia vykonaná.")
 
 
 func _refresh_ui() -> void:
@@ -331,34 +342,35 @@ func _refresh_ui() -> void:
 		religion_axis.call("refresh")
 	if map_view and map_view.has_method("refresh"):
 		map_view.call("refresh")
-	var s = GameManager.game_state
-	var edge_hint := 0
-	for pid in s.provinces:
-		var p = s.provinces[pid]
-		if typeof(p) == TYPE_DICTIONARY:
-			edge_hint += p.get("neighbors", []).size()
-	var occ := 0
-	for pid2 in s.provinces:
-		var p2 = s.provinces[pid2]
-		if typeof(p2) == TYPE_DICTIONARY and p2.has("occupier_faction"):
-			occ += 1
-	provinces_label.text = "Župy: %d · susedstvá: %d · okupované: %d" % [
-		s.provinces.size(), edge_hint / 2, occ
-	]
+	if objectives_panel and objectives_panel.has_method("refresh"):
+		objectives_panel.call("refresh")
 	if army_ui and army_ui.has_method("_update_army_list"):
 		army_ui.call("_update_army_list")
 	if diplomacy_panel and diplomacy_panel.has_method("refresh"):
 		diplomacy_panel.call("refresh")
+	_update_story_line()
+	# Year-gate Devín hint on button
+	if devine_btn and GameManager and GameManager.game_state:
+		var y: int = int(GameManager.game_state.year)
+		if y >= 906 and y <= 908:
+			devine_btn.text = "★ Scénár: Devín 907 (odporúčané)"
+		else:
+			devine_btn.text = "Scénár: Devín 907"
 
 
 func _append_chronicle(text: String) -> void:
-	chronicle_label.append_text(text + "\n")
+	if chronicle_label:
+		chronicle_label.append_text(text + "\n")
 	_notify(text)
 
 
 func _notify(text: String) -> void:
 	if notification_feed and notification_feed.has_method("push"):
-		notification_feed.call("push", text)
+		# short line only
+		var short: String = text
+		if short.length() > 120:
+			short = short.substr(0, 117) + "…"
+		notification_feed.call("push", short)
 
 
 func _check_ending() -> void:

@@ -101,16 +101,16 @@ func refresh() -> void:
 		thumb.custom_minimum_size = Vector2(32, 32)
 		thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		var art_id := FACTION_ART.get(fid, "")
+		var art_id: String = str(FACTION_ART.get(fid, ""))
 		if art_id != "":
-			var thumb_tex := ArtCatalog.texture(art_id)
+			var thumb_tex: Texture2D = ArtCatalog.texture(art_id)
 			if thumb_tex != null:
 				thumb.texture = thumb_tex
 		row.add_child(thumb)
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(0, 48)
 		var mood: float = float(f.get("mood", 50))
-		var stance := "nepriateľ" if mood < 35.0 else ("spojenec" if mood > 65.0 else "neutrál")
+		var stance: String = "nepriateľ" if mood < 35.0 else ("spojenec" if mood > 65.0 else "neutrál")
 		b.text = "%s · %.0f (%s)" % [str(f.get("name", f.get("id", "?"))), mood, stance]
 		b.pressed.connect(_on_select.bind(fid))
 		row.add_child(b)
@@ -130,9 +130,9 @@ func _on_select(faction_id: String) -> void:
 		if _emblem:
 			_emblem.visible = false
 		return
-	var art_id := FACTION_ART.get(faction_id, "")
+	var art_id: String = str(FACTION_ART.get(faction_id, ""))
 	if art_id != "" and _emblem != null:
-		var tex := ArtCatalog.texture(art_id)
+		var tex: Texture2D = ArtCatalog.texture(art_id)
 		if tex != null:
 			_emblem.texture = tex
 			_emblem.visible = true
@@ -141,7 +141,8 @@ func _on_select(faction_id: String) -> void:
 	else:
 		if _emblem:
 			_emblem.visible = false
-	var rel: Dictionary = f.get("relations", {}) if typeof(f.get("relations", {})) == TYPE_DICTIONARY else {}
+	var rel_raw = f.get("relations", {})
+	var rel: Dictionary = rel_raw if typeof(rel_raw) == TYPE_DICTIONARY else {}
 	_info.text = "%s\nNálada: %.0f\nNAP: %s · Obchod: %s · Pakt: %s" % [
 		str(f.get("name", faction_id)),
 		float(f.get("mood", 50)),
@@ -196,7 +197,9 @@ func _treaty(kind: String) -> void:
 		return
 	var f = gm.game_state.factions.get(_selected, {})
 	var rel: Dictionary = {}
-	if typeof(f) == TYPE_DICTIONARY and typeof(f.get("relations", {})) == TYPE_DICTIONARY:
-		rel = f.get("relations", {})
+	if typeof(f) == TYPE_DICTIONARY:
+		var rr = f.get("relations", {})
+		if typeof(rr) == TYPE_DICTIONARY:
+			rel = rr
 	var cur: bool = bool(rel.get(kind, false))
 	_run(gm.diplomacy_manager.set_treaty(_selected, kind, not cur))

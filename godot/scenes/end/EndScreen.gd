@@ -27,7 +27,7 @@ func _populate() -> void:
 	title_label.theme_type_variation = &"TitleLabel"
 	body_label.text = str(ending.get("message", "Koniec hry."))
 	var art_id := "moravian_court_interior" if won else "battle_danube_composition"
-	var tex := ArtCatalog.texture(art_id)
+	var tex: Texture2D = ArtCatalog.texture(art_id)
 	if tex != null:
 		art.texture = tex
 	else:

@@ -114,9 +114,11 @@ func get_pending_event() -> Variant:
 	if pending == null:
 		return null
 	# pending is expected to have: text (String), choices (Dict)
-	var title = "Udalosť"
-	var body = pending.get("text", "")
-	var art_id = ""  # let Main.gd use fallback or empty
+	var title = str(pending.get("title", "Udalosť"))
+	if title == "":
+		title = "Udalosť"
+	var body = str(pending.get("text", pending.get("body", "")))
+	var art_id = str(pending.get("art_id", ""))
 	var choices_dict = pending.get("choices", {})
 	var choices_array = []
 	if typeof(choices_dict) == TYPE_DICTIONARY:

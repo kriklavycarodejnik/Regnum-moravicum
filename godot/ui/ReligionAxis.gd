@@ -52,7 +52,7 @@ func _make_icon(art_id: String) -> TextureRect:
 	t.custom_minimum_size = Vector2(28, 28)
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var tex := ArtCatalog.texture(art_id)
+	var tex: Texture2D = ArtCatalog.texture(art_id)
 	if tex != null:
 		t.texture = tex
 	return t
