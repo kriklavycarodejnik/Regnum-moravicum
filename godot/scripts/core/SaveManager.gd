@@ -50,8 +50,8 @@ func load_game(path: String = DEFAULT_PATH) -> RefCounted:
 		return null
 
 	if int(json.get("version", 0)) != SAVE_VERSION:
-	    push_error("Save file version mismatch")
-	    return null
+		push_error("Save file version mismatch")
+		return null
 
 	rng.seed = int(json.get("seed") or 42)
 	rng.state = json.get("rng_state") or 0
