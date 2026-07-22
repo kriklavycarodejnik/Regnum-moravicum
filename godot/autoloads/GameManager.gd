@@ -4,65 +4,47 @@ extends Node
 const GAME_STATE := preload("res://scripts/core/GameState.gd")
 const SAVE_MANAGER := preload("res://scripts/core/SaveManager.gd")
 const TICK_MANAGER := preload("res://scripts/core/TickManager.gd")
+const ECONOMY_MANAGER := preload("res://scripts/managers/EconomyManager.gd")
+const NOBILITY_MANAGER := preload("res://scripts/managers/NobilityManager.gd")
+const NARRATION_MANAGER := preload("res://scripts/managers/NarrationManager.gd")
+const EVENT_MANAGER := preload("res://scripts/managers/EventManager.gd")
+const DIPLOMACY_MANAGER := preload("res://scripts/managers/DiplomacyManager.gd")
+const WAR_MANAGER := preload("res://scripts/managers/WarManager.gd")
+const BATTLE_MANAGER := preload("res://scripts/managers/BattleManager.gd")
+const SUCCESSION_MANAGER := preload("res://scripts/managers/SuccessionManager.gd")
+const RELIGION_MANAGER := preload("res://scripts/managers/ReligionManager.gd")
+const VICTORY_MANAGER := preload("res://scripts/managers/VictoryManager.gd")
+const ARMY_MANAGER := preload("res://scripts/managers/ArmyManager.gd")
+const MAP_MANAGER := preload("res://scripts/managers/MapManager.gd")
+const CAMPAIGN_MANAGER := preload("res://scripts/managers/CampaignManager.gd")
 
-# Dynamické načítanie manažérov
-var ECONOMY_MANAGER := load("res://scripts/managers/EconomyManager.gd")
-var NOBILITY_MANAGER := load("res://scripts/managers/NobilityManager.gd")
-var NARRATION_MANAGER := load("res://scripts/managers/NarrationManager.gd")
-var EVENT_MANAGER := load("res://scripts/managers/EventManager.gd")
-var DIPLOMACY_MANAGER := load("res://scripts/managers/DiplomacyManager.gd")
-var WAR_MANAGER := load("res://scripts/managers/WarManager.gd")
-var BATTLE_MANAGER := load("res://scripts/managers/BattleManager.gd")
-var SUCCESSION_MANAGER := load("res://scripts/managers/SuccessionManager.gd")
-var RELIGION_MANAGER := load("res://scripts/managers/ReligionManager.gd")
-var VICTORY_MANAGER := load("res://scripts/managers/VictoryManager.gd")
-var ARMY_MANAGER := load("res://scripts/managers/ArmyManager.gd")
-var MAP_MANAGER := load("res://scripts/managers/MapManager.gd")
-var HUNGARIAN_WAR_SCENARIO := load("res://scripts/scenarios/HungarianWarScenario.gd")
-
-var game_state
-var save_manager
-var tick_manager
-var economy_manager
-var nobility_manager
-var narration_manager
-var event_manager
-var diplomacy_manager
-var war_manager
-var battle_manager
-var succession_manager
-var religion_manager
-var victory_manager
-var army_manager
-var map_manager
+var game_state: GameState
+var save_manager: SaveManager
+var tick_manager: TickManager
+var economy_manager: EconomyManager
+var nobility_manager: NobilityManager
+var narration_manager: NarrationManager
+var event_manager: EventManager
+var diplomacy_manager: DiplomacyManager
+var war_manager: WarManager
+var battle_manager: BattleManager
+var succession_manager: SuccessionManager
+var religion_manager: ReligionManager
+var victory_manager: VictoryManager
+var army_manager: ArmyManager
+var map_manager: MapManager
+var campaign_manager: CampaignManager
 
 
 func _ready() -> void:
 	_bootstrap()
-	var provinces: Dictionary = game_state.get("provinces") or {}
-	var factions: Dictionary = game_state.get("factions") or {}
-	print("GameManager ready – M1+M2+M3+M4+M5 (year %d, provinces %d, factions %d)" % [
-		(game_state.get("year") or 902), provinces.size(), factions.size()
+	print("GameManager ready — M1+M2+M3+M4+M5 (year %d, provinces %d, factions %d, armies %d)" % [
+		game_state.year, game_state.provinces.size(), game_state.factions.size(), game_state.armies.size()
 	])
 
 
 func _bootstrap() -> void:
 	game_state = GAME_STATE.new()
-
-	# Inicializácia prázdnych Dictionary pre game_state
-	if typeof(game_state.get("nobles")) != TYPE_DICTIONARY:
-		game_state.set("nobles", {})
-	if typeof(game_state.get("armies")) != TYPE_DICTIONARY:
-		game_state.set("armies", {})
-	if typeof(game_state.get("provinces")) != TYPE_DICTIONARY:
-		game_state.set("provinces", {})
-	if typeof(game_state.get("factions")) != TYPE_DICTIONARY:
-		game_state.set("factions", {})
-	if typeof(game_state.get("resources")) != TYPE_DICTIONARY:
-		game_state.set("resources", {"gold": 1000, "prestige": 50})
-	if typeof(game_state.get("chronicle")) != TYPE_ARRAY:
-		game_state.set("chronicle", [])
-
 	save_manager = SAVE_MANAGER.new()
 	save_manager._init(42)
 	var rng = save_manager.get_rng()
@@ -91,6 +73,8 @@ func _bootstrap() -> void:
 	map_manager._init(game_state)
 	var loaded: int = map_manager.load_provinces_from_dir("res://data/provinces/")
 	print("MapManager loaded provinces: ", loaded)
+	campaign_manager = CAMPAIGN_MANAGER.new()
+	campaign_manager._init(game_state, war_manager, diplomacy_manager, rng)
 	tick_manager = TICK_MANAGER.new()
 	tick_manager._init(
 		game_state,
@@ -107,25 +91,26 @@ func _bootstrap() -> void:
 		save_manager
 	)
 
-	var nobles: Dictionary = game_state.get("nobles") or {}
-	if nobles.is_empty():
-		nobles["mojmir_ii"] = {
-			"id": "mojmir_ii",
-			"name": "Mojmír II.",
-			"birth_year": 870,
-			"is_ruler": true,
-			"dynasty_id": "mojmir",
-			"prestige": 50
+	# Inicializovať nobles
+	if game_state.nobles.is_empty():
+		game_state.nobles = {
+			"mojmir_ii": {
+				"id": "mojmir_ii",
+				"name": "Mojmír II.",
+				"birth_year": 870,
+				"is_ruler": true,
+				"dynasty_id": "mojmir",
+				"prestige": 50
+			},
+			"svatopluk_ii": {
+				"id": "svatopluk_ii",
+				"name": "Svätopluk II.",
+				"birth_year": 880,
+				"is_ruler": false,
+				"dynasty_id": "mojmir",
+				"prestige": 30
+			}
 		}
-		nobles["svatopluk_ii"] = {
-			"id": "svatopluk_ii",
-			"name": "Svätopluk II.",
-			"birth_year": 880,
-			"is_ruler": false,
-			"dynasty_id": "mojmir",
-			"prestige": 30
-		}
-		game_state.set("nobles", nobles)
 
 	# M5: Initial armies
 	army_manager.create_army("moravia_levy_1", "moravia_levy", "nitra")
@@ -142,11 +127,13 @@ func resolve_event_choice(choice_id: String) -> Dictionary:
 
 
 func has_pending_event() -> bool:
-	return game_state.get("pending_event") != null
+	return game_state.chronicle.size() > 0
 
 
 func get_pending_event() -> Variant:
-	return game_state.get("pending_event")
+	if game_state.chronicle.size() > 0:
+		return game_state.chronicle[-1]
+	return null
 
 
 func run_skirmish(province_id: String = "nitra", terrain: String = "field") -> Dictionary:
@@ -157,13 +144,11 @@ func run_skirmish(province_id: String = "nitra", terrain: String = "field") -> D
 		str(outcome.get("winner", "?")),
 		str(outcome.get("result", "?"))
 	]
-	var chronicle: Array = game_state.get("chronicle") or []
-	chronicle.append({
-		"year": game_state.get("year") or 902,
-		"month": game_state.get("month") or 1,
+	game_state.chronicle.append({
+		"year": game_state.year,
+		"month": game_state.month,
 		"text": line
 	})
-	game_state.set("chronicle", chronicle)
 	outcome["chronicle"] = line
 	return outcome
 
@@ -174,13 +159,11 @@ func run_devine_battle() -> Dictionary:
 		str(outcome.get("winner", "?")),
 		str(outcome.get("result", "?"))
 	]
-	var chronicle: Array = game_state.get("chronicle") or []
-	chronicle.append({
-		"year": game_state.get("year") or 902,
-		"month": game_state.get("month") or 1,
+	game_state.chronicle.append({
+		"year": game_state.year,
+		"month": game_state.month,
 		"text": line
 	})
-	game_state.set("chronicle", chronicle)
 	if outcome.has("rewards_applied"):
 		var r = outcome["rewards_applied"]
 		line += " | Odmena: +%d prestíž, +%d zlato, +%d lojalita" % [
@@ -243,8 +226,9 @@ func load_save() -> bool:
 	army_manager._init(game_state, rng)
 	map_manager = MAP_MANAGER.new()
 	map_manager._init(game_state)
-	var provinces: Dictionary = game_state.get("provinces") or {}
-	map_manager.provinces = provinces.duplicate(true)
+	map_manager.provinces = game_state.provinces.duplicate(true)
+	campaign_manager = CAMPAIGN_MANAGER.new()
+	campaign_manager._init(game_state, war_manager, diplomacy_manager, rng)
 	tick_manager = TICK_MANAGER.new()
 	tick_manager._init(
 		game_state,
