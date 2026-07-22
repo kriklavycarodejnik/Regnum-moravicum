@@ -31,7 +31,7 @@ func process_succession() -> Dictionary:
 
 
 func _get_current_ruler() -> Dictionary:
-	var nobles: Dictionary = game_state.get("nobles") or {}
+	var nobles: Dictionary = game_state.nobles
 	for noble_id in nobles:
 		var noble: Dictionary = nobles[noble_id]
 		if noble.get("is_ruler", false):
@@ -45,7 +45,7 @@ func get_heir() -> Dictionary:
 		return {}
 
 	var dynasty_id: String = str(ruler.get("dynasty_id", ""))
-	var nobles: Dictionary = game_state.get("nobles") or {}
+	var nobles: Dictionary = game_state.nobles
 	var candidates: Array = []
 	for noble_id in nobles:
 		var noble: Dictionary = nobles[noble_id]
@@ -56,7 +56,7 @@ func get_heir() -> Dictionary:
 		return {}
 
 	# Seniority: oldest candidate
-	var current_year: int = game_state.get("year") or 902
+	var current_year: int = game_state.year
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		var age_a: int = current_year - int(a.get("birth_year", 850))
 		var age_b: int = current_year - int(b.get("birth_year", 850))
@@ -66,7 +66,7 @@ func get_heir() -> Dictionary:
 
 
 func _elect_new_ruler() -> Dictionary:
-	var nobles: Dictionary = game_state.get("nobles") or {}
+	var nobles: Dictionary = game_state.nobles
 	var candidates: Array = []
 	for noble_id in nobles:
 		var noble: Dictionary = nobles[noble_id]
@@ -84,6 +84,6 @@ func _elect_new_ruler() -> Dictionary:
 	
 	# Update nobles
 	nobles[new_ruler.id] = new_ruler
-	game_state.set("nobles", nobles)
+	game_state.nobles = nobles
 	
 	return new_ruler

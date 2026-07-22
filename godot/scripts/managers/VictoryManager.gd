@@ -14,8 +14,8 @@ func _init(state: RefCounted = null) -> void:
 
 func check_victory() -> Dictionary:
 	var report := {"type": "victory", "victory": false, "victory_type": ""}
-	var resources: Dictionary = game_state.get("resources") or {}
-	var provinces: Dictionary = game_state.get("provinces") or {}
+	var resources: Dictionary = game_state.resources
+	var provinces: Dictionary = game_state.provinces
 
 	# Prestige victory
 	if int(resources.get("prestige", 0)) >= 100:

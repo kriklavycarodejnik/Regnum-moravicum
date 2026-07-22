@@ -97,18 +97,18 @@ func resolve_devine_battle() -> Dictionary:
 			"gold": 1000,
 			"loyalty_bonus": 10
 		}
-		var resources: Dictionary = game_state.get("resources") or {}
+		var resources: Dictionary = game_state.resources
 		resources["prestige"] = (resources.get("prestige") or 0) + rewards["prestige"]
 		resources["gold"] = (resources.get("gold") or 0) + rewards["gold"]
-		game_state.set("resources", resources)
+		game_state.resources = resources
 		
-		var provinces: Dictionary = game_state.get("provinces") or {}
+		var provinces: Dictionary = game_state.provinces
 		for province_id in ["nitra", "bratislava"]:
 			if provinces.has(province_id):
 				var province: Dictionary = provinces[province_id]
-				province["loyalty"] = (province.get("loyalty") or 50) + rewards["loyalty_bonus"]
+				province["loyalty"] = province.get("loyalty", 50) + rewards["loyalty_bonus"]
 				provinces[province_id] = province
-		game_state.set("provinces", provinces)
+		game_state.provinces = provinces
 		
 		outcome["rewards_applied"] = rewards
 

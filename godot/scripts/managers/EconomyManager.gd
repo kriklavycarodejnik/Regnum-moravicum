@@ -14,7 +14,7 @@ func _init(state: RefCounted = null) -> void:
 
 func process_economy() -> Dictionary:
 	var report := {"type": "economy", "prosperity_growth": {}, "upkeep": {}}
-	var provinces: Dictionary = game_state.get("provinces") or {}
+	var provinces: Dictionary = game_state.provinces
 	for province_id in provinces:
 		var province: Dictionary = provinces[province_id]
 		var prosperity: float = float(province.get("prosperity", 50.0))
@@ -24,14 +24,14 @@ func process_economy() -> Dictionary:
 
 	# Upkeep for nobles
 	var total_upkeep: int = 0
-	var nobles: Dictionary = game_state.get("nobles") or {}
+	var nobles: Dictionary = game_state.nobles
 	for noble_id in nobles:
 		var noble: Dictionary = nobles[noble_id]
 		var upkeep: int = int(noble.get("prestige", 10)) * 2
 		total_upkeep += upkeep
-	var resources: Dictionary = game_state.get("resources") or {}
+	var resources: Dictionary = game_state.resources
 	resources["gold"] = int(resources.get("gold", 1000)) - total_upkeep
-	game_state.set("resources", resources)
+	game_state.resources = resources
 	report.upkeep["nobles"] = total_upkeep
 
 	return report

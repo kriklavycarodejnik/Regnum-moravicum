@@ -27,7 +27,7 @@ func load_provinces_from_dir(dir_path: String) -> int:
 			if typeof(json) == TYPE_DICTIONARY:
 				provinces = json.duplicate(true)
 				count = json.size()
-				game_state.set("provinces", provinces.duplicate(true))
+				game_state.provinces = provinces.duplicate(true)
 
 	else:
 		dir.list_dir_begin()
@@ -52,7 +52,7 @@ func load_provinces_from_dir(dir_path: String) -> int:
 			province["neighbors"] = []
 		if not province.has("religion"):
 			province["religion"] = "pagan"
-	game_state.set("provinces", provinces.duplicate(true))
+	game_state.provinces = provinces.duplicate(true)
 	return count
 
 

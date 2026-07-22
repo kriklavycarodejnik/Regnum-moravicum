@@ -13,16 +13,17 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 		game_state = state
 	if rng_ref != null:
 		rng = rng_ref
-	_init_province_religions()
+	if game_state != null:
+		_init_province_religions()
 
 
 func _init_province_religions() -> void:
-	var provinces: Dictionary = game_state.get("provinces") or {}
+	var provinces: Dictionary = game_state.provinces
 	for province_id in provinces:
 		var province: Dictionary = provinces[province_id]
 		if not province.has("religion"):
 			province["religion"] = "pagan"
-	game_state.set("provinces", provinces)
+	game_state.provinces = provinces
 
 
 func process_religion() -> Dictionary:
@@ -30,7 +31,7 @@ func process_religion() -> Dictionary:
 	var religion_counts: Dictionary = {}
 
 	# Count religions
-	var provinces: Dictionary = game_state.get("provinces") or {}
+	var provinces: Dictionary = game_state.provinces
 	for province_id in provinces:
 		var province: Dictionary = provinces[province_id]
 		var religion: String = str(province.get("religion", "pagan"))
@@ -55,6 +56,6 @@ func process_religion() -> Dictionary:
 			"old_religion": province.get("religion", "pagan"),
 			"new_religion": new_religion
 		})
-	game_state.set("provinces", provinces)
+	game_state.provinces = provinces
 
 	return report

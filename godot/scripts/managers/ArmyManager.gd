@@ -30,12 +30,13 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 		game_state = state
 	if rng_ref != null:
 		rng = rng_ref
-	_init_armies()
+	if game_state != null:
+		_init_armies()
 
 
 func _init_armies() -> void:
-	var armies: Dictionary = game_state.get("armies") or {}
-	var army_templates: Dictionary = game_state.get("army_templates") or {}
+	var armies: Dictionary = game_state.armies
+	var army_templates: Dictionary = game_state.army_templates
 	
 	# Inicializovať army_templates, ak nie sú definované
 	if army_templates.is_empty():
@@ -59,12 +60,12 @@ func _init_armies() -> void:
 				"max_size": 3000
 			}
 		}
-		game_state.set("army_templates", army_templates)
+		game_state.army_templates = army_templates
 	
 	# Inicializovať armies, ak nie sú definované
 	if armies.is_empty():
 		armies = {}
-		game_state.set("armies", armies)
+		game_state.armies = armies
 
 
 func create_army(
@@ -75,7 +76,7 @@ func create_army(
 	size: int = -1,
 	commander_skill: int = 5
 ) -> Dictionary:
-	var army_templates: Dictionary = game_state.get("army_templates") or {}
+	var army_templates: Dictionary = game_state.army_templates
 	if not army_templates.has(template_id):
 		return {"ok": false, "error": "invalid_template"}
 
@@ -103,27 +104,27 @@ func create_army(
 		"supply": 100.0
 	}
 
-	var armies: Dictionary = game_state.get("armies") or {}
+	var armies: Dictionary = game_state.armies
 	armies[army_id] = army
-	game_state.set("armies", armies)
+	game_state.armies = armies
 	return {"ok": true, "army": army}
 
 
 func disband_army(army_id: String) -> Dictionary:
-	var armies: Dictionary = game_state.get("armies") or {}
+	var armies: Dictionary = game_state.armies
 	if not armies.has(army_id):
 		return {"ok": false, "error": "army_not_found"}
 
 	var army: Dictionary = armies[army_id]
 	army["status"] = "disbanded"
 	armies.erase(army_id)
-	game_state.set("armies", armies)
+	game_state.armies = armies
 	return {"ok": true}
 
 
 func move_army(army_id: String, target_province_id: String) -> Dictionary:
-	var armies: Dictionary = game_state.get("armies") or {}
-	var provinces: Dictionary = game_state.get("provinces") or {}
+	var armies: Dictionary = game_state.armies
+	var provinces: Dictionary = game_state.provinces
 	if not armies.has(army_id):
 		return {"ok": false, "error": "army_not_found"}
 	if not provinces.has(target_province_id):
@@ -145,12 +146,12 @@ func move_army(army_id: String, target_province_id: String) -> Dictionary:
 	army["status"] = "marching"
 
 	armies[army_id] = army
-	game_state.set("armies", armies)
+	game_state.armies = armies
 	return {"ok": true, "army": army}
 
 
 func start_battle(army_id: String, enemy_army_id: String, terrain: String = "field") -> Dictionary:
-	var armies: Dictionary = game_state.get("armies") or {}
+	var armies: Dictionary = game_state.armies
 	if not armies.has(army_id) or not armies.has(enemy_army_id):
 		return {"ok": false, "error": "army_not_found"}
 
@@ -164,7 +165,7 @@ func start_battle(army_id: String, enemy_army_id: String, terrain: String = "fie
 
 	armies[army_id] = army
 	armies[enemy_army_id] = enemy
-	game_state.set("armies", armies)
+	game_state.armies = armies
 
 	return {
 		"ok": true,
@@ -176,9 +177,9 @@ func start_battle(army_id: String, enemy_army_id: String, terrain: String = "fie
 
 func process_armies() -> Dictionary:
 	var report := {"type": "armies", "events": []}
-	var armies: Dictionary = game_state.get("armies") or {}
-	var resources: Dictionary = game_state.get("resources") or {}
-	var army_templates: Dictionary = game_state.get("army_templates") or {}
+	var armies: Dictionary = game_state.armies
+	var resources: Dictionary = game_state.resources
+	var army_templates: Dictionary = game_state.army_templates
 
 	# Upkeep
 	for army_id in armies:
@@ -214,18 +215,18 @@ func process_armies() -> Dictionary:
 
 		armies[army_id] = army
 
-	game_state.set("armies", armies)
-	game_state.set("resources", resources)
+	game_state.armies = armies
+	game_state.resources = resources
 	return report
 
 
 func get_army(army_id: String) -> Dictionary:
-	var armies: Dictionary = game_state.get("armies") or {}
+	var armies: Dictionary = game_state.armies
 	return armies.get(army_id, {})
 
 
 func list_armies(faction_id: String = "", province_id: String = "") -> Array:
-	var armies: Dictionary = game_state.get("armies") or {}
+	var armies: Dictionary = game_state.armies
 	var result: Array = []
 	for army_id in armies:
 		var army: Dictionary = armies[army_id]

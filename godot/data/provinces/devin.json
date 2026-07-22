@@ -1,0 +1,9 @@
+{
+  "id": "devin",
+  "name": "Devín",
+  "prosperity": 40,
+  "loyalty": 60,
+  "religion": "pagan",
+  "owner_faction": "moravia",
+  "neighbors": ["bratislava", "nitra"]
+}

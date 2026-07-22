@@ -16,7 +16,7 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 
 
 func process_events() -> Dictionary:
-	var pending_event: Variant = game_state.get("pending_event", null)
+	var pending_event: Variant = game_state.pending_event if "pending_event" in game_state else null
 	if pending_event != null:
 		return {"type": "event", "text": pending_event.text, "choices": pending_event.choices}
 
@@ -29,19 +29,19 @@ func process_events() -> Dictionary:
 
 
 func resolve_choice(choice_id: String) -> Dictionary:
-	var pending_event: Variant = game_state.get("pending_event", null)
+	var pending_event: Variant = game_state.pending_event if "pending_event" in game_state else null
 	if pending_event == null or not pending_event.choices.has(choice_id):
 		return {"ok": false, "error": "invalid_choice"}
 
 	var choice: Dictionary = pending_event.choices[choice_id]
 	var effect: Dictionary = choice.get("effect", {})
-	var resources: Dictionary = game_state.get("resources", {})
+	var resources: Dictionary = game_state.resources
 
 	if effect.has("gold"):
 		resources["gold"] = int(resources.get("gold", 1000)) + int(effect.gold)
 	if effect.has("prestige"):
 		resources["prestige"] = int(resources.get("prestige", 50)) + int(effect.prestige)
-	game_state.set("resources", resources)
+	game_state.resources = resources
 
 	game_state.set("pending_event", null)
 	return {"ok": true, "effect": effect}

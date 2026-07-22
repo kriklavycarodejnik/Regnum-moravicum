@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/ArmyUI.gd" id="1"]
+
+[node name="ArmyUI" type="Control"]
+script = ExtResource("1")
+
+[node name="ArmyList" type="VBoxContainer" parent="."]
+
+[node name="ArmyInfoPanel" type="PanelContainer" parent="."]
+margin_right = 200.0
+margin_top = 20.0
+margin_left = 20.0
+margin_bottom = 20.0
+
+[node name="ArmyInfoLabel" type="Label" parent="ArmyInfoPanel"]
+text = "Army Info:\nSize: 0\nMorale: 0\nSupplies: 0"
+margin_right = 180.0
+margin_top = 10.0
+margin_left = 10.0
+margin_bottom = 10.0
+
+[node name="ActionButtons" type="HBoxContainer" parent="."]
+margin_right = 200.0
+margin_top = 10.0
+margin_left = 20.0
+margin_bottom = 20.0
+
+[node name="MoveButton" type="Button" parent="ActionButtons"]
+text = "Move"
+
+[node name="BattleButton" type="Button" parent="ActionButtons"]
+text = "Battle"
+
+[node name="SiegeButton" type="Button" parent="ActionButtons"]
+text = "Siege"

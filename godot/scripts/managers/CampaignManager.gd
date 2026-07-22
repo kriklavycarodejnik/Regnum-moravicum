@@ -5,17 +5,24 @@ extends RefCounted
 const SUPPLY_RANGE := 3  # Max provinces from supply source
 const ATTRITION_RATE := 0.05  # 5% size loss per turn if out of supply
 
-var game_state: GameState
-var war_manager: WarManager
-var diplomacy_manager: DiplomacyManager
-var rng: RandomNumberGenerator
+var game_state
+var war_manager
+var diplomacy_manager
+var army_manager
+var rng
 
 
-func _init(state: GameState, war_mgr: WarManager, dip_mgr: DiplomacyManager, rng_ref: RandomNumberGenerator) -> void:
-	game_state = state
-	war_manager = war_mgr
-	diplomacy_manager = dip_mgr
-	rng = rng_ref
+func _init(state = null, war_mgr = null, dip_mgr = null, rng_ref = null, arm_mgr = null) -> void:
+	if state != null:
+		game_state = state
+	if war_mgr != null:
+		war_manager = war_mgr
+	if dip_mgr != null:
+		diplomacy_manager = dip_mgr
+	if rng_ref != null:
+		rng = rng_ref
+	if arm_mgr != null:
+		army_manager = arm_mgr
 
 
 func process_campaign() -> Dictionary:

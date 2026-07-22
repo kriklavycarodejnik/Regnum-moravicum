@@ -17,8 +17,8 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 
 func process_nobility() -> Dictionary:
 	var report := {"type": "nobility", "deaths": [], "births": [], "prestige_changes": {}}
-	var current_year: int = game_state.get("year") or 902
-	var nobles: Dictionary = game_state.get("nobles") or {}
+	var current_year: int = game_state.year
+	var nobles: Dictionary = game_state.nobles
 
 	# Aging and death
 	var nobles_to_remove: Array = []
@@ -57,5 +57,5 @@ func process_nobility() -> Dictionary:
 			"dynasty": "mojmir"
 		})
 
-	game_state.set("nobles", nobles)
+	game_state.nobles = nobles
 	return report

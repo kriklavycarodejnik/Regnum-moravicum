@@ -17,6 +17,7 @@ var succession
 var religion
 var victory
 var army
+var campaign
 var save_manager
 
 
@@ -30,9 +31,10 @@ func _init(
 	w = null,
 	suc = null,
 	rel = null,
-	vic = null,
-	arm = null,
-	save = null
+		vic = null,
+		arm = null,
+		camp = null,
+		save = null
 ) -> void:
 	if state != null:
 		game_state = state
@@ -56,27 +58,29 @@ func _init(
 		victory = vic
 	if arm != null:
 		army = arm
+	if camp != null:
+		campaign = camp
 	if save != null:
 		save_manager = save
 
 
 func advance_time() -> void:
-	var current_month: int = game_state.get("month") or 1
+	var current_month: int = game_state.month
 	current_month += 1
 	if current_month > 12:
 		current_month = 1
-		var current_year: int = game_state.get("year") or 902
+		var current_year: int = game_state.year
 		current_year += 1
-		game_state.set("year", current_year)
-	game_state.set("month", current_month)
+		game_state.year = current_year
+	game_state.month = current_month
 
 
 func process_tick() -> Dictionary:
 	advance_time()
 
 	var report := {
-		"year": game_state.get("year", 902),
-		"month": game_state.get("month", 1)
+		"year": game_state.year,
+		"month": game_state.month
 	}
 
 	# Order aligned with architecture (subset of full 14 phases)
@@ -96,19 +100,21 @@ func process_tick() -> Dictionary:
 		report["victory"] = victory.check_victory()
 	if army != null:
 		report["armies"] = army.process_armies()
+	if campaign != null:
+		report["campaign"] = campaign.process_campaign()
 
 	var chronicle_text: String = narration.generate_chronicle(report)
 	report["chronicle"] = chronicle_text
 	if chronicle_text != "":
-		var chronicle: Array = game_state.get("chronicle") or []
+		var chronicle: Array = game_state.chronicle
 		chronicle.append({
-			"year": game_state.get("year", 902),
-			"month": game_state.get("month", 1),
+			"year": game_state.year,
+			"month": game_state.month,
 			"text": chronicle_text
 		})
-		game_state.set("chronicle", chronicle)
+		game_state.chronicle = chronicle
 
-	if save_manager != null and (game_state.get("month") or 1) == 12:
+	if save_manager != null and (game_state.month) == 12:
 		save_manager.autosave_if_year_end(game_state)
 
 	tick_completed.emit(report)
