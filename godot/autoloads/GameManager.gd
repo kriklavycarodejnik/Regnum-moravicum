@@ -18,13 +18,11 @@ var army_manager
 var map_manager
 var campaign_manager
 
-
 func _ready() -> void:
 	_bootstrap()
 	print("GameManager ready — M1–M5 (year %d, provinces %d, factions %d, armies %d)" % [
 		game_state.year, game_state.provinces.size(), game_state.factions.size(), game_state.armies.size()
 	])
-
 
 func _bootstrap() -> void:
 	var GameState = preload("res://scripts/core/GameState.gd")
@@ -105,16 +103,37 @@ func _bootstrap() -> void:
 	army_manager.create_army("moravia_feudal_1", "moravia_feudal", "bratislava")
 	army_manager.create_army("madari_horde_1", "madari_horde", "uzhorod", "madari")
 
-
 func process_next_month() -> Dictionary:
 	return tick_manager.process_tick()
-
 
 func has_pending_event() -> bool:
 	return game_state.pending_event != null
 
 func get_pending_event() -> Variant:
-	return game_state.pending_event
+	var pending = game_state.pending_event
+	if pending == null:
+		return null
+	# pending is expected to have: text (String), choices (Dict)
+	var title = "Udalosť"
+	var body = pending.get("text", "")
+	var art_id = ""  # let Main.gd use fallback or empty
+	var choices_dict = pending.get("choices", {})
+	var choices_array = []
+	if typeof(choices_dict) == TYPE_DICTIONARY:
+		for choice_id in choices_dict.keys():
+			var choice = choices_dict[choice_id]
+			if typeof(choice) == TYPE_DICTIONARY:
+				choices_array.append({
+					"id": choice_id,
+					"label": choice.get("text", ""),
+					"effect": choice.get("effect", {})
+				})
+	return {
+		"title": title,
+		"body": body,
+		"art_id": art_id,
+		"choices": choices_array
+	}
 
 func run_skirmish(province_id: String, terrain: String = "field") -> Dictionary:
 	return war_manager.resolve_skirmish(province_id, terrain)
@@ -125,10 +144,8 @@ func run_devine_battle() -> Dictionary:
 func resolve_event_choice(choice_id: String) -> Dictionary:
 	return event_manager.resolve_choice(choice_id)
 
-
 func save() -> bool:
 	return save_manager.save_game(game_state)
-
 
 func load_save() -> bool:
 	var loaded = save_manager.load_game()
@@ -138,7 +155,6 @@ func load_save() -> bool:
 	if game_state.has_method("ensure_resources"):
 		game_state.ensure_resources()
 	var rng = save_manager.get_rng()
-
 	var EconomyManager = preload("res://scripts/managers/EconomyManager.gd")
 	var NobilityManager = preload("res://scripts/managers/NobilityManager.gd")
 	var NarrationManager = preload("res://scripts/managers/NarrationManager.gd")
@@ -152,7 +168,6 @@ func load_save() -> bool:
 	var MapManager = preload("res://scripts/managers/MapManager.gd")
 	var CampaignManager = preload("res://scripts/managers/CampaignManager.gd")
 	var TickManager = preload("res://scripts/core/TickManager.gd")
-
 	economy_manager = EconomyManager.new()
 	economy_manager._init(game_state)
 	nobility_manager = NobilityManager.new()
@@ -196,3 +211,4 @@ func load_save() -> bool:
 		save_manager
 	)
 	return true
+EOF

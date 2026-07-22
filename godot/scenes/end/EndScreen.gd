@@ -27,8 +27,7 @@ func _populate() -> void:
 	title_label.theme_type_variation = &"TitleLabel"
 	body_label.text = str(ending.get("message", "Koniec hry."))
 	var art_id := "moravian_court_interior" if won else "battle_danube_composition"
-	var art_cat = ArtCatalog.new()
-	var path := art_cat.path(art_id)
+	var path := ArtCatalog.path(art_id)
 	if path != "" and ResourceLoader.exists(path):
 		art.texture = load(path) as Texture2D
 	else:
@@ -43,3 +42,4 @@ func _on_restart() -> void:
 	if gm and gm.has_method("_bootstrap"):
 		gm._bootstrap()
 	get_tree().change_scene_to_file("res://scenes/main/Main.tscn")
+EOF

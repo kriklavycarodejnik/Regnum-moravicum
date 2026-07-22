@@ -7,7 +7,7 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var status_bar: HBoxContainer = $UI/StatusBarRow/StatusBar
 @onready var religion_axis: HBoxContainer = $UI/StatusBarRow/ReligionAxis
 @onready var map_view: Control = $UI/Body/MainColumn/MapView
-@onready var chronicle_label: RichTextLabel = $IO/Body/MainColumn/Chronicle
+@onready var chronicle_label: RichTextLabel = $UI/Body/MainColumn/Chronicle
 @onready var next_month_btn: Button = $UI/ButtonRow/NextMonthButton
 @onready var skirmish_btn: Button = $UI/ButtonRow/SkirmishButton
 @onready var devine_btn: Button = $UI/ButtonRow/DevineButton
@@ -28,44 +28,6 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var event_art: TextureRect = $UI/Body/MainColumn/EventPanel/EventVBox/EventArt
 @onready var notification_feed: Node = $UI/Body/MainColumn/NotificationFeed
 @onready var battle_view: Node = $UI/Body/MainColumn/BattleView
-
-# We'll add a new node for selection_art in the scene. But note: we are we are changing the scene.
-# We must update the .tscn file as well. However, we are only allowed to change .gd files? 
-# The user said we can use the tools, but we are in a text-based interface. We cannot edit .tscn directly.
-# We have two options:
-#   1. Assume the SelectionArt node already exists in the scene (we can add it via code if not, but that's hacky).
-#   2. Instead of adding a new node, we can use the existing event_art or another existing node to show the selection art temporarily? 
-#      But that would interfere with event art.
-#   3. We can create a new TextureRect in code and add it to the scene. However, we are not supposed to change the scene structure via code? 
-#      We can, but it's better to edit the .tscn. However, we don't have the ability to edit .tscn via the text tools easily.
-#
-# Given the constraints, we will skip adding a new node for selection_art and instead show the selection art in the event_art area when no event is active? 
-# But that would be confusing.
-#
-# Alternatively, we can change the selection_label to show the art as an icon? But it's a Label.
-#
-# Let's re-read the document: 
-#   "2) Výber župy (MapView → Main)" 
-#   - už mapuje nitra/devin/bratislava; rozšír:
-#        - morava → moravian_court_interior (alebo nitra)
-#        - default → mojmir_dynasty_emblem alebo style master (tlmene)
-#   - zobraz art v bočnom náhľade ALEBO EventArt/Selection preview (jednoduchý TextureRect `ProvinceArt` v MainColumn ak treba).
-#
-# It says we can either show it in the existing EventArt (when no event) or create a new TextureRect called ProvinceArt.
-#
-# Since we cannot easily add a new node to the scene without editing the .tscn, we will do the following:
-#   - We will use the event_art to show the selection art when there is no active event.
-#   - When an event is active, we will show the event art in event_art and hide the selection art (by not setting it).
-#   - We will keep a separate variable to store the current selection art_id and set it on event_art when there is no event.
-#
-# We'll add a new variable: `var selection_art_id: String = ""`
-# And in _on_province_selected, we set the selection_art_id and update the art if no event is showing.
-# In _show_event, we will show the event art and hide the selection art (by clearing the event_art or setting it to the event art).
-# In _hide_event (when event is dismissed), we will show the selection art again if there is a selection.
-#
-# This is a bit complex but doable without changing the scene.
-#
-# Let's implement.
 
 func _ready() -> void:
 	_apply_regnum_theme()
@@ -124,8 +86,7 @@ func _update_selection_art() -> void:
 	if selection_art_id == "":
 		event_art.visible = false
 		return
-	var art_cat = ArtCatalog.new()
-	var tex = art_cat.texture(selection_art_id)
+	var tex = ArtCatalog.texture(selection_art_id)
 	if tex != null:
 		event_art.texture = tex
 		event_art.visible = true
@@ -143,19 +104,17 @@ func _show_event(ev: Variant) -> void:
 	event_body.text = str(ev.get("body", ""))
 	var art_id := str(ev.get("art_id", ""))
 	if art_id != "":
-		var art_cat = ArtCatalog.new()
-		var tex = art_cat.texture(art_id)
+		var tex = ArtCatalog.texture(art_id)
 		if tex:
 			event_art.texture = tex
 			event_art.visible = true
 		else:
 			event_art.visible = false
 	else:
-		# No art_id in event, use fallback
+		# No art_id in event, use fallback (try to guess from body)
 		var fallback_art_id := _get_event_fallback_art(ev)
 		if fallback_art_id != "":
-			var art_cat = ArtCatalog.new()
-			var tex = art_cat.texture(fallback_art_id)
+			var tex = ArtCatalog.texture(fallback_art_id)
 			if tex:
 				event_art.texture = tex
 				event_art.visible = true
@@ -173,12 +132,10 @@ func _show_event(ev: Variant) -> void:
 
 func _get_event_fallback_art(ev: Dictionary) -> String:
 	# Check if the event is related to a ruler/dynasty
-	var text := str(ev.get("text", ""))
+	var text := str(ev.get("body", ""))  # using body as the text source
 	if "Mojmír" in text or "Svätopluk" in text or "Rastislav" in text:
 		return "mojmir_ii_master_portrait"
 	# Check if it's about a province
-	# We could parse the text for province names, but for simplicity we'll use a mapping of keywords.
-	# This is a simple fallback; we can improve later.
 	if "Nitra" in text:
 		return "nitra_master_hero"
 	if "Devín" in text:
@@ -213,6 +170,9 @@ func _resolve(choice_id: String) -> void:
 	if selection_art_id != "":
 		_update_selection_art()
 
+func _on_diplomacy_action() -> void:
+	_refresh_ui()
+
 func _refresh_ui() -> void:
 	if status_bar and status_bar.has_method("refresh"):
 		status_bar.call("refresh")
@@ -236,6 +196,8 @@ func _refresh_ui() -> void:
 	]
 	if army_ui and army_ui.has_method("_update_army_list"):
 		army_ui.call("_update_army_list")
+	if diplomacy_panel and diplomacy_panel.has_method("refresh"):
+		diplomacy_panel.call("refresh")
 
 func _append_chronicle(text: String) -> void:
 	chronicle_label.append_text(text + "\n")
@@ -250,3 +212,4 @@ func _check_ending() -> void:
 		if GameManager.has_method("save"):
 			GameManager.save()
 		get_tree().change_scene_to_file("res://scenes/end/EndScreen.tscn")
+EOF
