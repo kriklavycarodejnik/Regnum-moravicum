@@ -119,8 +119,15 @@ func _update_story_line() -> void:
 	if story_line == null or GameManager == null or GameManager.game_state == null:
 		return
 	var y: int = int(GameManager.game_state.year)
-	var left: int = maxi(0, 1000 - y)
-	story_line.text = "Cieľ: prežiť do 1000  ·  zostáva ~%d r.  ·  ťah = Ďalší mesiac" % left
+	var m: int = int(GameManager.game_state.month)
+	if y < 907:
+		var months_left: int = (907 - y) * 12 + (7 - m)
+		if months_left <= 0:
+			months_left = 1
+		story_line.text = "Do maďarskej invázie: ~%d mes.  ·  cieľ: prežiť do 1000  ·  ťah = Ďalší mesiac" % months_left
+	else:
+		var years_left: int = maxi(0, 1000 - y)
+		story_line.text = "Po Devíne  ·  zostáva ~%d r. do 1000  ·  ťah = Ďalší mesiac" % years_left
 
 
 func _on_next_month() -> void:
@@ -128,25 +135,42 @@ func _on_next_month() -> void:
 		_show_event(GameManager.get_pending_event())
 		_notify("Najprv vyrieš udalosť — vyber voľbu A alebo B.")
 		return
+	var res_before: Dictionary = GameManager.game_state.resources.duplicate(true)
 	var report: Dictionary = GameManager.process_next_month()
 	_months_played += 1
 	_refresh_ui()
+	# Δ resources
+	var deltas: Array = []
+	var res_after: Dictionary = GameManager.game_state.resources
+	for key in ["gold", "food", "wood", "stone", "iron", "prestige"]:
+		var d: int = int(res_after.get(key, 0)) - int(res_before.get(key, 0))
+		if d != 0:
+			var sign: String = "+" if d > 0 else ""
+			deltas.append("%s%s%d" % [key, sign, d])
+	var delta_str: String = ""
+	if not deltas.is_empty():
+		delta_str = " Δ: %s" % ", ".join(deltas)
 	if report.has("chronicle") and str(report["chronicle"]) != "":
-		_append_chronicle("[%d/%02d] %s" % [
+		_append_chronicle("[%d/%02d] %s%s" % [
 			report.get("year", 0),
 			report.get("month", 0),
-			report["chronicle"]
+			report["chronicle"],
+			delta_str
 		])
 	else:
-		_append_chronicle("[%d/%02d] Mesiac uplynul v tichu dvorov a polí." % [
-			GameManager.game_state.year, GameManager.game_state.month
+		_append_chronicle("[%d/%02d] Mesiac uplynul v tichu dvorov a polí.%s" % [
+			GameManager.game_state.year, GameManager.game_state.month, delta_str
 		])
 	_check_ending()
+	# Post-tick notifications
+	var gs = GameManager.game_state
 	if GameManager.has_pending_event():
 		_show_event(GameManager.get_pending_event())
 		_notify("Udalosť! Vyber jednu z dvoch volieb.")
-	elif GameManager.game_state.year == 907 and GameManager.game_state.month == 1:
-		_notify("Rok 907 — zváž scenár Devín 907 (nástroje dole).")
+	elif gs.year == 906 and gs.month == 1:
+		_notify("Rok 906 — Maďari sa blížia. O rok Devín. Priprav sa: armády, diplomacia, opevnenia.")
+	elif gs.year == 907 and gs.month == 1:
+		_notify("Rok 907 — Devín! Scenár čaká (tlačidlo „Scénár: Devín 907“).")
 
 
 func _on_skirmish() -> void:
@@ -161,7 +185,13 @@ func _on_skirmish() -> void:
 
 
 func _on_devine() -> void:
+	if GameManager.game_state.devine_resolved:
+		_notify("Scenár Devín 907 už bol odohraný.")
+		return
 	var outcome: Dictionary = GameManager.run_devine_battle()
+	if not outcome.get("ok", true):
+		_notify(str(outcome.get("chronicle", "Devín 907 už odohraný.")))
+		return
 	_refresh_ui()
 	if outcome.has("chronicle"):
 		_append_chronicle(str(outcome["chronicle"]))

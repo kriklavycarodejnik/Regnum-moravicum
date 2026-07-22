@@ -1,0 +1,228 @@
+[
+  {
+    "id": "hist_papal_legation_903",
+    "type": "historical",
+    "title": "Pápežské posolstvo",
+    "body": "Do Nitry prichádza posolstvo z Ríma s ponukou cirkevnej podpory výmenou za uznanie rímskej jurisdikcie nad moravskou cirkvou.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"year": 903, "yearMin": 0},
+    "once": true,
+    "choices": [
+      {"id": "rome", "text": "Prijať posolstvo a priblížiť sa Rímu", "effect": {"prestige": 3}, "religionChange": -15},
+      {"id": "decline", "text": "Zdvorilo odmietnuť a zachovať cyrilometodské dedičstvo", "effect": {}, "religionChange": 5}
+    ]
+  },
+  {
+    "id": "hist_hungarian_rumors_904",
+    "type": "military",
+    "title": "Zvesti o Maďaroch",
+    "body": "Kupci prichádzajúci od juhu prinášajú znepokojivé správy o zhromažďovaní maďarských jazdcov za hranicami ríše.",
+    "art_id": "devin_master_fortress",
+    "conditions": {"year": 904, "yearMin": 0},
+    "once": true,
+    "choices": [
+      {"id": "fortify", "text": "Posilniť opevnenia Devína a Nitry", "effect": {"gold": -50}, "zupaLoyalty": {"devin": 5, "nitra": 5}},
+      {"id": "ignore", "text": "Ignorovať zvesti ako preháňanie kupcov", "effect": {}}
+    ]
+  },
+  {
+    "id": "hist_byzantine_envoy_904",
+    "type": "historical",
+    "title": "Byzantské posolstvo",
+    "body": "Konštantínopol ponúka Morave obchodné výsady a vojenských poradcov výmenou za bližšie cirkevné a diplomatické zblíženie.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"year": 904, "yearMin": 0},
+    "once": true,
+    "choices": [
+      {"id": "accept", "text": "Prijať ponuku Konštantínopolu", "effect": {"gold": 30}, "religionChange": 15},
+      {"id": "decline", "text": "Zachovať odstup od oboch cirkevných centier", "effect": {}}
+    ]
+  },
+  {
+    "id": "byz_bride_proposal_906",
+    "type": "diplomatic",
+    "title": "Byzantská ponuka sobáša",
+    "body": "Cisár Lev VI. ponúka ruku byzantskej princeznej jednému z moravských šľachticov ako spečatenie spojenectva medzi ríšami.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"year": 906, "yearMin": 0},
+    "once": true,
+    "choices": [
+      {"id": "accept", "text": "Prijať ponuku sobáša", "effect": {}, "religionChange": 10, "nextEvent": "byz_bride_wedding_907"},
+      {"id": "decline", "text": "Zdvorilo odmietnuť", "effect": {}, "nextEvent": "byz_bride_insult_907"}
+    ]
+  },
+  {
+    "id": "hist_german_ultimatum_910",
+    "type": "historical",
+    "title": "Nemecké ultimátum",
+    "body": "Nemeckí kolonisti na severných hraniciach žiadajú väčšiu samosprávu a hrozia povstaním, ak im kráľovský dvor nevyjde v ústrety.",
+    "art_id": "devin_master_fortress",
+    "conditions": {"year": 910, "yearMin": 0},
+    "once": true,
+    "choices": [
+      {"id": "grant", "text": "Udeliť kolonistom širšiu samosprávu", "effect": {"prestige": -2}},
+      {"id": "refuse", "text": "Odmietnuť a poslať posily na hranicu", "effect": {"prestige": 3}}
+    ]
+  },
+  {
+    "id": "hist_bogata_conspiracy_915",
+    "type": "historical",
+    "title": "Sprisahanie rodu Bogata",
+    "body": "Z Užskej župy prichádzajú správy o tajných stretnutiach rodu Bogata s nespokojnými županmi — príprava na uzurpáciu trónu.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"year": 915, "yearMin": 0},
+    "once": true,
+    "choices": [
+      {"id": "arrest", "text": "Preventívne zatknúť vodcov sprisahania", "effect": {"prestige": 5}, "nextEvent": "bogata_trial_916"},
+      {"id": "watch", "text": "Sledovať a zhromažďovať dôkazy", "effect": {}, "nextEvent": "bogata_uprising_917"}
+    ]
+  },
+  {
+    "id": "rand_bad_harvest",
+    "type": "random",
+    "title": "Neúroda",
+    "body": "Chladné a daždivé leto zničilo veľkú časť úrody v jednej zo žúp.",
+    "art_id": "",
+    "conditions": {"yearMin": 903, "year": 0},
+    "once": false,
+    "cooldownTicks": 24,
+    "weight": 15,
+    "choices": [
+      {"id": "open", "text": "Otvoriť kráľovské sklady pre postihnutú župu", "effect": {"food": -20, "gold": -10}},
+      {"id": "ignore", "text": "Nechať župu, nech si poradí sama", "effect": {"food": -10, "prestige": -3}}
+    ]
+  },
+  {
+    "id": "rand_traveling_merchant",
+    "type": "random",
+    "title": "Potulný kupec",
+    "body": "Bohatý kupec z Byzancie ponúka na kráľovskom dvore vzácne tovary a informácie výmenou za zlato.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"yearMin": 903, "year": 0},
+    "once": false,
+    "cooldownTicks": 18,
+    "weight": 12,
+    "choices": [
+      {"id": "buy", "text": "Kúpiť tovar aj informácie", "effect": {"gold": -25, "prestige": 5}},
+      {"id": "decline", "text": "Poďakovať a odmietnuť", "effect": {}}
+    ]
+  },
+  {
+    "id": "rand_noble_feud",
+    "type": "diplomatic",
+    "title": "Spor medzi šľachtou",
+    "body": "Dvaja poprední župani sa dostali do sporu o hranice svojich žúp a žiadajú kráľovský rozsudok.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"yearMin": 903, "year": 0},
+    "once": false,
+    "cooldownTicks": 20,
+    "weight": 10,
+    "choices": [
+      {"id": "law", "text": "Rozsúdiť v prospech staršieho práva", "effect": {"prestige": 1}},
+      {"id": "ignore", "text": "Nechať spor nevyriešený, aby si oslabili navzájom silu", "effect": {"prestige": -1}}
+    ]
+  },
+  {
+    "id": "rand_border_raid",
+    "type": "military",
+    "title": "Nájazd na hranicu",
+    "body": "Ozbrojená skupina prepadla pohraničnú osadu a odohnala dobytok skôr, než dorazila posádka.",
+    "art_id": "battle_danube_composition",
+    "conditions": {"yearMin": 903, "year": 0},
+    "once": false,
+    "cooldownTicks": 15,
+    "weight": 12,
+    "choices": [
+      {"id": "chase", "text": "Vyslať jazdu na prenasledovanie", "effect": {"gold": -10, "prestige": 2}},
+      {"id": "fortify", "text": "Posilniť miestnu posádku a nechať nájazdníkov utiecť", "effect": {"gold": -15}}
+    ]
+  },
+  {
+    "id": "rand_missionary_dispute",
+    "type": "religious",
+    "title": "Spor misionárov",
+    "body": "Latinskí a byzantskí misionári sa v jednej z žúp verejne pohádali o správny spôsob bohoslužby, čo znepokojuje miestnych.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"yearMin": 903, "year": 0},
+    "once": false,
+    "cooldownTicks": 20,
+    "weight": 10,
+    "choices": [
+      {"id": "latin", "text": "Podporiť latinský obrad", "effect": {}, "religionChange": -8},
+      {"id": "byzantine", "text": "Podporiť byzantský obrad", "effect": {}, "religionChange": 8},
+      {"id": "ban", "text": "Zakázať verejné spory oboch strán", "effect": {"prestige": 1}}
+    ]
+  },
+  {
+    "id": "rand_court_intrigue",
+    "type": "diplomatic",
+    "title": "Dvorská intriga",
+    "body": "Anonymný odkaz varuje kráľa pred údajnou zradou jedného z blízkych radcov.",
+    "art_id": "moravian_court_interior",
+    "conditions": {"yearMin": 905, "year": 0},
+    "once": false,
+    "cooldownTicks": 24,
+    "weight": 8,
+    "choices": [
+      {"id": "remove", "text": "Radcu potichu odstrániť z dvora", "effect": {"prestige": -1}},
+      {"id": "ignore", "text": "Odkaz ignorovať ako klamstvo", "effect": {}}
+    ]
+  },
+  {
+    "id": "byz_bride_wedding_907",
+    "type": "religious",
+    "title": "Svadba na kráľovskom dvore",
+    "body": "O rok neskôr sa v Nitre koná honosná svadba spečaťujúca byzantsko-moravské spojenectvo pred zrakom vyslancov z celej Európy.",
+    "art_id": "moravian_court_interior",
+    "conditions": {},
+    "once": true,
+    "chainOnly": true,
+    "choices": [
+      {"id": "grand", "text": "Osláviť veľkolepou hostinou", "effect": {"gold": -60, "prestige": 8}},
+      {"id": "modest", "text": "Usporiadať skromný obrad", "effect": {"prestige": 3}}
+    ]
+  },
+  {
+    "id": "byz_bride_insult_907",
+    "type": "diplomatic",
+    "title": "Chladné vzťahy s Konštantínopolom",
+    "body": "Odmietnutie sobáša sa v Konštantínopole nesie ako urážka cisárskeho domu. Byzantskí poslovia začínajú obmedzovať obchodné výsady.",
+    "art_id": "moravian_court_interior",
+    "conditions": {},
+    "once": true,
+    "chainOnly": true,
+    "choices": [
+      {"id": "apologize", "text": "Vyslať ospravedlňujúce posolstvo s darmi", "effect": {"gold": -40}},
+      {"id": "stand", "text": "Neustupovať", "effect": {"prestige": 1}}
+    ]
+  },
+  {
+    "id": "bogata_trial_916",
+    "type": "diplomatic",
+    "title": "Súd nad sprisahancami",
+    "body": "Po zatknutí vodcov rodu Bogata žiada kráľovská rada rozsudok nad usvedčenými sprisahancami.",
+    "art_id": "moravian_court_interior",
+    "conditions": {},
+    "once": true,
+    "chainOnly": true,
+    "choices": [
+      {"id": "exile", "text": "Odsúdiť na vyhnanstvo", "effect": {"prestige": 2}},
+      {"id": "death", "text": "Odsúdiť na smrť", "effect": {"prestige": -3}},
+      {"id": "pardon", "text": "Udeliť milosť výmenou za vernosť", "effect": {"prestige": -1}}
+    ]
+  },
+  {
+    "id": "bogata_uprising_917",
+    "type": "military",
+    "title": "Povstanie rodu Bogata",
+    "body": "Nesledovaní a nezastavení sa sprisahanci rodu Bogata odhodlali k otvorenej vzbure v Užskej župe.",
+    "art_id": "battle_danube_composition",
+    "conditions": {},
+    "once": true,
+    "chainOnly": true,
+    "choices": [
+      {"id": "crush", "text": "Poslať kráľovské vojsko potlačiť vzburu", "effect": {"gold": -40, "prestige": 4}},
+      {"id": "negotiate", "text": "Rokovať o kapitulácii výmenou za amnestiu", "effect": {"prestige": -2}}
+    ]
+  }
+]

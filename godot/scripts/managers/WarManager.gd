@@ -28,10 +28,12 @@ func process_wars() -> Dictionary:
 	var current_year: int = game_state.year
 	var current_month: int = game_state.month
 
-	# Check for Devín 907 scenario
-	if current_year == 907 and current_month == 7:
+	if current_year == 907 and current_month == 7 and not game_state.devine_resolved:
 		var outcome: Dictionary = hungarian_war_scenario.resolve_devine_battle()
+		game_state.devine_resolved = true
 		report.battles.append(outcome)
+	elif game_state.devine_resolved:
+		pass
 
 	return report
 
@@ -55,7 +57,11 @@ func resolve_skirmish(province_id: String, terrain: String = "field") -> Diction
 
 
 func resolve_devine_battle() -> Dictionary:
-	return hungarian_war_scenario.resolve_devine_battle()
+	if game_state.devine_resolved:
+		return {"ok": false, "error": "already_resolved", "chronicle": "Scenár Devín 907 už bol odohraný."}
+	var outcome: Dictionary = hungarian_war_scenario.resolve_devine_battle()
+	game_state.devine_resolved = true
+	return outcome
 
 
 func are_adjacent(province_a: String, province_b: String) -> bool:
