@@ -9,11 +9,26 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var quit_btn: Button = $Center/Panel/VBox/QuitButton
 @onready var status_label: Label = $Center/Panel/VBox/StatusLabel
 @onready var emblem: TextureRect = $Center/Panel/VBox/Emblem
+@onready var bg_art: TextureRect = $BackgroundArt
+@onready var blurb: Label = $Center/Panel/VBox/Blurb
 
 
 func _ready() -> void:
 	theme = _ThemeFactory.build()
 	$Background.color = _Colors.BG_DARKER
+	if bg_art:
+		var tex: Texture2D = null
+		var cat = get_node_or_null("/root/ArtCatalog")
+		if cat:
+			tex = cat.texture("regnum_visual_style_master")
+			if tex == null:
+				tex = cat.texture("moravian_court_interior")
+		if tex == null and ResourceLoader.exists("res://assets/events/regnum_visual_style_master_v1.png"):
+			tex = load("res://assets/events/regnum_visual_style_master_v1.png") as Texture2D
+		if tex != null:
+			bg_art.texture = tex
+			bg_art.modulate = Color(1, 1, 1, 0.38)
+			bg_art.visible = true
 	var emblem_path := "res://assets/icons/factions/mojmir_dynasty_emblem_v1.png"
 	if ResourceLoader.exists(emblem_path):
 		emblem.texture = load(emblem_path) as Texture2D

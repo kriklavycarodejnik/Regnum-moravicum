@@ -20,6 +20,18 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.039, 0.031, 0.024, 1)
 
+[node name="BackgroundArt" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.35)
+
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -29,7 +41,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(420, 0)
+custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
 
 [node name="VBox" type="VBoxContainer" parent="Center/Panel"]
@@ -53,8 +65,16 @@ stretch_mode = 5
 [node name="StatusLabel" type="Label" parent="Center/Panel/VBox"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "…"
+text = "Veľká Morava · 902–1000"
 horizontal_alignment = 1
+
+[node name="Blurb" type="Label" parent="Center/Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+horizontal_alignment = 1
+text = "Ťahová stratégia. Preži ako Mojmír II. do roku 1000.
+Ďalší mesiac = ťah · mapa žúp · diplomacia · bitky."
 
 [node name="NewButton" type="Button" parent="Center/Panel/VBox"]
 custom_minimum_size = Vector2(0, 48)

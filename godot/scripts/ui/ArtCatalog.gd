@@ -1,45 +1,66 @@
 # scripts/ui/ArtCatalog.gd
-# Singleton for centralized art asset lookup.
-# Loads art_map.json once and provides path/texture lookup with fallbacks.
-
+# Autoload — centrálny lookup art_id → cesta / texture.
 extends Node
 
-# Cache for the art map dictionary.
 var _art_map: Dictionary = {}
+var _tex_cache: Dictionary = {}
+
 
 func _ready() -> void:
 	_load_art_map()
 
+
 func _load_art_map() -> void:
-	var map_path := "res://data/art_map.json"
-	var file = FileAccess.open(map_path, FileAccess.READ)
-	if file == null:
-		push_warning("ArtCatalog: Could not open art map at %s" % map_path)
+	var map_path: String = "res://data/art_map.json"
+	if not FileAccess.file_exists(map_path):
+		push_warning("ArtCatalog: chýba %s" % map_path)
+		_art_map = {}
 		return
-	var content = file.get_as_text()
+	var file := FileAccess.open(map_path, FileAccess.READ)
+	if file == null:
+		return
+	var data = JSON.parse_string(file.get_as_text())
 	file.close()
-	var data = JSON.parse_string(content)
 	if typeof(data) == TYPE_DICTIONARY:
-		_art_map = data.duplicate()
+		_art_map = data
 	else:
-		push_warning("ArtCatalog: art_map.json is not a dictionary")
 		_art_map = {}
 
-# Returns the filesystem path for a given art_id, or empty string if not found.
-func path(art_id: String) -> String:
-	return _art_map.get(art_id, "")
 
-# Returns a Texture2D for the art_id, or null if not found or fails to load.
+func path(art_id: String) -> String:
+	if art_id == "":
+		return ""
+	return str(_art_map.get(art_id, ""))
+
+
+func has(art_id: String) -> bool:
+	return art_id != "" and _art_map.has(art_id)
+
+
 func texture(art_id: String) -> Texture2D:
-	var p = _art_map.get(art_id, "")
-	if p == "":
+	if art_id == "":
 		return null
-	var res = ResourceLoader.load(p)
-	if res and res is Texture2D:
+	if _tex_cache.has(art_id):
+		return _tex_cache[art_id] as Texture2D
+	var p: String = path(art_id)
+	if p == "" or not ResourceLoader.exists(p):
+		return null
+	var res = load(p)
+	if res is Texture2D:
+		_tex_cache[art_id] = res
 		return res as Texture2D
-	push_warning("ArtCatalog: Failed to load texture for %s (%s)" % [art_id, p])
 	return null
 
-# Convenience: checks if an art_id exists in the map.
-func has(art_id: String) -> bool:
-	return _art_map.has(art_id)
+
+func province_art_id(province_id: String) -> String:
+	match province_id:
+		"nitra":
+			return "nitra_master_hero"
+		"devin":
+			return "devin_master_fortress"
+		"bratislava":
+			return "bratislava_master_river"
+		"morava":
+			return "moravian_court_interior"
+		_:
+			return ""

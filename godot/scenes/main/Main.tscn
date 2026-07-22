@@ -27,18 +27,30 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0392157, 0.0313726, 0.0235294, 1)
 
+[node name="BackgroundArt" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.22)
+
 [node name="UI" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
-offset_top = 12.0
+offset_top = 8.0
 offset_right = -12.0
-offset_bottom = -12.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="UI"]
 layout_mode = 2
@@ -46,6 +58,13 @@ theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 28
 text = "Regnum Moravicum"
 horizontal_alignment = 1
+
+[node name="HelpBar" type="Label" parent="UI"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+theme_override_font_sizes/font_size = 12
+text = "Ako hrať: ① Klikni župu  ② Zdroje hore  ③ Ďalší mesiac = ťah  ④ Event = 2 voľby  ⑤ Devín 907 / Skirmish = bitka"
+autowrap_mode = 3
 
 [node name="StatusBarRow" type="HBoxContainer" parent="UI"]
 layout_mode = 2
@@ -80,12 +99,12 @@ text = "Župy: 0"
 [node name="MapView" parent="UI/Body/MainColumn" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 240)
+custom_minimum_size = Vector2(0, 300)
 
 [node name="SelectionLabel" type="Label" parent="UI/Body/MainColumn"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Klikni na župu na mape."
+text = "Klikni na župu na mape — vpravo sa ukáže ilustrácia."
 
 [node name="BattleView" parent="UI/Body/MainColumn" instance=ExtResource("8")]
 visible = false
@@ -95,7 +114,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="Chronicle" type="RichTextLabel" parent="UI/Body/MainColumn"]
-custom_minimum_size = Vector2(0, 100)
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
@@ -117,7 +136,7 @@ text = "Udalosť"
 
 [node name="EventArt" type="TextureRect" parent="UI/Body/MainColumn/EventPanel/EventVBox"]
 visible = false
-custom_minimum_size = Vector2(0, 140)
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
@@ -143,14 +162,51 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Voľba B"
 
-[node name="SidePanel" type="PanelContainer" parent="UI/Body"]
-custom_minimum_size = Vector2(320, 0)
+[node name="SidePanel" type="VBoxContainer" parent="UI/Body"]
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="RulerRow" type="HBoxContainer" parent="UI/Body/SidePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RulerArt" type="TextureRect" parent="UI/Body/SidePanel/RulerRow"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RulerInfo" type="Label" parent="UI/Body/SidePanel/RulerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SubtitleLabel"
+text = "Mojmír II.
+Veľká Morava"
+autowrap_mode = 3
+
+[node name="HeroPanel" type="PanelContainer" parent="UI/Body/SidePanel"]
+layout_mode = 2
+
+[node name="HeroBox" type="VBoxContainer" parent="UI/Body/SidePanel/HeroPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeroArt" type="TextureRect" parent="UI/Body/SidePanel/HeroPanel/HeroBox"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="HeroCaption" type="Label" parent="UI/Body/SidePanel/HeroPanel/HeroBox"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Vyber župu — ukáže sa ilustrácia."
+autowrap_mode = 3
 
 [node name="SideTabs" type="TabContainer" parent="UI/Body/SidePanel"]
 layout_mode = 2
-size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Armády" parent="UI/Body/SidePanel/SideTabs" instance=ExtResource("3")]
