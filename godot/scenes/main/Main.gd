@@ -61,6 +61,86 @@ func _ready() -> void:
 	_append_chronicle("Rok 902. Mojmír II. zasadá na trón Veľkej Moravy. Kronika sa otvára.")
 	_append_chronicle("Tvoj cieľ: udržať dynastiu a aspoň jednu župu do roku 1000.")
 	_notify("Hlavný ťah = tlačidlo „Ďalší mesiac“.")
+	if not GameManager.game_state.tutorial_done:
+		_show_coach_overlay()
+
+
+func _show_coach_overlay() -> void:
+	var gs = GameManager.game_state
+	if gs.tutorial_done:
+		return
+	var step: int = gs.tutorial_step
+	var overlay := PanelContainer.new()
+	overlay.name = "CoachOverlay"
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_theme_stylebox_override("panel", _coach_style())
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	var title_lbl := Label.new()
+	title_lbl.text = "Krok %d/3" % [step + 1]
+	title_lbl.theme_type_variation = &"TitleLabel"
+	vbox.add_child(title_lbl)
+	var body_lbl := Label.new()
+	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	match step:
+		0:
+			body_lbl.text = "Vitaj v Regnum Moravicum!\nKlikni na župu Nitra na mape (v strede mapy, zelený kruh)."
+		1:
+			body_lbl.text = "Výborne! Teraz klikni na „Ďalší mesiac“ — postúpiš o jeden mesiac vpred."
+		2:
+			body_lbl.text = "Skvelé! Preskúmaj Diplomaciu v bočnom paneli vpravo.\nMôžeš rokovať so susednými ríšami."
+	vbox.add_child(body_lbl)
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 12)
+	var skip_btn := Button.new()
+	skip_btn.text = "Preskočiť tutoriál"
+	skip_btn.custom_minimum_size = Vector2(0, 48)
+	skip_btn.pressed.connect(func():
+		gs.tutorial_step = 3
+		gs.tutorial_done = true
+		overlay.queue_free()
+		_notify("Tutoriál preskočený. Hlavný ťah = „Ďalší mesiac“.")
+	)
+	btn_row.add_child(skip_btn)
+	if step < 2:
+		var next_btn := Button.new()
+		next_btn.text = "Ďalej"
+		next_btn.custom_minimum_size = Vector2(0, 48)
+		next_btn.pressed.connect(func():
+			gs.tutorial_step += 1
+			overlay.queue_free()
+			_show_coach_overlay()
+		)
+		btn_row.add_child(next_btn)
+	else:
+		var done_btn := Button.new()
+		done_btn.text = "Rozumiem, začať hrať"
+		done_btn.custom_minimum_size = Vector2(0, 48)
+		done_btn.pressed.connect(func():
+			gs.tutorial_done = true
+			overlay.queue_free()
+			_notify("Tutoriál dokončený. Veľa šťastia, Mojmír II.!")
+		)
+		btn_row.add_child(done_btn)
+	vbox.add_child(btn_row)
+	overlay.add_child(vbox)
+	add_child(overlay)
+
+
+func _coach_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color(0.12, 0.08, 0.05, 0.95)
+	s.border_color = Color(_Colors.BYZANTINE_GOLD.r, _Colors.BYZANTINE_GOLD.g, _Colors.BYZANTINE_GOLD.b, 0.5)
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(16)
+	s.content_margin_left = 40
+	s.content_margin_top = 30
+	s.content_margin_right = 40
+	s.content_margin_bottom = 30
+	return s
 
 
 func _apply_regnum_theme() -> void:
@@ -173,9 +253,11 @@ func _on_next_month() -> void:
 		_show_event(GameManager.get_pending_event())
 		_notify("Udalosť! Vyber jednu z dvoch volieb.")
 	elif gs.year == 906 and gs.month == 1:
-		_notify("Rok 906 — Maďari sa blížia. O rok Devín. Priprav sa: armády, diplomacia, opevnenia.")
+		_show_devin_modal("warning")
 	elif gs.year == 907 and gs.month == 1:
-		_notify("Rok 907 — Devín! Scenár čaká (tlačidlo „Scénár: Devín 907“).")
+		_show_devin_modal("prepare")
+	# Show turn report card
+	_show_turn_report(deltas, report.get("chronicle", ""))
 
 
 func _on_skirmish() -> void:
@@ -203,6 +285,7 @@ func _on_devine() -> void:
 	_set_hero_art("battle_danube_composition", "Kríza 907 · Devín (Maďari útočia)")
 	_show_battle("Bitka pri Devíne (907)", outcome, "battle_danube_composition")
 	_log_battle_phases(outcome)
+	_show_devin_modal("epilogue")
 	_notify("Scénár 907 odohraný. Pokračuj „Ďalší mesiac“.")
 
 
@@ -420,6 +503,126 @@ func _notify(text: String) -> void:
 		if short.length() > 120:
 			short = short.substr(0, 117) + "…"
 		notification_feed.call("push", short)
+
+
+func _check_ending() -> void:
+
+
+# ─── TurnReport card ───
+
+func _show_turn_report(deltas: Array, chronicle_line: String) -> void:
+	var card := PanelContainer.new()
+	card.name = "TurnReportCard"
+	card.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	card.custom_minimum_size = Vector2(480, 0)
+	card.add_theme_stylebox_override("panel", _card_style())
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	var title_lbl := Label.new()
+	title_lbl.text = "Ťah %d/%02d" % [GameManager.game_state.year, GameManager.game_state.month]
+	title_lbl.theme_type_variation = &"SubtitleLabel"
+	vbox.add_child(title_lbl)
+	if chronicle_line != "":
+		var chr := Label.new()
+		chr.text = str(chronicle_line)
+		chr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vbox.add_child(chr)
+	if not deltas.is_empty():
+		var hbox := HBoxContainer.new()
+		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		hbox.add_theme_constant_override("separation", 10)
+		for delta in deltas:
+			var lbl := Label.new()
+			lbl.text = str(delta)
+			lbl.add_theme_font_size_override("font_size", 13)
+			if "+" in str(delta):
+				lbl.add_theme_color_override("font_color", _Colors.SUCCESS)
+			else:
+				lbl.add_theme_color_override("font_color", _Colors.WARNING)
+			hbox.add_child(lbl)
+		vbox.add_child(hbox)
+	else:
+		var empty_lbl := Label.new()
+		empty_lbl.text = "žiadne zmeny zdrojov"
+		empty_lbl.add_theme_color_override("font_color", _Colors.TEXT_MUTED)
+		vbox.add_child(empty_lbl)
+	card.add_child(vbox)
+	add_child(card)
+	# Auto-remove after 4 seconds
+	var timer := Timer.new()
+	timer.wait_time = 4.0
+	timer.one_shot = true
+	timer.timeout.connect(func(): card.queue_free())
+	add_child(timer)
+	timer.start()
+	# Click to dismiss
+	card.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed:
+			card.queue_free()
+	)
+
+
+func _card_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color(0.10, 0.07, 0.04, 0.92)
+	s.border_color = Color(_Colors.BYZANTINE_GOLD.r, _Colors.BYZANTINE_GOLD.g, _Colors.BYZANTINE_GOLD.b, 0.35)
+	s.set_border_width_all(1)
+	s.set_corner_radius_all(12)
+	s.content_margin_left = 20
+	s.content_margin_top = 12
+	s.content_margin_right = 20
+	s.content_margin_bottom = 12
+	return s
+
+
+# ─── Devín chapter modal ───
+
+func _show_devin_modal(stage: String) -> void:
+	var modal := PanelContainer.new()
+	modal.name = "DevinModal"
+	modal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	modal.add_theme_stylebox_override("panel", _modal_style())
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	var title_lbl := Label.new()
+	var body_lbl := Label.new()
+	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	match stage:
+		"warning":
+			title_lbl.text = "Rok 906 — Blíži sa invázia"
+			body_lbl.text = "Kupci a vyzvedači hlásia zhromažďovanie maďarských jazdcov za hranicami.\nRok 907 prinesie rozhodujúcu bitku pri Devíne.\n\nPriprav sa: posilni armády, uzatvor spojenectvá (Diplomacia),\na opevni Nitru a Devín („Ďalší mesiac“ → opevňovacie eventy)."
+				"prepare":
+					title_lbl.text = "Rok 907 — Devín volá"
+					body_lbl.text = "Maďarské vojská sa valia na Devín!\nToto je rozhodujúci moment tvojej vlády.\n\nScenár Devín 907 je pripravený — klikni na tlačidlo\n„★ Scénár: Devín 907“ v nástrojoch dole."
+				"epilogue":
+					title_lbl.text = "Po Devíne — kríza prežitá"
+					body_lbl.text = "Bitka pri Devíne sa skončila. Maďari zvíťazili —\nako predpovedali kroniky, ako varovali kupci.\n\nMorava však stojí. Dynastia žije.\nTvoj cieľ: vydržať do roku 1000.\n\nPokračuj „Ďalší mesiac“."
+	title_lbl.theme_type_variation = &"TitleLabel"
+	vbox.add_child(title_lbl)
+	vbox.add_child(body_lbl)
+	var close_btn := Button.new()
+	close_btn.text = "Rozumiem"
+	close_btn.custom_minimum_size = Vector2(0, 48)
+	close_btn.pressed.connect(func(): modal.queue_free())
+	vbox.add_child(close_btn)
+	modal.add_child(vbox)
+	add_child(modal)
+
+
+func _modal_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color(0.08, 0.05, 0.03, 0.96)
+	s.border_color = Color(_Colors.MORAVIA_CRIMSON.r, _Colors.MORAVIA_CRIMSON.g, _Colors.MORAVIA_CRIMSON.b, 0.6)
+	s.set_border_width_all(3)
+	s.set_corner_radius_all(18)
+	s.content_margin_left = 50
+	s.content_margin_top = 40
+	s.content_margin_right = 50
+	s.content_margin_bottom = 40
+	return s
 
 
 func _check_ending() -> void:
