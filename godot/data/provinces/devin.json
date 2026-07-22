@@ -3,7 +3,10 @@
   "name": "Devín",
   "prosperity": 40,
   "loyalty": 60,
-  "religion": "pagan",
+  "religion": 50,
   "owner_faction": "moravia",
-  "neighbors": ["bratislava", "nitra"]
+  "neighbors": [
+    "bratislava",
+    "nitra"
+  ]
 }

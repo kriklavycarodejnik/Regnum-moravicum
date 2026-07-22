@@ -4,7 +4,7 @@
 | Súbor | Overuje | Očakávaný výsledok |
 |-------|---------|---------------------|
 | `test_campaign_determinism.gd` | Determinizmus `CampaignManager.gd`. | Rovnaký seed = rovnaké ťahy AI. |
-| `test_historical_accuracy.gd` | Historická presnosť (Devín 907, expanzia Maďarov). | Maďari expandujú, Morava vyhráva Devín 907. |
+| `test_historical_accuracy.gd` | Historická presnosť (Devín 907, expanzia Maďarov). | Maďari expandujú, Maďari vyhrávajú Devín 907 (Morava prehráva/kríza). |
 | `test_performance.gd` | Výkon pre 100+ armád. | Max 500 ms na spracovanie. |
 
 ### 8.2 Spustenie testov

@@ -13,6 +13,7 @@ var selected_army_id: String = ""
 
 
 func _ready() -> void:
+	_apply_regnum_theme()
 	army_manager = get_node("/root/GameManager").army_manager
 	map_manager = get_node("/root/GameManager").map_manager
 	_update_army_list()
@@ -21,6 +22,12 @@ func _ready() -> void:
 	move_button.pressed.connect(_on_move_button_pressed)
 	battle_button.pressed.connect(_on_battle_button_pressed)
 	siege_button.pressed.connect(_on_siege_button_pressed)
+
+
+
+func _apply_regnum_theme() -> void:
+	if theme == null:
+		theme = RegnumThemeFactory.build()
 
 
 func _update_army_list() -> void:

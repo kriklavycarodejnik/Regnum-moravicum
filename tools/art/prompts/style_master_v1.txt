@@ -1,0 +1,9 @@
+Visual style reference sheet for an alternate early medieval Slavic empire (Great Moravia, c. 902–1000):
+six small panels on one parchment-toned page showing (1) fortified hilltop dvorec at dawn,
+(2) three-quarter noble bust, (3) river fortress cliff, (4) steppe horse archer opponent,
+(5) torchlit timber-and-stone throne hall with subtle Byzantine textiles,
+(6) simple heraldic emblem study — unified historical comic / illustrated chronicle look,
+refined ink linework, soft painted shading, muted earthy royal palette anchors
+#8B1E2D #C9A227 #E8DCC4 #2A1F14 #2F4A28 #3A6B7A #6B6560, dramatic natural light,
+strong silhouettes, subtle desaturation, cinematic non-photoreal,
+no text labels, no modern UI, clean margins, masterpiece detailed illustration

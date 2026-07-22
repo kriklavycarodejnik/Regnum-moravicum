@@ -36,3 +36,12 @@ Pozri `docs/GODOT4_ARCHITECTURE_PROPOSAL.md` (v1.3).
 
 - **M3:** BattleManager (port Phase 2), WarManager, DiplomacyManager
 - **M4:** SuccessionManager, ReligionManager, VictoryManager, Hungarian War
+
+## Art pipeline (G0+)
+
+- Kanon: `../docs/ART_PROMPT_CANON.md`, manifest: `../docs/ASSET_MANIFEST.md`
+- Farby: `assets/theme/colors.gd` (`RegnumColors`)
+- Theme: `assets/theme/regnum_theme_factory.gd` — aplikuje `Main.gd` v `_ready`
+- Fonty: `assets/fonts/` (Cormorant Garamond + Alegreya, OFL)
+- Style Master (Review): `assets/events/regnum_visual_style_master_v1.png`
+- Checklist approve: `../tools/art/ASSET_CHECKLIST.md`

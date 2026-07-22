@@ -1,0 +1,118 @@
+{
+  "batch": "G2",
+  "created": "2026-07-22T12:45:40",
+  "style_master_seed_ref": 3914650080,
+  "assets": [
+    {
+      "id": "mojmir_ii_master_portrait",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 1481386353,
+      "seconds": 3.2,
+      "path": "godot/assets/portraits/mojmir_ii_master_portrait_v1.png",
+      "raw": "tools/art/raw/g2/mojmir_ii_master_portrait_124445.png",
+      "url": "https://v3b.fal.media/files/b/0aa3431c/28XTWqWxy2hUorVfLGfj_.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "768x1024"
+    },
+    {
+      "id": "theodora_master_portrait",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 616258313,
+      "seconds": 2.5,
+      "path": "godot/assets/portraits/theodora_master_portrait_v1.png",
+      "raw": "tools/art/raw/g2/theodora_master_portrait_124451.png",
+      "url": "https://v3b.fal.media/files/b/0aa3431d/pZNiPVcqWHrW_dAbO3Ow2.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "768x1024"
+    },
+    {
+      "id": "arpad_master_portrait",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 1758244638,
+      "seconds": 3.1,
+      "path": "godot/assets/portraits/arpad_master_portrait_v1.png",
+      "raw": "tools/art/raw/g2/arpad_master_portrait_124458.png",
+      "url": "https://v3b.fal.media/files/b/0aa3431d/SF8CaDDh7eoObklpEQ735.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "768x1024"
+    },
+    {
+      "id": "nitra_master_hero",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 391561747,
+      "seconds": 2.7,
+      "path": "godot/assets/locations/nitra_master_hero_v1.png",
+      "raw": "tools/art/raw/g2/nitra_master_hero_124504.png",
+      "url": "https://v3b.fal.media/files/b/0aa3431e/B41l93IyQzOsl9eaLjCW-.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "1536x864"
+    },
+    {
+      "id": "devin_master_fortress",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 1697161034,
+      "seconds": 2.6,
+      "path": "godot/assets/locations/devin_master_fortress_v1.png",
+      "raw": "tools/art/raw/g2/devin_master_fortress_124511.png",
+      "url": "https://v3b.fal.media/files/b/0aa3431e/KSLcP7Jwzsc6cGnx1uboO.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "1536x864"
+    },
+    {
+      "id": "bratislava_master_river",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 1335777942,
+      "seconds": 2.6,
+      "path": "godot/assets/locations/bratislava_master_river_v1.png",
+      "raw": "tools/art/raw/g2/bratislava_master_river_124517.png",
+      "url": "https://v3b.fal.media/files/b/0aa3431f/hMrif9M8k4O2u_NCIN4b2.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "1536x864"
+    },
+    {
+      "id": "moravian_court_interior",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 656853287,
+      "seconds": 2.9,
+      "path": "godot/assets/locations/moravian_court_interior_v1.png",
+      "raw": "tools/art/raw/g2/moravian_court_interior_124523.png",
+      "url": "https://v3b.fal.media/files/b/0aa34320/favfz2y0mdP3ruWHNN6aH.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "1536x864"
+    },
+    {
+      "id": "mojmir_dynasty_emblem",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 114963398,
+      "seconds": 3.5,
+      "path": "godot/assets/icons/factions/mojmir_dynasty_emblem_v1.png",
+      "raw": "tools/art/raw/g2/mojmir_dynasty_emblem_124530.png",
+      "url": "https://v3b.fal.media/files/b/0aa34320/41kKErGgCDAN73sOjSCH0.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "1024x1024"
+    },
+    {
+      "id": "battle_danube_composition",
+      "model": "fal-ai/flux/dev/image-to-image",
+      "seed": 394539667,
+      "seconds": 2.8,
+      "path": "godot/assets/events/battle_danube_composition_v1.png",
+      "raw": "tools/art/raw/g2/battle_danube_composition_124536.png",
+      "url": "https://v3b.fal.media/files/b/0aa34321/XQQSKiatEslrmrJ02AxqW.png",
+      "status": "Review",
+      "style_ref": "regnum_visual_style_master_v1",
+      "size": "1536x864"
+    }
+  ],
+  "errors": [],
+  "status": "Superseded_by_t2i",
+  "note": "i2i batch discarded; t2i approved"
+}

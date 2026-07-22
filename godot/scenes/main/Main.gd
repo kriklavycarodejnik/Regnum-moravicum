@@ -13,9 +13,12 @@ extends Control
 @onready var event_body: Label = $UI/EventPanel/EventVBox/EventBody
 @onready var choice_a_btn: Button = $UI/EventPanel/EventVBox/Choices/ChoiceA
 @onready var choice_b_btn: Button = $UI/EventPanel/EventVBox/Choices/ChoiceB
+@onready var title_label: Label = $UI/Title
+@onready var background: ColorRect = $Background
 
 
 func _ready() -> void:
+	_apply_regnum_theme()
 	next_month_btn.pressed.connect(_on_next_month)
 	skirmish_btn.pressed.connect(_on_skirmish)
 	devine_btn.pressed.connect(_on_devine)
@@ -24,6 +27,19 @@ func _ready() -> void:
 	event_panel.visible = false
 	_refresh_ui()
 	_append_chronicle("Kronika sa začína. Mojmír II. vládne Veľkej Morave.")
+
+
+func _apply_regnum_theme() -> void:
+	var built: Theme = RegnumThemeFactory.build()
+	theme = built
+	if background:
+		background.color = RegnumColors.BG_DARKER
+	if title_label:
+		title_label.theme_type_variation = &"TitleLabel"
+	if event_title:
+		event_title.theme_type_variation = &"SubtitleLabel"
+	if provinces_label:
+		provinces_label.theme_type_variation = &"MutedLabel"
 
 
 func _on_next_month() -> void:
@@ -124,11 +140,14 @@ func _resolve(choice_id: String) -> void:
 func _refresh_ui() -> void:
 	var s = GameManager.game_state
 	year_label.text = "Rok %d · mesiac %d" % [s.year, s.month]
-	resources_label.text = "Zlato: %d | Jedlo: %d | Drevo: %d | Prestíž: %d" % [
-		s.resources.get("gold", 0),
-		s.resources.get("food", 0),
-		s.resources.get("wood", 0),
-		s.resources.get("prestige", 0)
+	var r: Dictionary = s.resources
+	resources_label.text = "Zlato: %d | Jedlo: %d | Drevo: %d | Kameň: %d | Železo: %d | Prestíž: %d" % [
+		int(r.get("gold", 0)),
+		int(r.get("food", 0)),
+		int(r.get("wood", 0)),
+		int(r.get("stone", 0)),
+		int(r.get("iron", 0)),
+		int(r.get("prestige", 0))
 	]
 	var edge_hint := 0
 	for pid in s.provinces:

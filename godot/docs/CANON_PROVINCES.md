@@ -8,7 +8,8 @@
 |----|-------|----------|
 | morava | Morava | jadro |
 | nitra | Nitra | sídlo |
-| bratislava | Bratislava | západ / Devínska oblasť (zjednodušene) |
+| bratislava | Bratislava | západ / riečne centrum |
+| devin | Devín | pevnosť pri Dunaji (samostatná župa; Devín 907) |
 | trencin | Trenčín | severozápad |
 | tekov | Tekov | stred |
 | hont | Hont | juh |
@@ -37,5 +38,5 @@ React prototype zostáva archív / referencia. Pri prípadnom ďalšom React wor
 
 ## Otvorené
 
-- Presné mapovanie „Bratislava“ vs historický Devín — môže sa neskôr rozdeliť na dve entity.
+- Bratislava a Devín sú **samostatné** župy (symetrický neighbors graf).
 - Export z Notion DB nahradí ručné JSON, keď budú Relations TODO hotové.
