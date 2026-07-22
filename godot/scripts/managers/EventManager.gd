@@ -292,7 +292,7 @@ func _build_council_event() -> Dictionary:
 		"title": "Rada županov",
 		"text": "Rada županov: Ako chcete posilniť ríšu?",
 		"body": "Rada županov: Ako chcete posilniť ríšu?",
-		"art_id": "moravian_court_interior",
+		"art_id": "event_council_of_zhupans",
 		"choices": {
 			"gifts": {
 				"id": "gifts",

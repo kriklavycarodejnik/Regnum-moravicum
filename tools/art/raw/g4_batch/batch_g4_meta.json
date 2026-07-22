@@ -1,0 +1,320 @@
+{
+  "batch": "G4_missing_sets",
+  "created": "2026-07-22T19:35:10.914485+00:00",
+  "assets": [
+    {
+      "id": "emblem_franks",
+      "path": "godot/assets/icons/factions/franks_emblem_v1.png",
+      "seed": 3064193649,
+      "url": "https://v3b.fal.media/files/b/0aa34f8b/qcgGiVRlO9C-lVRV6NLiH_e6b3d542564f47878ec6b67c0b41aa34.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "emblem_bavaria",
+      "path": "godot/assets/icons/factions/bavaria_emblem_v1.png",
+      "seed": 2650225931,
+      "url": "https://v3b.fal.media/files/b/0aa34f8c/AlX7VG-IFFEN5Ycb4lpMW_81f069b2130345a78f33bf69789f997b.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "emblem_hungary",
+      "path": "godot/assets/icons/factions/hungary_emblem_v1.png",
+      "seed": 1136875611,
+      "url": "https://v3b.fal.media/files/b/0aa34f8d/Wj9BkwfxCSju-Gk8z5Wlf_ad34e72258fc45409176537b1ddd2a93.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "emblem_poland",
+      "path": "godot/assets/icons/factions/poland_emblem_v1.png",
+      "seed": 1116530359,
+      "url": "https://v3b.fal.media/files/b/0aa34f8e/ztEvnXqjZW5Zq8Y_At3OJ_2c1d135f61914195b8b27cca18709516.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "emblem_bohemia",
+      "path": "godot/assets/icons/factions/bohemia_emblem_v1.png",
+      "seed": 233223728,
+      "url": "https://v3b.fal.media/files/b/0aa34f8e/QIJ8D3Q6f7esFCb_Jj3Uz_9d2575734bb544dbb8002a4b32afed08.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "emblem_byzantium",
+      "path": "godot/assets/icons/factions/byzantium_emblem_v1.png",
+      "seed": 2439743516,
+      "url": "https://v3b.fal.media/files/b/0aa34f8f/njyyxbkR5L0bKGU2BnGpM_215eac4749854fc9899ff4e556817dbc.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "marker_settlement_small",
+      "path": "godot/assets/map/marker_settlement_small_v1.png",
+      "seed": 1877850824,
+      "url": "https://v3b.fal.media/files/b/0aa34f90/wlag4Et17-7lNG6v0AvAa_e95e4c6edd82441d8d4dbb754d744475.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "marker_settlement_medium",
+      "path": "godot/assets/map/marker_settlement_medium_v1.png",
+      "seed": 161214907,
+      "url": "https://v3b.fal.media/files/b/0aa34f91/tpUuP_YBeLwZtbtIkoPvv_1cfc39fa7a034ce28679b7652c0d2a1e.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "marker_settlement_large",
+      "path": "godot/assets/map/marker_settlement_large_v1.png",
+      "seed": 479035952,
+      "url": "https://v3b.fal.media/files/b/0aa34f92/XqjDRCEn2oQlKns3-x78X_8c0266718bb043ceb5d77816f2219e01.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "marker_fort",
+      "path": "godot/assets/map/marker_fort_v1.png",
+      "seed": 424678189,
+      "url": "https://v3b.fal.media/files/b/0aa34f93/fn7B-oYps1fetZzYn-Dhq_42147385b8474ec0a4836f4c1357f1da.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "marker_army_dot",
+      "path": "godot/assets/map/marker_army_dot_v1.png",
+      "seed": 2654452681,
+      "url": "https://v3b.fal.media/files/b/0aa34f93/x6GHr7wrYB05M6x7aB3zf_6c25f3648e4c4517aca12b4548d85730.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "sil_infantry",
+      "path": "godot/assets/battle/sil_infantry_v1.png",
+      "seed": 2509889878,
+      "url": "https://v3b.fal.media/files/b/0aa34f94/ViLuRt941bJxh2tyvlZN1_8d6402c3dd4942cfb2686c2d57db6164.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "sil_archer",
+      "path": "godot/assets/battle/sil_archer_v1.png",
+      "seed": 2505978456,
+      "url": "https://v3b.fal.media/files/b/0aa34fa3/k_IKiNlYlplVsU89Q7EGj_8387816c55384b9c976534cc58fe7696.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "sil_cavalry",
+      "path": "godot/assets/battle/sil_cavalry_v1.png",
+      "seed": 2672116080,
+      "url": "https://v3b.fal.media/files/b/0aa34f96/2qWhKZ2FXtDi1QBBOsz7w_e650790eec284c47a524881b3ad1f895.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "sil_shieldwall",
+      "path": "godot/assets/battle/sil_shieldwall_v1.png",
+      "seed": 3138084773,
+      "url": "https://v3b.fal.media/files/b/0aa34f98/-oSDp986WdJAV2wH7lSgK_945c5b306ede4f949d88db03153e3853.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "sil_magyar_horse",
+      "path": "godot/assets/battle/sil_magyar_horse_v1.png",
+      "seed": 2824888762,
+      "url": "https://v3b.fal.media/files/b/0aa34fa7/Mu9ccNm_vWawZIVtbQ4uY_328e3068384c40fe84bea40a81efcb05.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "sil_commander",
+      "path": "godot/assets/battle/sil_commander_v1.png",
+      "seed": 2015802545,
+      "url": "https://v3b.fal.media/files/b/0aa34f99/rGn2m_RKmjcdwEh288Ocn_9e2f9dbed09142e0b6051a1e06ae11f7.png",
+      "layer": "B",
+      "ok": true
+    },
+    {
+      "id": "event_papal_legation",
+      "path": "godot/assets/events/event_papal_legation_v1.png",
+      "seed": 2183615572,
+      "url": "https://v3b.fal.media/files/b/0aa34f9a/Olk8O6yHeJ9LW9bxSPvhd_1583279f02654553b27aa848b7b7e176.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "event_byzantine_marriage",
+      "path": "godot/assets/events/event_byzantine_marriage_v1.png",
+      "seed": 3660030019,
+      "url": "https://v3b.fal.media/files/b/0aa34f9b/r9hQ9QmNu4LOV_uvGdRrD_f14b7c61f7f6492cba60a6184874f1db.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "event_bogata_conspiracy",
+      "path": "godot/assets/events/event_bogata_conspiracy_v1.png",
+      "seed": 3980391848,
+      "url": "https://v3b.fal.media/files/b/0aa34f9b/XaZhS-9GbvdHBEYZFpxWH_41e5479a603a4e6bbfa696a0d97c6159.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "event_council_of_zhupans",
+      "path": "godot/assets/events/event_council_of_zhupans_v1.png",
+      "seed": 2088668288,
+      "url": "https://v3b.fal.media/files/b/0aa34f9c/Jaz5bD6lc_hnE7JUrbB99_c2866d2b7ab64d1f8f858a2eb8a3d433.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "event_border_raid",
+      "path": "godot/assets/events/event_border_raid_v1.png",
+      "seed": 1898274319,
+      "url": "https://v3b.fal.media/files/b/0aa34f9d/j0mkt-r6oLOvzFagWTuT4_3954b179b0ac484a8821ae9ecceda90a.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "event_harvest_tithe",
+      "path": "godot/assets/events/event_harvest_tithe_v1.png",
+      "seed": 733442068,
+      "url": "https://v3b.fal.media/files/b/0aa34f9e/Vmms-xiqBrVVPyhZiS-4t_7fb59d49bf53461fa3c50c92c4f60d6c.png",
+      "layer": "A",
+      "ok": true
+    },
+    {
+      "id": "icon_gift",
+      "path": "godot/assets/icons/ui/icon_gift_1024.png",
+      "seed": 1847503471,
+      "url": "https://v3b.fal.media/files/b/0aa34f9f/rEnUf3pi9OYZCwYn0eL5X_20aeb5ddfa964a4dbd12d7ee1d7fad90.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_threat",
+      "path": "godot/assets/icons/ui/icon_threat_1024.png",
+      "seed": 2550533695,
+      "url": "https://v3b.fal.media/files/b/0aa34fa0/_7hlzvkCf6IZ1ioi6mE_s_87cb312d467d43c4b582795ea55a88b5.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_treaty",
+      "path": "godot/assets/icons/ui/icon_treaty_1024.png",
+      "seed": 1569289696,
+      "url": "https://v3b.fal.media/files/b/0aa34faf/HPLqybQE3dC40YbFRS-a7_226e1a777cce4e4698d53f39db324d23.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_trade",
+      "path": "godot/assets/icons/ui/icon_trade_1024.png",
+      "seed": 2572850484,
+      "url": "https://v3b.fal.media/files/b/0aa34fa1/Saur5IPoz1y58OLxfE9bp_e65f04ca6fa54d8b95ef8f446f188619.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_nap",
+      "path": "godot/assets/icons/ui/icon_nap_1024.png",
+      "seed": 2787710377,
+      "url": "https://v3b.fal.media/files/b/0aa34fb0/FIozU3Jt086d5I_LrP1mF_82eb9dc5baa341e6b039c93130612767.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_military_pact",
+      "path": "godot/assets/icons/ui/icon_military_pact_1024.png",
+      "seed": 2895691363,
+      "url": "https://v3b.fal.media/files/b/0aa34fa4/sCOQgbqq8XHxRnpLYloxp_a82b4b4fee1d426fafdba46dc8be21b4.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_move",
+      "path": "godot/assets/icons/ui/icon_move_1024.png",
+      "seed": 4014677563,
+      "url": "https://v3b.fal.media/files/b/0aa34fa5/LZEYMIoxFWY0ZA1sOJoVZ_3cad1f383c304d6a9f9d773db8a8e6d4.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_split",
+      "path": "godot/assets/icons/ui/icon_split_1024.png",
+      "seed": 3981220432,
+      "url": "https://v3b.fal.media/files/b/0aa34fab/lBQJ7qqX83GXoSSlboAY6_08bb72ee3c564d15b3e0eb0e2a097af0.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_merge",
+      "path": "godot/assets/icons/ui/icon_merge_1024.png",
+      "seed": 1421252969,
+      "url": "https://v3b.fal.media/files/b/0aa34fb3/vmxDdyAN26ixwJu3UVn79_af8e2a95d9f24209b5b1e07072236392.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_upgrade",
+      "path": "godot/assets/icons/ui/icon_upgrade_1024.png",
+      "seed": 190542272,
+      "url": "https://v3b.fal.media/files/b/0aa34fb6/TJui6AqbhcqJgK_VYgL6D_d8e8a07579c642899aa276c36cb83e67.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_save",
+      "path": "godot/assets/icons/ui/icon_save_1024.png",
+      "seed": 1191901588,
+      "url": "https://v3b.fal.media/files/b/0aa34fb7/w-yCMbZshTA7valciqhDd_3579b2ad207a46a6b38867d8bd14bc23.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_load",
+      "path": "godot/assets/icons/ui/icon_load_1024.png",
+      "seed": 2875148693,
+      "url": "https://v3b.fal.media/files/b/0aa34fb7/M1vkUWzdwlslafwlGxcx2_b2b65608d0084a2aa04a6660c340a10f.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_next_month",
+      "path": "godot/assets/icons/ui/icon_next_month_1024.png",
+      "seed": 2725669091,
+      "url": "https://v3b.fal.media/files/b/0aa34fb8/-b0cVccRkxU7PlGgPZvaj_7057bd79c5174266ae426a505a4bd40b.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_bell",
+      "path": "godot/assets/icons/ui/icon_bell_1024.png",
+      "seed": 2187398909,
+      "url": "https://v3b.fal.media/files/b/0aa34fb9/wQPDHwur1_Ecgcd8IfBim_692e949b12ed47db9dcee7219f0ec2f9.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_victory",
+      "path": "godot/assets/icons/ui/icon_victory_1024.png",
+      "seed": 8736363,
+      "url": "https://v3b.fal.media/files/b/0aa34fb9/BDMPYeH7eljV3NfpgtkDB_d829660ed90c4967a71cffb4240516ca.png",
+      "layer": "C",
+      "ok": true
+    },
+    {
+      "id": "icon_defeat",
+      "path": "godot/assets/icons/ui/icon_defeat_1024.png",
+      "seed": 1619668745,
+      "url": "https://v3b.fal.media/files/b/0aa34fba/6X3Y6getC-6RmREyeS7Dt_ae040e53b3e140739484a1fd9fbd137e.png",
+      "layer": "C",
+      "ok": true
+    }
+  ],
+  "ok_count": 39,
+  "errors": []
+}

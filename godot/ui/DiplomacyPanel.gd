@@ -17,12 +17,14 @@ var trade_btn: Button
 var pact_btn: Button
 
 const FACTION_ART := {
-	"moravia": "mojmir_dynasty_emblem",
-	"hungary": "arpad_master_portrait",
-	"frankia": "mojmir_dynasty_emblem",
-	"bavaria": "mojmir_dynasty_emblem",
-	"poland": "mojmir_dynasty_emblem",
-	"bohemia": "mojmir_dynasty_emblem",
+	"moravia": "emblem_moravia",
+	"hungary": "emblem_hungary",
+	"franks": "emblem_franks",
+	"frankia": "emblem_franks",
+	"bavaria": "emblem_bavaria",
+	"poland": "emblem_poland",
+	"bohemia": "emblem_bohemia",
+	"byzantium": "emblem_byzantium",
 }
 
 

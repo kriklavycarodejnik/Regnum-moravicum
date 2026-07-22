@@ -51,3 +51,39 @@
 | 2026-07-22 | M6 scope zohľadnený: 12 UI icon rows Planned; odkaz M6_UI_ART_SCOPE; sim M1–M5 AS-IS |
 | 2026-07-22 | G2 masters (9) **Approved** userom — ready G3 icons / M6 wire |
 | 2026-07-22 | G3 UI icons MVP 12 vygenerované → Review (`godot/assets/icons/ui/`) |
+
+
+## G4 batch — missing sets (2026-07-22) — status **Review**
+
+Meta: `tools/art/raw/g4_batch/batch_g4_meta.json` · FAL `fal-ai/flux-pro/v1.1` · 39/39 OK
+
+### Faction emblems (6)
+| ID | Path |
+|----|------|
+| emblem_franks | godot/assets/icons/factions/franks_emblem_v1.png |
+| emblem_bavaria | godot/assets/icons/factions/bavaria_emblem_v1.png |
+| emblem_hungary | godot/assets/icons/factions/hungary_emblem_v1.png |
+| emblem_poland | godot/assets/icons/factions/poland_emblem_v1.png |
+| emblem_bohemia | godot/assets/icons/factions/bohemia_emblem_v1.png |
+| emblem_byzantium | godot/assets/icons/factions/byzantium_emblem_v1.png |
+
+(+ moravia = existing mojmir_dynasty_emblem Approved)
+
+### Map markers (5) — layer B
+marker_settlement_small/medium/large, marker_fort, marker_army_dot → `godot/assets/map/`
+
+### Battle silhouettes (6) — layer B
+sil_infantry, sil_archer, sil_cavalry, sil_shieldwall, sil_magyar_horse, sil_commander → `godot/assets/battle/`
+
+### Event A-plates (6)
+event_papal_legation, event_byzantine_marriage, event_bogata_conspiracy, event_council_of_zhupans, event_border_raid, event_harvest_tithe → `godot/assets/events/`
+
+### Extended UI icons 13–28 (16) — layer C
+icon_gift, threat, treaty, trade, nap, military_pact, move, split, merge, upgrade, save, load, next_month, bell, victory, defeat  
+(`_64` / `_256` / `_1024` in `godot/assets/icons/ui/`)
+
+### Original 12 resource/religion icons
+Still **Review** (unchanged this batch). User may `approve g3` without regen.
+
+| 2026-07-22 | G4 batch 39 assets Review — emblems/markers/sils/events/ext icons |
+
