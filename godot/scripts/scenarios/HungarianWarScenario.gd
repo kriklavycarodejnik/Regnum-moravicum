@@ -77,7 +77,7 @@ func create_initial_armies() -> Dictionary:
 func resolve_devine_battle() -> Dictionary:
 	# P-1.1 guard — Devín max 1× za run
 	if game_state.devine_resolved:
-		return {"result": "already_resolved"}
+		return {"ok": false, "error": "already_resolved", "chronicle": "Scenár Devín 907 už bol odohraný."}
 	var armies: Dictionary = create_initial_armies()
 	var hungarian: Dictionary = armies["hungarian_main"].duplicate(true)
 	var moravian: Dictionary = armies["moravian_main"].duplicate(true)

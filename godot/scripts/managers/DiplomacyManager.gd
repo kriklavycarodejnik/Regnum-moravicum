@@ -25,6 +25,7 @@ func _ensure_default_factions() -> void:
 		"hungary": {"name": "Maďari", "mood": 20.0, "relations": {}},
 		"poland": {"name": "Poľsko", "mood": 30.0, "relations": {}},
 		"bohemia": {"name": "Čechy", "mood": 60.0, "relations": {}},
+		"byzantium": {"name": "Byzantská ríša", "mood": 50.0, "relations": {}},
 	}
 	var factions: Dictionary = game_state.factions
 	for faction_id in default_factions:

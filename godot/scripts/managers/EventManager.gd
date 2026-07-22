@@ -335,7 +335,7 @@ func _resolve_faction_id(name_or_id: String) -> String:
 	# Common aliases
 	var lower: String = name_or_id.to_lower()
 	if lower in ["byzantium", "byzantskí", "konštantínopol"]:
-		return ""
+		return "byzantium"
 	if lower in ["franks", "franky", "frankia", "nemeckí"]:
 		return "franks"
 	if lower in ["hungary", "maďari", "bogatovci"]:
