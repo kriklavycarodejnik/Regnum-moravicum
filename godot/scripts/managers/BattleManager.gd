@@ -31,7 +31,9 @@ func auto_resolve(attacker: Dictionary, defender: Dictionary, terrain: String = 
 		"result": result,
 		"attacker_es": attacker_es,
 		"defender_es": defender_es,
-		"terrain": terrain
+		"terrain": terrain,
+		"attacker_faction": attacker.get("faction_id", "?"),
+		"defender_faction": defender.get("faction_id", "?")
 	}
 
 

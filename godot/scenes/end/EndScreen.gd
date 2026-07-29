@@ -27,6 +27,7 @@ func _populate() -> void:
 	var won: bool = bool(ending.get("won", false))
 	title_label.text = "Víťazstvo" if won else "Porážka"
 	title_label.theme_type_variation = &"TitleLabel"
+	title_label.icon = ArtCatalog.texture("icon_victory_64") if won else ArtCatalog.texture("icon_defeat_64")
 	body_label.text = str(ending.get("message", "Koniec hry."))
 	var art_id := "moravian_court_interior" if won else "battle_danube_composition"
 	var tex: Texture2D = ArtCatalog.texture(art_id)
