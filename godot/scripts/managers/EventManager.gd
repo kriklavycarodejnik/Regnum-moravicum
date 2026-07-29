@@ -107,7 +107,9 @@ func _try_historical_event() -> Dictionary:
 		var eid: String = str(cat.get("id", ""))
 		var conds = cat.get("conditions", {})
 		var req_year: int = int(conds.get("year", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
-		if req_year != 0 and y != req_year:
+		if req_year == 0:
+			continue
+		if y != req_year:
 			continue
 		if bool(cat.get("once", false)) and game_state.triggered_events.has(eid):
 			continue

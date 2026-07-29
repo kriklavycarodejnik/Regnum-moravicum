@@ -119,11 +119,19 @@ func get_pending_event() -> Variant:
 		title = "Udalosť"
 	var body = str(pending.get("text", pending.get("body", "")))
 	var art_id = str(pending.get("art_id", ""))
-	var choices_dict = pending.get("choices", {})
+	var choices_v = pending.get("choices", {})
 	var choices_array = []
-	if typeof(choices_dict) == TYPE_DICTIONARY:
-		for choice_id in choices_dict.keys():
-			var choice = choices_dict[choice_id]
+	if typeof(choices_v) == TYPE_ARRAY:
+		for choice in choices_v:
+			if typeof(choice) == TYPE_DICTIONARY:
+				choices_array.append({
+					"id": str(choice.get("id", "")),
+					"label": str(choice.get("text", choice.get("label", ""))),
+					"effect": choice.get("effect", {})
+				})
+	elif typeof(choices_v) == TYPE_DICTIONARY:
+		for choice_id in choices_v.keys():
+			var choice = choices_v[choice_id]
 			if typeof(choice) == TYPE_DICTIONARY:
 				choices_array.append({
 					"id": choice_id,
@@ -213,3 +221,7 @@ func load_save() -> bool:
 		save_manager
 	)
 	return true
+
+
+func reset() -> void:
+	_bootstrap()

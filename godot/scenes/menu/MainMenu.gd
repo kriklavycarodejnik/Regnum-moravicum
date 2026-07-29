@@ -44,7 +44,8 @@ func _ready() -> void:
 
 
 func _on_new() -> void:
-	# Briefing pred mapou — hráč musí vedieť cieľ
+	GameManager.reset()
+	# Briefing pred mapou
 	get_tree().change_scene_to_file("res://scenes/briefing/Briefing.tscn")
 
 
