@@ -75,24 +75,24 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 	if _title:
 		_title.text = title
 	
-	# Determine which silhouettes to show
-	var attacker_faction: String = str(outcome.get("attacker_faction", "hungary"))
-	var defender_faction: String = str(outcome.get("defender_faction", "moravia"))
-	var attacker_is_magyar: bool = attacker_faction in ["hungary", "magyar", "magyars"]
-	var defender_is_magyar: bool = defender_faction in ["hungary", "magyar", "magyars"]
-	
-	if _sil_left != null:
-		if attacker_is_magyar:
+	# Determine silhouettes based on art_id / battle context
+	var is_devin: bool = (art_id == "battle_danube_composition" or "Devín" in title or "devin" in title.to_lower())
+	if is_devin:
+		# Devín 907: magyar horse (left=attacker) vs moravian shieldwall (right=defender)
+		if _sil_left != null:
 			_sil_left.texture = ArtCatalog.texture("sil_magyar_horse")
-		else:
-			_sil_left.texture = ArtCatalog.texture("sil_infantry")
-		_sil_left.visible = _sil_left.texture != null
-	if _sil_right != null:
-		if defender_is_magyar:
-			_sil_right.texture = ArtCatalog.texture("sil_magyar_horse")
-		else:
+			_sil_left.visible = _sil_left.texture != null
+		if _sil_right != null:
 			_sil_right.texture = ArtCatalog.texture("sil_shieldwall")
-		_sil_right.visible = _sil_right.texture != null
+			_sil_right.visible = _sil_right.texture != null
+	else:
+		# Generic skirmish: infantry vs archer/cavalry
+		if _sil_left != null:
+			_sil_left.texture = ArtCatalog.texture("sil_infantry")
+			_sil_left.visible = _sil_left.texture != null
+		if _sil_right != null:
+			_sil_right.texture = ArtCatalog.texture("sil_cavalry")
+			_sil_right.visible = _sil_right.texture != null
 	
 	if _art:
 		if art_id != "":
