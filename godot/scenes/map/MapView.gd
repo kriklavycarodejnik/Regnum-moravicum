@@ -197,53 +197,53 @@ func _draw() -> void:
 		var loyalty: float = float(pdata.get("loyalty", 50))
 		var center := Vector2(cx, cy)
 
-				# Soft shadow
-				draw_circle(center + Vector2(2, 3), r + 2.0, Color(0, 0, 0, 0.35))
+		# Soft shadow
+		draw_circle(center + Vector2(2, 3), r + 2.0, Color(0, 0, 0, 0.35))
 
-				var has_art: bool = _marker_tex.has(pid)
-				if has_art:
-					var tex: Texture2D = _marker_tex[pid]
-					var d := r * 2.0
-					var dest := Rect2(cx - r, cy - r, d, d)
-					draw_circle(center, r + 1.0, C.OAK_DARK)
-					draw_texture_rect(tex, dest, false, Color(1, 1, 1, 0.92))
-					var rim := _faction_color(owner)
-					rim.a = 0.9
-					draw_arc(center, r + 2.0, 0.0, TAU, 48, rim, 4.0, true)
-				else:
-					# Use settlement marker based on prosperity
-					var marker_tex: Texture2D = _settlement_medium
-					var prosperity: float = float(pdata.get("prosperity", 50))
-					if prosperity >= 70:
-						marker_tex = _settlement_large if _settlement_large != null else _settlement_medium
-					elif prosperity < 30:
-						marker_tex = _settlement_small if _settlement_small != null else _settlement_medium
-					var fill := _faction_color(owner)
-					fill = fill.lightened(0.08)
-					fill.a = 0.92
-					draw_circle(center, r, fill)
-					var hi := C.PARCHMENT
-					hi.a = 0.12
-					draw_circle(center + Vector2(-r * 0.25, -r * 0.25), r * 0.45, hi)
-					# Draw settlement icon
-					if marker_tex != null:
-						var ms: float = r * 0.8
-						draw_texture_rect(marker_tex, Rect2(cx - ms, cy - ms, ms * 2, ms * 2), false)
+		var has_art: bool = _marker_tex.has(pid)
+		if has_art:
+			var tex: Texture2D = _marker_tex[pid]
+			var d := r * 2.0
+			var dest := Rect2(cx - r, cy - r, d, d)
+			draw_circle(center, r + 1.0, C.OAK_DARK)
+			draw_texture_rect(tex, dest, false, Color(1, 1, 1, 0.92))
+			var rim := _faction_color(owner)
+			rim.a = 0.9
+			draw_arc(center, r + 2.0, 0.0, TAU, 48, rim, 4.0, true)
+		else:
+			# Use settlement marker based on prosperity
+			var marker_tex: Texture2D = _settlement_medium
+			var prosperity: float = float(pdata.get("prosperity", 50))
+			if prosperity >= 70:
+				marker_tex = _settlement_large if _settlement_large != null else _settlement_medium
+			elif prosperity < 30:
+				marker_tex = _settlement_small if _settlement_small != null else _settlement_medium
+			var fill := _faction_color(owner)
+			fill = fill.lightened(0.08)
+			fill.a = 0.92
+			draw_circle(center, r, fill)
+			var hi := C.PARCHMENT
+			hi.a = 0.12
+			draw_circle(center + Vector2(-r * 0.25, -r * 0.25), r * 0.45, hi)
+			# Draw settlement icon
+			if marker_tex != null:
+				var ms: float = r * 0.8
+				draw_texture_rect(marker_tex, Rect2(cx - ms, cy - ms, ms * 2, ms * 2), false)
 
-				# Fort indicator for occupied provinces
-				if pdata.has("occupier_faction") and _fort_tex != null:
-					var fs: float = r * 0.6
-					draw_texture_rect(_fort_tex, Rect2(cx + r * 0.3, cy - r * 0.7, fs, fs), false)
+		# Fort indicator for occupied provinces
+		if pdata.has("occupier_faction") and _fort_tex != null:
+			var fs: float = r * 0.6
+			draw_texture_rect(_fort_tex, Rect2(cx + r * 0.3, cy - r * 0.7, fs, fs), false)
 
-				# Army dot if armies present in province
-				if _army_dot != null:
-					var armies: Dictionary = GameManager.game_state.armies if GameManager else {}
-					for aid in armies:
-						var a = armies[aid]
-						if typeof(a) == TYPE_DICTIONARY and str(a.get("province_id", "")) == pid:
-							var ads: float = r * 0.5
-							draw_texture_rect(_army_dot, Rect2(cx - r * 0.4, cy + r * 0.1, ads, ads), false)
-							break
+		# Army dot if armies present in province
+		if _army_dot != null:
+			var armies: Dictionary = GameManager.game_state.armies if GameManager else {}
+			for aid in armies:
+				var a = armies[aid]
+				if typeof(a) == TYPE_DICTIONARY and str(a.get("province_id", "")) == pid:
+					var ads: float = r * 0.5
+					draw_texture_rect(_army_dot, Rect2(cx - r * 0.4, cy + r * 0.1, ads, ads), false)
+					break
 
 		draw_arc(center, r + 5.0, 0.0, TAU, 40, _loyalty_ring(loyalty), 2.5, true)
 

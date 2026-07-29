@@ -505,9 +505,6 @@ func _notify(text: String) -> void:
 		notification_feed.call("push", short)
 
 
-func _check_ending() -> void:
-
-
 # ─── TurnReport card ───
 
 func _show_turn_report(deltas: Array, chronicle_line: String) -> void:
@@ -594,12 +591,12 @@ func _show_devin_modal(stage: String) -> void:
 		"warning":
 			title_lbl.text = "Rok 906 — Blíži sa invázia"
 			body_lbl.text = "Kupci a vyzvedači hlásia zhromažďovanie maďarských jazdcov za hranicami.\nRok 907 prinesie rozhodujúcu bitku pri Devíne.\n\nPriprav sa: posilni armády, uzatvor spojenectvá (Diplomacia),\na opevni Nitru a Devín („Ďalší mesiac“ → opevňovacie eventy)."
-				"prepare":
-					title_lbl.text = "Rok 907 — Devín volá"
-					body_lbl.text = "Maďarské vojská sa valia na Devín!\nToto je rozhodujúci moment tvojej vlády.\n\nScenár Devín 907 je pripravený — klikni na tlačidlo\n„★ Scénár: Devín 907“ v nástrojoch dole."
-				"epilogue":
-					title_lbl.text = "Po Devíne — kríza prežitá"
-					body_lbl.text = "Bitka pri Devíne sa skončila. Maďari zvíťazili —\nako predpovedali kroniky, ako varovali kupci.\n\nMorava však stojí. Dynastia žije.\nTvoj cieľ: vydržať do roku 1000.\n\nPokračuj „Ďalší mesiac“."
+		"prepare":
+			title_lbl.text = "Rok 907 — Devín volá"
+			body_lbl.text = "Maďarské vojská sa valia na Devín!\nToto je rozhodujúci moment tvojej vlády.\n\nScenár Devín 907 je pripravený — klikni na tlačidlo\n„★ Scénár: Devín 907“ v nástrojoch dole."
+		"epilogue":
+			title_lbl.text = "Po Devíne — kríza prežitá"
+			body_lbl.text = "Bitka pri Devíne sa skončila. Maďari zvíťazili —\nako predpovedali kroniky, ako varovali kupci.\n\nMorava však stojí. Dynastia žije.\nTvoj cieľ: vydržať do roku 1000.\n\nPokračuj „Ďalší mesiac“."
 	title_lbl.theme_type_variation = &"TitleLabel"
 	vbox.add_child(title_lbl)
 	vbox.add_child(body_lbl)
