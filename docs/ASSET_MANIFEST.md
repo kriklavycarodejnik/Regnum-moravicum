@@ -18,19 +18,19 @@
 | mojmir_dynasty_emblem | A | emblem | godot/assets/icons/factions/mojmir_dynasty_emblem_v1.png | **Approved** | §9.9 | 4096415977 | FAL fal-ai/flux-pro/v1.1 t2i (i2i rejected — style bleed); size 1024x1024; schválené userom |
 | battle_danube_composition | A | battle | godot/assets/events/battle_danube_composition_v1.png | **Approved** | §9.5 | 1349791227 | FAL fal-ai/flux-pro/v1.1 t2i (i2i rejected — style bleed); size 1344x768; schválené userom |
 
-| ui_icon_set_v1 | C | icons | godot/assets/icons/ui/ | **Review** | Block C + M6 §4 | | G3 batch 12 icons generated; 64/256/1024 |
-| icon_gold | C | ui_icon | godot/assets/icons/ui/icon_gold_64.png | **Review** | M6_UI_ART_SCOPE §4 | 3086081312 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_food | C | ui_icon | godot/assets/icons/ui/icon_food_64.png | **Review** | M6_UI_ART_SCOPE §4 | 664207953 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_wood | C | ui_icon | godot/assets/icons/ui/icon_wood_64.png | **Review** | M6_UI_ART_SCOPE §4 | 3532798983 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_stone | C | ui_icon | godot/assets/icons/ui/icon_stone_64.png | **Review** | M6_UI_ART_SCOPE §4 | 1528861453 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_iron | C | ui_icon | godot/assets/icons/ui/icon_iron_64.png | **Review** | M6_UI_ART_SCOPE §4 | 1786691906 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_prestige | C | ui_icon | godot/assets/icons/ui/icon_prestige_64.png | **Review** | M6_UI_ART_SCOPE §4 | 352713469 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_eagle | C | ui_icon | godot/assets/icons/ui/icon_eagle_64.png | **Review** | M6_UI_ART_SCOPE §4 | 3128970590 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_cross_latin | C | ui_icon | godot/assets/icons/ui/icon_cross_latin_64.png | **Review** | M6_UI_ART_SCOPE §4 | 267214866 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_cross_patriarchal | C | ui_icon | godot/assets/icons/ui/icon_cross_patriarchal_64.png | **Review** | M6_UI_ART_SCOPE §4 | 1176055786 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_sword | C | ui_icon | godot/assets/icons/ui/icon_sword_64.png | **Review** | M6_UI_ART_SCOPE §4 | 4036174036 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_shield | C | ui_icon | godot/assets/icons/ui/icon_shield_64.png | **Review** | M6_UI_ART_SCOPE §4 | 2002594877 | FAL flux-pro; also _256/_1024; schválenie userom |
-| icon_scroll | C | ui_icon | godot/assets/icons/ui/icon_scroll_64.png | **Review** | M6_UI_ART_SCOPE §4 | 1857357039 | FAL flux-pro; also _256/_1024; schválenie userom |
+| ui_icon_set_v1 | C | icons | godot/assets/icons/ui/ | **Approved** | Block C + M6 §4 | | G3 batch 12 icons generated; 64/256/1024 |
+| icon_gold | C | ui_icon | godot/assets/icons/ui/icon_gold_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 3086081312 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_food | C | ui_icon | godot/assets/icons/ui/icon_food_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 664207953 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_wood | C | ui_icon | godot/assets/icons/ui/icon_wood_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 3532798983 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_stone | C | ui_icon | godot/assets/icons/ui/icon_stone_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 1528861453 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_iron | C | ui_icon | godot/assets/icons/ui/icon_iron_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 1786691906 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_prestige | C | ui_icon | godot/assets/icons/ui/icon_prestige_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 352713469 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_eagle | C | ui_icon | godot/assets/icons/ui/icon_eagle_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 3128970590 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_cross_latin | C | ui_icon | godot/assets/icons/ui/icon_cross_latin_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 267214866 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_cross_patriarchal | C | ui_icon | godot/assets/icons/ui/icon_cross_patriarchal_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 1176055786 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_sword | C | ui_icon | godot/assets/icons/ui/icon_sword_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 4036174036 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_shield | C | ui_icon | godot/assets/icons/ui/icon_shield_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 2002594877 | FAL flux-pro; also _256/_1024; schválenie userom |
+| icon_scroll | C | ui_icon | godot/assets/icons/ui/icon_scroll_64.png | **Approved** | M6_UI_ART_SCOPE §4 | 1857357039 | FAL flux-pro; also _256/_1024; schválenie userom |
 
 ## Theme / infra (nie AI)
 
@@ -87,3 +87,13 @@ Still **Review** (unchanged this batch). User may `approve g3` without regen.
 
 | 2026-07-22 | G4 batch 39 assets Review — emblems/markers/sils/events/ext icons |
 
+
+| 2026-07-23 | G3 UI icons 12 **Approved** userom |
+| sil_infantry_v1 | B | battle_silhouette | godot/assets/battle/sil_infantry_v1.png | **Approved** | — | — | |
+| sil_archer_v1 | B | battle_silhouette | godot/assets/battle/sil_archer_v1.png | **Approved** | — | — | |
+| sil_cavalry_v1 | B | battle_silhouette | godot/assets/battle/sil_cavalry_v1.png | **Approved** | — | — | |
+| marker_settlement_small_v1 | B | map_marker | godot/assets/map/marker_settlement_small_v1.png | **Approved** | — | — | |
+| marker_settlement_medium_v1 | B | map_marker | godot/assets/map/marker_settlement_medium_v1.png | **Approved** | — | — | |
+| marker_settlement_large_v1 | B | map_marker | godot/assets/map/marker_settlement_large_v1.png | **Approved** | — | — | |
+| marker_fort_v1 | B | map_marker | godot/assets/map/marker_fort_v1.png | **Approved** | — | — | |
+| marker_army_dot_v1 | B | map_marker | godot/assets/map/marker_army_dot_v1.png | **Approved** | — | — | |

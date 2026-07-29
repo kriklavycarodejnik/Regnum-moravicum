@@ -26,7 +26,17 @@ func _ready() -> void:
 		battle_button.pressed.connect(_on_battle_button_pressed)
 	if siege_button:
 		siege_button.pressed.connect(_on_siege_button_pressed)
+	_setup_button_icons()
 	_update_army_list()
+
+
+func _setup_button_icons() -> void:
+	if move_button:
+		move_button.icon = ArtCatalog.texture("icon_move_64")
+	if battle_button:
+		battle_button.icon = ArtCatalog.texture("icon_sword_64")
+	if siege_button:
+		siege_button.icon = ArtCatalog.texture("icon_shield_64")
 
 
 func _apply_regnum_theme() -> void:

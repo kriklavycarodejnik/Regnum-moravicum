@@ -13,6 +13,11 @@ var _hover_id: String = ""
 var _tooltip: Label
 var _bg_tex: Texture2D
 var _marker_tex: Dictionary = {}  # pid -> Texture2D
+var _settlement_small: Texture2D
+var _settlement_medium: Texture2D
+var _settlement_large: Texture2D
+var _fort_tex: Texture2D
+var _army_dot: Texture2D
 
 
 func _ready() -> void:
@@ -49,10 +54,15 @@ func _load_art() -> void:
 	var cat = get_node_or_null("/root/ArtCatalog")
 	if cat == null:
 		return
-	# Prefer landscape plate as map backdrop (court / style master).
 	_bg_tex = cat.texture("moravian_court_interior")
 	if _bg_tex == null:
 		_bg_tex = cat.texture("regnum_visual_style_master")
+	# Load settlement markers
+	_settlement_small = cat.texture("marker_settlement_small")
+	_settlement_medium = cat.texture("marker_settlement_medium")
+	_settlement_large = cat.texture("marker_settlement_large")
+	_fort_tex = cat.texture("marker_fort")
+	_army_dot = cat.texture("marker_army_dot")
 	for pid in ["nitra", "devin", "bratislava", "morava"]:
 		var aid: String = cat.province_art_id(pid) if cat.has_method("province_art_id") else ""
 		if aid == "":
@@ -187,31 +197,53 @@ func _draw() -> void:
 		var loyalty: float = float(pdata.get("loyalty", 50))
 		var center := Vector2(cx, cy)
 
-		# Soft shadow
-		draw_circle(center + Vector2(2, 3), r + 2.0, Color(0, 0, 0, 0.35))
+				# Soft shadow
+				draw_circle(center + Vector2(2, 3), r + 2.0, Color(0, 0, 0, 0.35))
 
-		var has_art: bool = _marker_tex.has(pid)
-		if has_art:
-			var tex: Texture2D = _marker_tex[pid]
-			# circular-ish art disc via clipped texture rect + ring
-			var d := r * 2.0
-			var dest := Rect2(cx - r, cy - r, d, d)
-			# dark plate under art
-			draw_circle(center, r + 1.0, C.OAK_DARK)
-			draw_texture_rect(tex, dest, false, Color(1, 1, 1, 0.92))
-			# faction tint rim
-			var rim := _faction_color(owner)
-			rim.a = 0.9
-			draw_arc(center, r + 2.0, 0.0, TAU, 48, rim, 4.0, true)
-		else:
-			var fill := _faction_color(owner)
-			fill = fill.lightened(0.08)
-			fill.a = 0.92
-			draw_circle(center, r, fill)
-			# inner parchment highlight
-			var hi := C.PARCHMENT
-			hi.a = 0.12
-			draw_circle(center + Vector2(-r * 0.25, -r * 0.25), r * 0.45, hi)
+				var has_art: bool = _marker_tex.has(pid)
+				if has_art:
+					var tex: Texture2D = _marker_tex[pid]
+					var d := r * 2.0
+					var dest := Rect2(cx - r, cy - r, d, d)
+					draw_circle(center, r + 1.0, C.OAK_DARK)
+					draw_texture_rect(tex, dest, false, Color(1, 1, 1, 0.92))
+					var rim := _faction_color(owner)
+					rim.a = 0.9
+					draw_arc(center, r + 2.0, 0.0, TAU, 48, rim, 4.0, true)
+				else:
+					# Use settlement marker based on prosperity
+					var marker_tex: Texture2D = _settlement_medium
+					var prosperity: float = float(pdata.get("prosperity", 50))
+					if prosperity >= 70:
+						marker_tex = _settlement_large if _settlement_large != null else _settlement_medium
+					elif prosperity < 30:
+						marker_tex = _settlement_small if _settlement_small != null else _settlement_medium
+					var fill := _faction_color(owner)
+					fill = fill.lightened(0.08)
+					fill.a = 0.92
+					draw_circle(center, r, fill)
+					var hi := C.PARCHMENT
+					hi.a = 0.12
+					draw_circle(center + Vector2(-r * 0.25, -r * 0.25), r * 0.45, hi)
+					# Draw settlement icon
+					if marker_tex != null:
+						var ms: float = r * 0.8
+						draw_texture_rect(marker_tex, Rect2(cx - ms, cy - ms, ms * 2, ms * 2), false)
+
+				# Fort indicator for occupied provinces
+				if pdata.has("occupier_faction") and _fort_tex != null:
+					var fs: float = r * 0.6
+					draw_texture_rect(_fort_tex, Rect2(cx + r * 0.3, cy - r * 0.7, fs, fs), false)
+
+				# Army dot if armies present in province
+				if _army_dot != null:
+					var armies: Dictionary = GameManager.game_state.armies if GameManager else {}
+					for aid in armies:
+						var a = armies[aid]
+						if typeof(a) == TYPE_DICTIONARY and str(a.get("province_id", "")) == pid:
+							var ads: float = r * 0.5
+							draw_texture_rect(_army_dot, Rect2(cx - r * 0.4, cy + r * 0.1, ads, ads), false)
+							break
 
 		draw_arc(center, r + 5.0, 0.0, TAU, 40, _loyalty_ring(loyalty), 2.5, true)
 
