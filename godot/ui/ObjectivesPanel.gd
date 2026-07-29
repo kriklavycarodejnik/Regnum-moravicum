@@ -124,6 +124,13 @@ func refresh() -> void:
 		next_step = "Zostáva ~%d rokov. Primárne: „Ďalší mesiac“. Župy: %d · prestíž: %d" % [left, owned, prestige]
 
 	_phase.text = "%s\n%s" % [phase_name, phase_hint]
+	# P1.3: Diplomacy side-goal — najhoršia nálada (okrem Hungary)
+	if year != 907:
+		var dip_goal: Dictionary = _diplomacy_side_goal(gm)
+		if str(dip_goal.get("goal", "")) != "":
+			goals.append(str(dip_goal["goal"]))
+			if float(dip_goal.get("mood", 100.0)) < 30.0:
+				next_step = str(dip_goal["next_step"])
 	_body.clear()
 	_body.append_text("[b]Hlavný cieľ:[/b] Prežiť ako Mojmír II. / dynastia do roku [color=#C9A227]1000[/color].\n\n")
 	for g in goals:
@@ -132,6 +139,28 @@ func refresh() -> void:
 		year, month, owned, gold, food
 	])
 	_next.text = next_step
+
+
+func _diplomacy_side_goal(gm) -> Dictionary:
+	if gm.diplomacy_manager == null:
+		return {}
+	var factions: Array = gm.diplomacy_manager.list_factions()
+	var worst_mood := 100.0
+	var worst_name := ""
+	for f in factions:
+		if typeof(f) != TYPE_DICTIONARY or str(f.get("id", "")) == "hungary":
+			continue
+		var mood: float = float(f.get("mood", 50.0))
+		if mood < worst_mood:
+			worst_mood = mood
+			worst_name = str(f.get("name", ""))
+	if worst_name == "" or worst_mood >= 50.0:
+		return {}
+	return {
+		"goal": "• Diplomacia: %s má náladu len %.0f — dar alebo zmluva v záložke Diplomacia" % [worst_name, worst_mood],
+		"mood": worst_mood,
+		"next_step": "Otvor záložku Diplomacia a pošli dar frakcii %s (nálada %.0f — riziko rozkolu)." % [worst_name, worst_mood],
+	}
 
 
 func _count_owned(s, faction: String) -> int:
