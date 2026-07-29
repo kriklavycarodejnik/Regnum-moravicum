@@ -19,6 +19,22 @@ func _ready() -> void:
 func _build() -> void:
 	for c in get_children():
 		c.queue_free()
+	# Header with bell icon
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 6)
+	var bell := TextureRect.new()
+	bell.custom_minimum_size = Vector2(18, 18)
+	bell.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	bell.texture = ArtCatalog.texture("icon_bell_64")
+	if bell.texture == null:
+		bell.texture = ArtCatalog.texture("icon_scroll_64")
+	header.add_child(bell)
+	var title := Label.new()
+	title.text = "Notifikácie"
+	title.theme_type_variation = &"MutedLabel"
+	title.add_theme_font_size_override("font_size", 11)
+	header.add_child(title)
+	add_child(header)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 8)
 	margin.add_theme_constant_override("margin_right", 8)
