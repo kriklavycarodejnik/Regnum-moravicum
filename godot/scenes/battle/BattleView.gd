@@ -1,5 +1,5 @@
 # scenes/battle/BattleView.gd
-# Battle chrome — dusk + text phase + optional art plate via ArtCatalog.
+# Battle chrome — dusk + silhouettes + text phase + optional art plate.
 extends Control
 
 const C = preload("res://assets/theme/colors.gd")
@@ -8,6 +8,8 @@ const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 var _title: Label
 var _body: RichTextLabel
 var _art: TextureRect
+var _sil_left: TextureRect
+var _sil_right: TextureRect
 
 func _ready() -> void:
 	if theme == null:
@@ -35,8 +37,28 @@ func _build() -> void:
 	_title.theme_type_variation = &"SubtitleLabel"
 	_title.text = "Bitka"
 	v.add_child(_title)
+	# Silhouette row (left attacker, right defender)
+	var sil_row := HBoxContainer.new()
+	sil_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	sil_row.add_theme_constant_override("separation", 16)
+	_sil_left = TextureRect.new()
+	_sil_left.custom_minimum_size = Vector2(64, 100)
+	_sil_left.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_sil_left.visible = false
+	sil_row.add_child(_sil_left)
+	var vs := Label.new()
+	vs.text = "⚔"
+	vs.add_theme_font_size_override("font_size", 24)
+	vs.add_theme_color_override("font_color", C.BYZANTINE_GOLD)
+	sil_row.add_child(vs)
+	_sil_right = TextureRect.new()
+	_sil_right.custom_minimum_size = Vector2(64, 100)
+	_sil_right.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_sil_right.visible = false
+	sil_row.add_child(_sil_right)
+	v.add_child(sil_row)
 	_art = TextureRect.new()
-	_art.custom_minimum_size = Vector2(0, 80)
+	_art.custom_minimum_size = Vector2(0, 60)
 	_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	_art.visible = false
@@ -52,6 +74,26 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 	visible = true
 	if _title:
 		_title.text = title
+	
+	# Determine which silhouettes to show
+	var attacker_faction: String = str(outcome.get("attacker_faction", "hungary"))
+	var defender_faction: String = str(outcome.get("defender_faction", "moravia"))
+	var attacker_is_magyar: bool = attacker_faction in ["hungary", "magyar", "magyars"]
+	var defender_is_magyar: bool = defender_faction in ["hungary", "magyar", "magyars"]
+	
+	if _sil_left != null:
+		if attacker_is_magyar:
+			_sil_left.texture = ArtCatalog.texture("sil_magyar_horse")
+		else:
+			_sil_left.texture = ArtCatalog.texture("sil_infantry")
+		_sil_left.visible = _sil_left.texture != null
+	if _sil_right != null:
+		if defender_is_magyar:
+			_sil_right.texture = ArtCatalog.texture("sil_magyar_horse")
+		else:
+			_sil_right.texture = ArtCatalog.texture("sil_shieldwall")
+		_sil_right.visible = _sil_right.texture != null
+	
 	if _art:
 		if art_id != "":
 			var tex: Texture2D = ArtCatalog.texture(art_id)
@@ -88,3 +130,7 @@ func hide_battle() -> void:
 	visible = false
 	if _body:
 		_body.clear()
+	if _sil_left:
+		_sil_left.visible = false
+	if _sil_right:
+		_sil_right.visible = false
