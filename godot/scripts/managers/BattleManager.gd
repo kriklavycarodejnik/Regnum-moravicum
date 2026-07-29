@@ -36,7 +36,7 @@ func auto_resolve(attacker: Dictionary, defender: Dictionary, terrain: String = 
 
 
 func _evaluate_battle_result(winner: String, attacker_es: float, defender_es: float) -> String:
-	var es_ratio: float = attacker_es / defender_es if winner == "defender" else defender_es / attacker_es
+	var es_ratio: float = attacker_es / defender_es if winner == "attacker" else defender_es / attacker_es
 
 	if es_ratio >= 2.0:
 		return "decisive_victory"
@@ -47,9 +47,9 @@ func _evaluate_battle_result(winner: String, attacker_es: float, defender_es: fl
 	elif es_ratio >= 0.8:
 		return "stalemate"
 	elif es_ratio >= 0.5:
-		return "minor_defeat"
+		return "narrow_victory"
 	else:
-		return "decisive_defeat"
+		return "heroic_victory"
 
 
 # ─── Phased battle (M8.3) ───
