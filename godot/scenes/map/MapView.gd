@@ -247,6 +247,10 @@ func _draw() -> void:
 
 		draw_arc(center, r + 5.0, 0.0, TAU, 40, _loyalty_ring(loyalty), 2.5, true)
 
+		# Threat marker for critically low loyalty
+		if loyalty < 30.0:
+			draw_arc(center, r + 9.0, 0.0, TAU, 60, C.WARNING, 3.0, true)
+
 		if pid == _selected_id:
 			draw_arc(center, r + 10.0, 0.0, TAU, 48, C.BYZANTINE_GOLD, 3.0, true)
 		elif pid == _hover_id:

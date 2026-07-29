@@ -200,19 +200,57 @@ func _set_hero_art(art_id: String, caption: String = "") -> void:
 func _update_story_line() -> void:
 	if story_line == null or GameManager == null or GameManager.game_state == null:
 		return
-	var y: int = int(GameManager.game_state.year)
-	var m: int = int(GameManager.game_state.month)
 	var gs = GameManager.game_state
-	if gs.devine_resolved and y < 907:
-		story_line.text = "Devín už rozhodol osud ríše  ·  cieľ: prežiť do 1000  ·  ťah = Ďalší mesiac"
+	var y: int = int(gs.year)
+	var m: int = int(gs.month)
+	# Threat clock
+	var clock_text: String = ""
+	var gs2 = gs
+	if gs2.devine_resolved and y < 907:
+		clock_text = "Devín už rozhodol osud ríše"
 	elif y < 907:
 		var months_left: int = (907 - y) * 12 + (7 - m)
 		if months_left <= 0:
 			months_left = 1
-		story_line.text = "Do maďarskej invázie: ~%d mes.  ·  cieľ: prežiť do 1000  ·  ťah = Ďalší mesiac" % months_left
+		clock_text = "Do maďarskej invázie: ~%d mes." % months_left
 	else:
 		var years_left: int = maxi(0, 1000 - y)
-		story_line.text = "Po Devíne  ·  zostáva ~%d r. do 1000  ·  ťah = Ďalší mesiac" % years_left
+		clock_text = "Po Devíne · zostáva ~%d r. do 1000" % years_left
+	# Threat strip: worst loyalty, hostile faction, food runway
+	var threats: Array = []
+	var worst_loyalty := 100.0
+	var worst_province := ""
+	for pid in gs.provinces:
+		var p = gs.provinces[pid]
+		if typeof(p) != TYPE_DICTIONARY:
+			continue
+		var loy: float = float(p.get("loyalty", 50))
+		if loy < worst_loyalty:
+			worst_loyalty = loy
+			worst_province = str(p.get("name", pid))
+	if worst_loyalty < 40 and worst_province != "":
+		threats.append("lojalita %s: %.0f" % [worst_province, worst_loyalty])
+	var worst_mood := 100.0
+	var worst_faction := ""
+	for fid in gs.factions:
+		var f = gs.factions[fid]
+		if typeof(f) != TYPE_DICTIONARY:
+			continue
+		if fid == "moravia":
+			continue
+		var mood: float = float(f.get("mood", 50))
+		if mood < worst_mood:
+			worst_mood = mood
+			worst_faction = str(f.get("name", fid))
+	if worst_mood < 35 and worst_faction != "":
+		threats.append("%s: %.0f" % [worst_faction, worst_mood])
+	var food: int = int(gs.resources.get("food", 0))
+	if food < 50:
+		threats.append("jedlo: %d" % food)
+	var threat_text: String = ""
+	if not threats.is_empty():
+		threat_text = "  ⚠ " + " · ".join(threats)
+	story_line.text = clock_text + "  ·  ťah = Ďalší mesiac" + threat_text
 
 
 func _on_next_month() -> void:
@@ -254,6 +292,8 @@ func _on_next_month() -> void:
 		_notify("Udalosť! Vyber jednu z dvoch volieb.")
 	elif gs.year == 906 and gs.month == 1:
 		_show_devin_modal("warning")
+	elif gs.year == 906 and gs.month >= 6:
+		_notify("Rok 906: pošli armádu k Devínu (Armády → Presun → devin).")
 	elif gs.year == 907 and gs.month == 1:
 		_show_devin_modal("prepare")
 	# Show turn report card
