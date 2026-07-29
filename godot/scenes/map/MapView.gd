@@ -205,7 +205,7 @@ func _draw() -> void:
 			var tex: Texture2D = _marker_tex[pid]
 			var d := r * 2.0
 			var dest := Rect2(cx - r, cy - r, d, d)
-			draw_circle(center, r + 1.0, C.OAK_DARK)
+			draw_colored_polygon(_province_polygon(pid, cx, cy, r), C.OAK_DARK)
 			draw_texture_rect(tex, dest, false, Color(1, 1, 1, 0.92))
 			var rim := _faction_color(owner)
 			rim.a = 0.9
@@ -221,7 +221,7 @@ func _draw() -> void:
 			var fill := _faction_color(owner)
 			fill = fill.lightened(0.08)
 			fill.a = 0.92
-			draw_circle(center, r, fill)
+			draw_colored_polygon(_province_polygon(pid, cx, cy, r), fill)
 			var hi := C.PARCHMENT
 			hi.a = 0.12
 			draw_circle(center + Vector2(-r * 0.25, -r * 0.25), r * 0.45, hi)
@@ -270,6 +270,19 @@ func _draw() -> void:
 	var hs := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs)
 	draw_rect(Rect2(8, h - 26, hs.x + 16, 20), Color(0.08, 0.06, 0.04, 0.72), true)
 	draw_string(font, Vector2(16, h - 12), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs, C.TEXT_MUTED)
+
+
+func _province_polygon(pid: String, cx: float, cy: float, r: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var n := 10
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(pid)
+	for i in range(n):
+		var angle: float = (float(i) / float(n)) * TAU
+		var jitter: float = 1.0 + rng.randf_range(-0.18, 0.18)
+		var rr: float = r * 1.35 * jitter
+		pts.append(Vector2(cx + cos(angle) * rr, cy + sin(angle) * rr))
+	return pts
 
 
 func _gui_input(event: InputEvent) -> void:
