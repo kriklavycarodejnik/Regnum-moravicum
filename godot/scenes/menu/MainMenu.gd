@@ -38,6 +38,9 @@ func _ready() -> void:
 	if blurb:
 		blurb.text = "Si Mojmír II. Preži dynastiu do roku 1000.\nNová hra najprv ukáže poslanie a 3 kroky, ako hrať."
 	new_btn.text = "Nová hra — začať príbeh"
+	new_btn.icon = ArtCatalog.texture("icon_next_month_64")
+	load_btn.icon = ArtCatalog.texture("icon_save_64")
+	quit_btn.icon = ArtCatalog.texture("icon_gold_64")
 
 
 func _on_new() -> void:

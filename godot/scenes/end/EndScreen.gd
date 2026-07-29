@@ -15,6 +15,8 @@ func _ready() -> void:
 	$Background.color = _Colors.BG_DARKER
 	menu_btn.pressed.connect(_on_menu)
 	restart_btn.pressed.connect(_on_restart)
+	menu_btn.icon = ArtCatalog.texture("icon_gold_64")
+	restart_btn.icon = ArtCatalog.texture("icon_next_month_64")
 	_populate()
 
 func _populate() -> void:

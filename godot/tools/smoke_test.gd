@@ -102,8 +102,10 @@ func _init():
 
 	if ok:
 		print("SMOKE_PASS")
+		quit()
 	else:
 		print("SMOKE_FAIL")
+		quit(1)
 
 
 func check(cond, msg):
