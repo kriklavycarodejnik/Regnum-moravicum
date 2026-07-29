@@ -4,7 +4,7 @@
     "type": "historical",
     "title": "Pápežské posolstvo",
     "body": "Do Nitry prichádza posolstvo z Ríma s ponukou cirkevnej podpory výmenou za uznanie rímskej jurisdikcie nad moravskou cirkvou.",
-    "art_id": "moravian_court_interior",
+    "art_id": "event_papal_legation",
     "conditions": {
       "year": 903,
       "yearMin": 0
@@ -111,7 +111,7 @@
     "type": "diplomatic",
     "title": "Byzantská ponuka sobáša",
     "body": "Cisár Lev VI. ponúka ruku byzantskej princeznej jednému z moravských šľachticov ako spečatenie spojenectva medzi ríšami.",
-    "art_id": "moravian_court_interior",
+    "art_id": "event_byzantine_marriage",
     "conditions": {
       "year": 906,
       "yearMin": 0
@@ -190,7 +190,7 @@
     "type": "historical",
     "title": "Sprisahanie rodu Bogata",
     "body": "Z Užskej župy prichádzajú správy o tajných stretnutiach rodu Bogata s nespokojnými županmi — príprava na uzurpáciu trónu.",
-    "art_id": "moravian_court_interior",
+    "art_id": "event_bogata_conspiracy",
     "conditions": {
       "year": 915,
       "yearMin": 0
@@ -229,7 +229,7 @@
     "type": "random",
     "title": "Neúroda",
     "body": "Chladné a daždivé leto zničilo veľkú časť úrody v jednej zo žúp.",
-    "art_id": "",
+    "art_id": "event_harvest_tithe",
     "conditions": {
       "yearMin": 903,
       "year": 0
@@ -290,7 +290,7 @@
     "type": "diplomatic",
     "title": "Spor medzi šľachtou",
     "body": "Dvaja poprední župani sa dostali do sporu o hranice svojich žúp a žiadajú kráľovský rozsudok.",
-    "art_id": "moravian_court_interior",
+    "art_id": "event_council_of_zhupans",
     "conditions": {
       "yearMin": 903,
       "year": 0
@@ -331,7 +331,7 @@
     "type": "military",
     "title": "Nájazd na hranicu",
     "body": "Ozbrojená skupina prepadla pohraničnú osadu a odohnala dobytok skôr, než dorazila posádka.",
-    "art_id": "battle_danube_composition",
+    "art_id": "event_border_raid",
     "conditions": {
       "yearMin": 903,
       "year": 0
@@ -440,7 +440,7 @@
     "type": "religious",
     "title": "Svadba na kráľovskom dvore",
     "body": "O rok neskôr sa v Nitre koná honosná svadba spečaťujúca byzantsko-moravské spojenectvo pred zrakom vyslancov z celej Európy.",
-    "art_id": "moravian_court_interior",
+    "art_id": "event_byzantine_marriage",
     "conditions": {},
     "once": true,
     "chainOnly": true,
@@ -517,7 +517,7 @@
     "type": "diplomatic",
     "title": "Súd nad sprisahancami",
     "body": "Po zatknutí vodcov rodu Bogata žiada kráľovská rada rozsudok nad usvedčenými sprisahancami.",
-    "art_id": "moravian_court_interior",
+    "art_id": "event_bogata_conspiracy",
     "conditions": {},
     "once": true,
     "chainOnly": true,
@@ -568,7 +568,7 @@
     "type": "military",
     "title": "Povstanie rodu Bogata",
     "body": "Nesledovaní a nezastavení sa sprisahanci rodu Bogata odhodlali k otvorenej vzbure v Užskej župe.",
-    "art_id": "battle_danube_composition",
+    "art_id": "event_border_raid",
     "conditions": {},
     "once": true,
     "chainOnly": true,

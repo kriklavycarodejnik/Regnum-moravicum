@@ -94,5 +94,21 @@
   "icon_victory": "res://assets/icons/ui/icon_victory_64.png",
   "icon_victory_256": "res://assets/icons/ui/icon_victory_256.png",
   "icon_defeat": "res://assets/icons/ui/icon_defeat_64.png",
-  "icon_defeat_256": "res://assets/icons/ui/icon_defeat_256.png"
+  "icon_defeat_256": "res://assets/icons/ui/icon_defeat_256.png",
+  "icon_bell_64": "res://assets/icons/ui/icon_bell_64.png",
+  "icon_defeat_64": "res://assets/icons/ui/icon_defeat_64.png",
+  "icon_gift_64": "res://assets/icons/ui/icon_gift_64.png",
+  "icon_load_64": "res://assets/icons/ui/icon_load_64.png",
+  "icon_merge_64": "res://assets/icons/ui/icon_merge_64.png",
+  "icon_military_pact_64": "res://assets/icons/ui/icon_military_pact_64.png",
+  "icon_move_64": "res://assets/icons/ui/icon_move_64.png",
+  "icon_nap_64": "res://assets/icons/ui/icon_nap_64.png",
+  "icon_next_month_64": "res://assets/icons/ui/icon_next_month_64.png",
+  "icon_save_64": "res://assets/icons/ui/icon_save_64.png",
+  "icon_split_64": "res://assets/icons/ui/icon_split_64.png",
+  "icon_threat_64": "res://assets/icons/ui/icon_threat_64.png",
+  "icon_trade_64": "res://assets/icons/ui/icon_trade_64.png",
+  "icon_treaty_64": "res://assets/icons/ui/icon_treaty_64.png",
+  "icon_upgrade_64": "res://assets/icons/ui/icon_upgrade_64.png",
+  "icon_victory_64": "res://assets/icons/ui/icon_victory_64.png"
 }
