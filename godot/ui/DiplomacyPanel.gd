@@ -72,6 +72,12 @@ func _build() -> void:
 	for b in [gift_btn, threat_btn, nap_btn, trade_btn, pact_btn]:
 		actions.add_child(b)
 	add_child(actions)
+	# Set action button icons
+	gift_btn.icon = ArtCatalog.texture("icon_gift_64")
+	threat_btn.icon = ArtCatalog.texture("icon_threat_64")
+	nap_btn.icon = ArtCatalog.texture("icon_nap_64")
+	trade_btn.icon = ArtCatalog.texture("icon_trade_64")
+	pact_btn.icon = ArtCatalog.texture("icon_military_pact_64")
 
 
 func _mk_btn(text: String, cb: Callable) -> Button:
