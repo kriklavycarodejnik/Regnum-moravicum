@@ -36,6 +36,8 @@ const _Colors = preload("res://assets/theme/colors.gd")
 
 var selection_art_id: String = "mojmir_ii_master_portrait"
 var _months_played: int = 0
+var _active_battle: Dictionary = {}
+var _battle_round: int = 0
 
 
 func _ready() -> void:
@@ -54,6 +56,8 @@ func _ready() -> void:
 		map_view.province_selected.connect(_on_province_selected)
 	if diplomacy_panel and diplomacy_panel.has_signal("action_done"):
 		diplomacy_panel.action_done.connect(_on_diplomacy_action)
+	if battle_view and battle_view.has_signal("action_chosen"):
+		battle_view.action_chosen.connect(_on_battle_action)
 	event_panel.visible = false
 	if event_art:
 		event_art.visible = false
@@ -301,13 +305,45 @@ func _on_next_month() -> void:
 
 
 func _on_skirmish() -> void:
-	var outcome: Dictionary = GameManager.run_skirmish("nitra", "field")
-	_refresh_ui()
-	if outcome.has("chronicle"):
-		_append_chronicle(str(outcome["chronicle"]))
+	var attacker := {"faction_id": "moravia", "size": 1000, "morale": 80.0,
+		"composition": {"infantry": 0.7, "cavalry": 0.2, "archers": 0.1}, "commander": {"skill": 5}}
+	var defender := {"faction_id": "hungary", "size": 800, "morale": 70.0,
+		"composition": {"infantry": 0.5, "cavalry": 0.4, "archers": 0.1}, "commander": {"skill": 4}}
+	_active_battle = GameManager.war_manager.battle_manager.begin_phased_battle(attacker, defender, "field")
+	_battle_round = 0
+	next_month_btn.disabled = true
+	skirmish_btn.disabled = true
+	devine_btn.disabled = true
+	battle_view.call("show_actions", true)
 	_set_hero_art("nitra_master_hero", "Cvičná bitka · Nitra")
-	_show_battle("Cvičná bitka pri Nitre", outcome, "nitra_master_hero")
-	_log_battle_phases(outcome)
+	battle_view.visible = true
+
+
+func _on_battle_action(action: String) -> void:
+	var bm = GameManager.war_manager.battle_manager
+	if _battle_round < 2:
+		var phase := "attack" if _battle_round == 0 else "counterattack"
+		var enemy_action: String = bm.pick_ai_action(_active_battle["defender"])
+		_active_battle = bm.resolve_phase_round(_active_battle, phase, action, enemy_action)
+		_battle_round += 1
+		if _active_battle.get("routed", "") != "" or _battle_round >= 2:
+			_finish_battle(action)
+		else:
+			battle_view.call("show_actions", true)
+	else:
+		_finish_battle(action)
+
+
+func _finish_battle(last_action: String) -> void:
+	var bm = GameManager.war_manager.battle_manager
+	var enemy_action: String = bm.pick_ai_action(_active_battle["defender"])
+	_active_battle = bm.resolve_decision(_active_battle, last_action, enemy_action)
+	next_month_btn.disabled = false
+	skirmish_btn.disabled = false
+	devine_btn.disabled = false
+	battle_view.call("show_actions", false)
+	_show_battle("Cvičná bitka pri Nitre", _active_battle, "nitra_master_hero")
+	_log_battle_phases(_active_battle)
 	_notify("Cvičná bitka hotová — späť k mesačným ťahom.")
 
 

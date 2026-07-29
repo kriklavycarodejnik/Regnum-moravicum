@@ -2,6 +2,8 @@
 # Battle chrome — dusk + silhouettes + text phase + optional art plate.
 extends Control
 
+signal action_chosen(action: String)
+
 const C = preload("res://assets/theme/colors.gd")
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 
@@ -10,6 +12,7 @@ var _body: RichTextLabel
 var _art: TextureRect
 var _sil_left: TextureRect
 var _sil_right: TextureRect
+var _actions_row: HBoxContainer
 
 func _ready() -> void:
 	if theme == null:
@@ -63,6 +66,17 @@ func _build() -> void:
 	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	_art.visible = false
 	v.add_child(_art)
+	# Action buttons (M8.3 phased battle)
+	_actions_row = HBoxContainer.new()
+	_actions_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_actions_row.add_theme_constant_override("separation", 8)
+	for a in ["melee", "ranged", "flank", "retreat"]:
+		var b := Button.new()
+		b.text = {"melee": "Priamy útok", "ranged": "Streľba", "flank": "Obchvat", "retreat": "Ústup"}[a]
+		b.pressed.connect(func(): action_chosen.emit(a))
+		_actions_row.add_child(b)
+	_actions_row.visible = false
+	v.add_child(_actions_row)
 	_body = RichTextLabel.new()
 	_body.bbcode_enabled = true
 	_body.fit_content = true
@@ -72,6 +86,7 @@ func _build() -> void:
 
 func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> void:
 	visible = true
+	show_actions(false)
 	if _title:
 		_title.text = title
 	
@@ -125,6 +140,10 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 					_body.append_text("· decision: %s\n" % str(log.get("winner", "?")))
 		if outcome.has("chronicle"):
 			_body.append_text("\n%s\n" % str(outcome.get("chronicle")))
+
+func show_actions(visible_flag: bool) -> void:
+	if _actions_row:
+		_actions_row.visible = visible_flag
 
 func hide_battle() -> void:
 	visible = false
