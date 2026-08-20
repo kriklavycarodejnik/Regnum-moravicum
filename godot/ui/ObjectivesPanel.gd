@@ -5,6 +5,7 @@ extends PanelContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 const C = preload("res://assets/theme/colors.gd")
+const BVT = preload("res://scripts/ui/BattleViewTranslations.gd")
 
 var _phase_label: Label
 var _goals_label: Label
@@ -278,7 +279,7 @@ static func _diplomacy_side_goal_static(s) -> PackedStringArray:
 		var mood: float = float(f.get("mood", 50.0))
 		if mood < worst_mood:
 			worst_mood = mood
-			worst_name = str(f.get("name", fid))
+			worst_name = BVT.translate_faction(fid)
 	if worst_name == "" or worst_mood >= 50.0:
 		return PackedStringArray()
 	if worst_mood < 30.0:
@@ -301,7 +302,7 @@ static func _diplomacy_urgent_next_step_static(s) -> String:
 		var mood: float = float(f.get("mood", 50.0))
 		if mood < worst_mood:
 			worst_mood = mood
-			worst_name = str(f.get("name", fid))
+			worst_name = BVT.translate_faction(fid)
 	if worst_name == "" or worst_mood >= 30.0:
 		return ""
 	return "Dar frakcii %s v záložke Diplomacia (nálada %.0f)." % [worst_name, worst_mood]

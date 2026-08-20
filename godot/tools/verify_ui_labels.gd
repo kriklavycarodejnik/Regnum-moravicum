@@ -5,17 +5,17 @@ extends Node
 func _ready() -> void:
 	print("=== SPUŠŤAM OVERENIE SLOVENSKÝCH NÁZVOV V UI ===")
 	var BVT = load("res://scripts/ui/BattleViewTranslations.gd")
-	var fails = 0
-	var raw_tokens: Array = ["moravia_levy_1", "moravia_feudal_1", "madari_horde_1", "unknown_xyz", "unknown_fac_xyz", "unknown_army_xyz"]
+	var fails = [0]
+	var raw_tokens: Array = ["moravia_levy_1", "moravia_feudal_1", "madari_horde_1", "unknown_xyz", "unknown_fac_xyz", "unknown_army_xyz", "raw_faction_db_key", "raw_province_db_key"]
 	var check_surface := func(surface: String, value: String) -> void:
 		print("  %s: \"%s\"" % [surface, value])
 		if "_" in value:
 			print("  [FAIL] %s obsahuje podtržník" % surface)
-			fails += 1
+			fails[0] += 1
 		for token in raw_tokens:
 			if token in value:
 				print("  [FAIL] %s obsahuje raw ID %s" % [surface, token])
-				fails += 1
+				fails[0] += 1
 	
 	# 1. Kontrola Translation mapy a fallbackov
 	print("\n--- 1. Overenie prekladového modulu a fallbackov ---")
@@ -25,25 +25,25 @@ func _ready() -> void:
 		print("  Provincia '%s' -> '%s'" % [p, tr])
 		if "_" in tr or tr == p:
 			print("  [FAIL] raw ID leaky v provincii: %s" % tr)
-			fails += 1
+			fails[0] += 1
 			
 	var unknown_prov = BVT.translate_province("unknown_xyz")
 	print("  Neznáma provincia 'unknown_xyz' -> '%s'" % unknown_prov)
 	if unknown_prov != "Neznáma župa":
 		print("  [FAIL] Neznáma župa fallback nesedí")
-		fails += 1
+		fails[0] += 1
 		
 	var unknown_fac = BVT.translate_faction("unknown_fac_xyz")
 	print("  Neznáma frakcia 'unknown_fac_xyz' -> '%s'" % unknown_fac)
 	if unknown_fac != "Neznáma frakcia":
 		print("  [FAIL] Neznáma frakcia fallback nesedí")
-		fails += 1
+		fails[0] += 1
 
 	var unknown_army = BVT.translate_army_name({}, "unknown_army_xyz")
 	print("  Neznáma armáda 'unknown_army_xyz' -> '%s'" % unknown_army)
 	if unknown_army != "Neznámy oddiel":
 		print("  [FAIL] Neznámy oddiel fallback nesedí")
-		fails += 1
+		fails[0] += 1
 
 	# 2. Main scéna a UI inštancie
 	print("\n--- 2. Overenie Main.tscn a inštančných UI uzlov ---")
@@ -62,7 +62,7 @@ func _ready() -> void:
 	check_surface.call("SelectionLabel", sel_label.text)
 	if "nitra" in sel_label.text or "_" in sel_label.text:
 		print("  [FAIL] SelectionLabel obsahuje raw ID alebo podtržník!")
-		fails += 1
+		fails[0] += 1
 
 	main._on_province_selected("devin")
 	print("  SelectionLabel po výbere 'devin': \"%s\"" % sel_label.text)
@@ -74,10 +74,10 @@ func _ready() -> void:
 	check_surface.call("MapView tooltip", map_tooltip_text)
 	if "devin" in map_tooltip_text.to_lower() and not "Devín" in map_tooltip_text:
 		print("  [FAIL] MapView tooltip obsahuje lowercase devin!")
-		fails += 1
+		fails[0] += 1
 	if "devin" in sel_label.text or "_" in sel_label.text:
 		print("  [FAIL] SelectionLabel obsahuje raw ID alebo podtržník!")
-		fails += 1
+		fails[0] += 1
 
 	# ArmyUI kontrola
 	print("\n--- 3. Overenie ArmyUI a detailu oddielov ---")
@@ -91,7 +91,7 @@ func _ready() -> void:
 			check_surface.call("ArmyUI položka", child.text)
 			if "_" in child.text or "moravia_levy" in child.text or "madari_horde" in child.text:
 				print("  [FAIL] ArmyUI tlačidlo obsahuje raw ID alebo podtržník!")
-				fails += 1
+				fails[0] += 1
 				
 	# Simulácia výberu armády a otvorenie presunu
 	army_ui._on_army_selected("moravia_levy_1")
@@ -100,10 +100,10 @@ func _ready() -> void:
 	check_surface.call("Detail armády", army_info_text)
 	if "_" in army_info_text:
 		print("  [FAIL] Detail armády obsahuje podtržník!")
-		fails += 1
+		fails[0] += 1
 	if "moravia_levy_1" in army_info_text or "nitra" in army_info_text.to_lower() and not "Nitra" in army_info_text:
 		print("  [FAIL] Detail armády obsahuje raw ID!")
-		fails += 1
+		fails[0] += 1
 
 	# Presun armády dialóg
 	army_ui._on_move_button_pressed()
@@ -119,7 +119,7 @@ func _ready() -> void:
 							check_surface.call("Cieľová župa", b.text)
 							if "_" in b.text or b.text.to_lower() == b.text:
 								print("  [FAIL] Cieľová župa je lowercase alebo obsahuje podtržník: %s" % b.text)
-								fails += 1
+								fails[0] += 1
 
 	# DiplomacyPanel kontrola
 	print("\n--- 4. Overenie DiplomacyPanel ---")
@@ -135,7 +135,7 @@ func _ready() -> void:
 					check_surface.call("Diplomacia frakcia", child.text)
 					if "_" in child.text or "franks" in child.text or "bavaria" in child.text or "hungary" in child.text:
 						print("  [FAIL] Diplomacia zoznam obsahuje raw ID!")
-						fails += 1
+						fails[0] += 1
 				
 	# Výber frakcie v diplomacii
 	dip_panel._on_select("franks")
@@ -144,7 +144,7 @@ func _ready() -> void:
 	check_surface.call("Detail diplomacie", dip_info)
 	if not "Franská ríša" in dip_info:
 		print("  [FAIL] Detail frakcie nezobrazuje 'Franská ríša'!")
-		fails += 1
+		fails[0] += 1
 
 	# BattleView kontrola
 	print("\n--- 5. Overenie BattleView prekladu fáz a výsledkov ---")
@@ -173,12 +173,12 @@ func _ready() -> void:
 	check_surface.call("BattleView výsledok", battle_body)
 	if "rozhodujúce víťazstvo" not in battle_body or "protiútok" not in battle_body:
 		print("  [FAIL] BattleView nevykreslil slovenský výsledok a fázu")
-		fails += 1
+		fails[0] += 1
 	print("  Výsledok bitky: '%s' -> '%s'" % [round_res["winner"], res_sk])
 	print("  Fáza bitky: '%s' -> '%s'" % ["counterattack", phase_sk])
 	if res_sk != "rozhodujúce víťazstvo" or phase_sk != "protiútok":
 		print("  [FAIL] BattleView preklad zlyhal!")
-		fails += 1
+		fails[0] += 1
 
 	# Chronicle a CTA kontrola po ticku
 	print("\n--- 6. Overenie StoryLine / CTA / Notifikácie 906 ---")
@@ -188,7 +188,7 @@ func _ready() -> void:
 	check_surface.call("StoryLine / CTA", story_line.text)
 	if "_" in story_line.text:
 		print("  [FAIL] StoryLine obsahuje podtržník!")
-		fails += 1
+		fails[0] += 1
 		
 	# Overenie notifikácie v roku 906
 	GameManager.game_state.year = 906
@@ -206,7 +206,7 @@ func _ready() -> void:
 	check_surface.call("Notifikačný kanál", feed_text)
 	if "Devín" not in feed_text or "Presun" not in feed_text:
 		print("  [FAIL] Notifikačný kanál neobsahuje vloženú slovenskú správu")
-		fails += 1
+		fails[0] += 1
 
 	# 7. Regresná kontrola manipulovaného state s raw lowercase/underscore hodnotami v `name`
 	print("\n--- 7. Overenie imunity voči raw `name` hodnotám v GameState ---")
@@ -240,10 +240,10 @@ func _ready() -> void:
 	check_surface.call("MapView tooltip s raw dátami", raw_tooltip)
 	if "pagan" in raw_tooltip.to_lower() or "raw_" in raw_tooltip:
 		print("  [FAIL] MapView tooltip obsahuje surové náboženstvo alebo raw ID!")
-		fails += 1
+		fails[0] += 1
 	if "Pohanstvo" not in raw_tooltip:
 		print("  [FAIL] MapView tooltip neobsahuje lokalizovaný názov náboženstva 'Pohanstvo'!")
-		fails += 1
+		fails[0] += 1
 
 	# DiplomacyPanel s raw fac
 	dip_panel.refresh()
@@ -273,13 +273,13 @@ func _ready() -> void:
 	GameManager.game_state.factions.erase("test_raw_fac")
 
 	print("\n==========================================")
-	if fails == 0:
+	if fails[0] == 0:
 		print("VŠETKY VIZUÁLNE A TEXTOVÉ KONTROLY PREŠLI BEZ CHÝB (0 chýb).")
 	else:
-		print("KONTROLA ZLYHALA: %d chýb!" % fails)
+		print("KONTROLA ZLYHALA: %d chýb!" % fails[0])
 	print("==========================================")
 	
-	if fails > 0:
+	if fails[0] > 0:
 		get_tree().quit(1)
 	else:
 		get_tree().quit(0)
