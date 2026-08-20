@@ -74,33 +74,50 @@ func process_events() -> Dictionary:
 	# 1. Check chain events queued via nextEvent
 	var chain_out: Dictionary = _try_chain_event()
 	if not chain_out.is_empty():
+		_record_last_event(chain_out)
 		return chain_out
 
 	# 2. Check historical (year-scoped) events
 	var hist_out: Dictionary = _try_historical_event()
 	if not hist_out.is_empty():
+		_record_last_event(hist_out)
 		return hist_out
 
 	# 3. Random weighted event
 	var rand_out: Dictionary = _try_random_event()
 	if not rand_out.is_empty():
+		_record_last_event(rand_out)
 		return rand_out
 
 	# 4. Fallback: council event (8% chance)
+	#    No-immediate-repeat: skip if the previous turn was also the council event.
 	if event_rng != null and event_rng.randf_range(0.0, 1.0) < 0.08:
-		var ce: Dictionary = _build_council_event()
-		game_state.pending_event = ce
-		return {
-			"type": "event",
-			"id": str(ce.get("id", "council")),
-			"title": ce.get("title", "Rada županov"),
-			"text": ce.get("text", ""),
-			"body": ce.get("text", ""),
-			"art_id": ce.get("art_id", ""),
-			"choices": ce.get("choices", {}),
-		}
+		if game_state.last_event_id == "council":
+			pass  # zámerné: council sa nesmie opakovať dva ťahy za sebou
+		else:
+			var ce: Dictionary = _build_council_event()
+			game_state.pending_event = ce
+			game_state.last_event_id = "council"
+			return {
+				"type": "event",
+				"id": str(ce.get("id", "council")),
+				"title": ce.get("title", "Rada županov"),
+				"text": ce.get("text", ""),
+				"body": ce.get("text", ""),
+				"art_id": ce.get("art_id", ""),
+				"choices": ce.get("choices", {}),
+			}
 
 	return {"type": "event", "id": "", "title": "", "text": "", "body": "", "art_id": "", "choices": []}
+
+
+# P0.7a no-immediate-repeat poistka: zaznamená id naposledy vybraného eventu.
+# Volá sa len pri výbere NOVÉHO eventu (chain/historical/random/council),
+# nie pri opätovnom vrátení už čakajúceho pending_event.
+func _record_last_event(report: Dictionary) -> void:
+	var eid: String = str(report.get("id", ""))
+	if eid != "":
+		game_state.last_event_id = eid
 
 
 func _try_chain_event() -> Dictionary:
@@ -171,6 +188,11 @@ func _try_random_event() -> Dictionary:
 			var last: int = int(cooldowns.get(eid, 0))
 			if game_state.year * 12 + game_state.month < last + cooldown:
 				continue
+		# P0.7a no-immediate-repeat poistka: naposledy odohraný event
+		# sa nesmie vytiahnuť hneď nasledujúci ťah. Dočasná poistka kým
+		# v P1 nepríde plný pool 14 eventov s 6-mesačným cooldownom.
+		if eid == game_state.last_event_id and eid != "":
+			continue
 		var w: int = int(cat.get("weight", 1))
 		if w <= 0:
 			continue

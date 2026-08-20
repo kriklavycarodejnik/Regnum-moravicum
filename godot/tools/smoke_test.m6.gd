@@ -404,5 +404,42 @@ func _init() -> void:
 	check(council_sc >= 3 and council_sc <= 6, "council fallback body sentence count (%d) in range 3..6" % council_sc)
 	print("Sentence count assertions OK: all catalog events and council have 3-6 sentences.")
 
+	# 12) P0.7a No-immediate-repeat poistka
+	#     Acceptancia: v 20 po sebe idúcich ťahoch sa žiadny event
+	#     neopakuje dva ťahy za sebou (rovnaké id na pozíciách i a i+1).
+	#     Re-runuje sekvenciu cez existujúci helper _run_event_sequence.
+	var seq_rep: Array = _run_event_sequence(42, 20, 0)
+	var repeat_found: bool = false
+	var repeat_at: int = -1
+	for i in range(seq_rep.size() - 1):
+		var a: String = str(seq_rep[i])
+		var b: String = str(seq_rep[i + 1])
+		# Prázdne id (fallback „žiadny event") sa nepovažuje za opakovanie —
+		# poistka platí len pre reálne eventy s neprázdnym id.
+		if a != "" and a == b:
+			repeat_found = true
+			repeat_at = i
+			break
+	check(not repeat_found, "P0.7a no-immediate-repeat: žiadny event sa neopakuje dva ťahy za sebou (seq=%s)" % str(seq_rep))
+	print("P0.7a no-immediate-repeat: seq_rep=", seq_rep)
+	if repeat_found:
+		print("  FAIL detail: opakovanie na pozícii %d ('%s')" % [repeat_at, str(seq_rep[repeat_at])])
+
+	# 13) P0.7a last_event_id perzistencia v save/loade (to_dict/from_dict round-trip)
+	#     Nové pole na GameState musí prežiť serializáciu + deserializáciu.
+	var gs_rt = GameState.new()
+	gs_rt.ensure_resources()
+	gs_rt.last_event_id = "rand_bad_harvest"
+	var d: Dictionary = gs_rt.to_dict()
+	check(str(d.get("last_event_id", "")) == "rand_bad_harvest", "P0.7a to_dict: last_event_id serializovaný")
+	var gs_loaded = GameState.new()
+	gs_loaded.from_dict(d)
+	check(gs_loaded.last_event_id == "rand_bad_harvest", "P0.7a from_dict: last_event_id načítaný späť")
+	# Starý save bez last_event_id → default "" (spätná kompatibilita)
+	var gs_old = GameState.new()
+	gs_old.from_dict({"year": 903, "month": 1})
+	check(gs_old.last_event_id == "", "P0.7a from_dict: starý save bez last_event_id → prázdny default")
+	print("P0.7a last_event_id round-trip OK (to_dict + from_dict + old-save default)")
+
 	print("SMOKE_M6_PASS")
 	quit(0)
