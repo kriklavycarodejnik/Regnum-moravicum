@@ -45,11 +45,6 @@ func process_events() -> Dictionary:
 	if not _loaded:
 		_load_catalog()
 
-	# Re-seed the event RNG stream for this tick. This is the isolation point:
-	# event_rng depends only on (save_seed, month_index, faction_id, "event")
-	# and is unaffected by any battle/economy/nobility draws that happened before.
-	_refresh_event_rng()
-
 	var pending = game_state.pending_event
 	if pending != null and typeof(pending) == TYPE_DICTIONARY:
 		return {

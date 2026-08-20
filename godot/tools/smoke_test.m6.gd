@@ -31,8 +31,8 @@ func _run_event_sequence(seed_val: int, num_months: int, battle_draws: int) -> A
 	var sm_ev = SaveManager.new()
 	sm_ev._init(seed_val)
 	var em_ev = EventManager.new()
-	em_ev._init(gs_ev, sm_ev.get_rng())
-	em_ev.set_save_seed(sm_ev.get_save_seed())
+	em_ev._init(gs_ev)
+
 	em_ev._load_catalog()
 	var ids: Array = []
 	for _m in range(num_months):
@@ -167,9 +167,9 @@ func _init() -> void:
 	var sm_ss = SaveManager.new()
 	sm_ss._init(42)
 	var em_ss = EventManager.new()
-	em_ss._init(gs_ss, sm_ss.get_rng())
-	em_ss.set_save_seed(sm_ss.get_save_seed())
-	em_ss._refresh_event_rng()
+	em_ss._init(gs_ss)
+
+
 	ev_seed_a = em_ss.event_rng.seed
 	var gs_ss2 = GameState.new()
 	gs_ss2.ensure_resources()
@@ -178,9 +178,9 @@ func _init() -> void:
 	var sm_ss2 = SaveManager.new()
 	sm_ss2._init(42)
 	var em_ss2 = EventManager.new()
-	em_ss2._init(gs_ss2, sm_ss2.get_rng())
-	em_ss2.set_save_seed(sm_ss2.get_save_seed())
-	em_ss2._refresh_event_rng()
+	em_ss2._init(gs_ss2)
+
+
 	ev_seed_b = em_ss2.event_rng.seed
 	check(ev_seed_a == ev_seed_b, "event RNG seed determinism: same save_seed → same event seed")
 	print("Event RNG seed: a=%d b=%d" % [ev_seed_a, ev_seed_b])
