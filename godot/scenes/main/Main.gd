@@ -14,7 +14,8 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var save_btn: Button = $UI/PrimaryRow/SaveButton
 @onready var menu_btn: Button = $UI/PrimaryRow/MenuButton
 @onready var selection_label: Label = $UI/Body/MainColumn/SelectionLabel
-@onready var story_line: Label = $UI/Header/StoryLine
+@onready var story_line: Label = $UI/Header/HelpStrip/StoryLine
+@onready var help_strip: PanelContainer = $UI/Header/HelpStrip
 @onready var event_panel: PanelContainer = $UI/Body/MainColumn/EventPanel
 @onready var event_title: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventTitle
 @onready var event_body: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventBody
@@ -250,9 +251,24 @@ func _apply_regnum_theme() -> void:
 	if selection_label:
 		selection_label.theme_type_variation = &"MutedLabel"
 	if story_line:
-		story_line.theme_type_variation = &"MutedLabel"
+		story_line.theme_type_variation = &"SubtitleLabel"
 	if hero_caption:
 		hero_caption.theme_type_variation = &"MutedLabel"
+	# Help strip panel style
+	if help_strip:
+		var s := StyleBoxFlat.new()
+		s.bg_color = Color(0.15, 0.10, 0.06, 0.85)
+		s.border_color = _Colors.BYZANTINE_GOLD
+		s.border_width_left = 2
+		s.border_width_top = 0
+		s.border_width_right = 0
+		s.border_width_bottom = 0
+		s.set_corner_radius_all(4)
+		s.content_margin_left = 10
+		s.content_margin_right = 10
+		s.content_margin_top = 4
+		s.content_margin_bottom = 4
+		help_strip.add_theme_stylebox_override("panel", s)
 
 
 func _setup_background_art() -> void:
@@ -298,10 +314,49 @@ func _set_hero_art(art_id: String, caption: String = "") -> void:
 		hero_caption.text = caption if caption != "" else art_id
 
 
+# ─── Help strip / CTA ───
+
+func _compute_cta_text() -> String:
+	# Determines what the player should do NOW based on game state.
+	if GameManager == null or GameManager.game_state == null:
+		return ""
+
+	var gs = GameManager.game_state
+
+	# 1. Tutorial active (not yet done)
+	if not gs.tutorial_done:
+		return "Krok %d/3 — postupuj podľa tutoriálu" % [mini(gs.tutorial_step + 1, 3)]
+
+	# 2. Pending event — player must resolve it first
+	if GameManager.has_pending_event():
+		return "◈  Vyber voľbu v paneli udalostí"
+
+	# 3. Battle active — battle_view actions visible (not post-outcome)
+	if battle_view and battle_view.has_method(&"is_in_active_combat") and battle_view.call(&"is_in_active_combat"):
+		return "⚔  Vyber akciu v bitke"
+
+	# 4. Devín scenario recommended (year 906–908, not resolved yet)
+	if gs.devine_resolved == false:
+		var y: int = int(gs.year)
+		if y >= 906 and y <= 908:
+			return "★  Odporúčame: spusti Scénár „Devín 907“ v nástrojoch"
+
+	# 5. Normal play — primary CTA is Next Month
+	var year: int = int(gs.year)
+	var month: int = int(gs.month)
+	var owned: int = 0
+	for pid in gs.provinces:
+		var p = gs.provinces[pid]
+		if typeof(p) == TYPE_DICTIONARY and str(p.get("owner_faction", "")) == "moravia":
+			owned += 1
+	return "▶  Ďalší mesiac  ·  župy %d  ·  %d/%02d" % [owned, year, month]
+
+
 func _update_story_line() -> void:
 	if story_line == null or GameManager == null or GameManager.game_state == null:
 		return
 	var gs = GameManager.game_state
+	var cta: String = _compute_cta_text()
 	# Threat strip: worst loyalty, hostile faction, food runway
 	var threats: Array = []
 	var worst_loyalty := 100.0
@@ -336,7 +391,7 @@ func _update_story_line() -> void:
 	var threat_text: String = ""
 	if not threats.is_empty():
 		threat_text = "  ⚠ " + " · ".join(threats)
-	story_line.text = "ťah = Ďalší mesiac" + threat_text
+	story_line.text = cta + threat_text
 
 
 func _on_next_month() -> void:
@@ -434,6 +489,7 @@ func _finish_battle(last_action: String) -> void:
 	_show_battle("Cvičná bitka pri Nitre", _active_battle, "nitra_master_hero")
 	_log_battle_phases(_active_battle)
 	_notify("Cvičná bitka hotová — späť k mesačným ťahom.")
+	_refresh_ui()
 
 
 func _on_devine() -> void:

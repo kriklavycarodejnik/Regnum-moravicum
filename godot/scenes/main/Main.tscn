@@ -67,10 +67,18 @@ theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 24
 text = "Regnum Moravicum — Mojmír II."
 
-[node name="StoryLine" type="Label" parent="UI/Header"]
+[node name="HelpStrip" type="PanelContainer" parent="UI/Header"]
 layout_mode = 2
-theme_type_variation = &"MutedLabel"
-text = "Cieľ: prežiť do roku 1000"
+size_flags_horizontal = 2
+custom_minimum_size = Vector2(340, 0)
+theme_override_constants/separation = 0
+
+[node name="StoryLine" type="Label" parent="UI/Header/HelpStrip"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 32)
+autowrap_mode = 3
+theme_type_variation = &"SubtitleLabel"
+theme_override_font_sizes/font_size = 13
 
 [node name="StatusBarRow" type="HBoxContainer" parent="UI"]
 layout_mode = 2
