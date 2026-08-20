@@ -9,6 +9,11 @@ const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 @onready var battle_button: Button = $Actions/BattleButton
 @onready var siege_button: Button = $Actions/SiegeButton
 
+# Signály pre armádny wizard (P1 kontrakt §3.2)
+signal army_selected(army_id: String)
+signal move_dialog_opened()
+signal army_moved(army_id: String, target_province: String)
+
 var army_manager
 var map_manager
 var selected_army_id: String = ""
@@ -86,6 +91,7 @@ func _update_army_list() -> void:
 
 func _on_army_selected(army_id: String) -> void:
 	selected_army_id = army_id
+	army_selected.emit(army_id)
 	if army_manager == null or army_info == null:
 		return
 	var army = army_manager.get_army(army_id)
@@ -105,6 +111,7 @@ func _on_army_selected(army_id: String) -> void:
 func _on_move_button_pressed() -> void:
 	if selected_army_id == "" or army_manager == null or map_manager == null:
 		return
+	move_dialog_opened.emit()
 	var army = army_manager.get_army(selected_army_id)
 	if typeof(army) != TYPE_DICTIONARY:
 		return
@@ -132,6 +139,7 @@ func _on_target_province_selected(army_id: String, target_province_id: String) -
 		return
 	var result = army_manager.move_army(army_id, target_province_id)
 	if typeof(result) == TYPE_DICTIONARY and result.get("ok", false):
+		army_moved.emit(army_id, target_province_id)
 		_update_army_list()
 		_on_army_selected(army_id)
 

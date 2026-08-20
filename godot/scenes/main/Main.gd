@@ -63,6 +63,12 @@ func _ready() -> void:
 		map_view.province_selected.connect(_on_province_selected)
 	if diplomacy_panel and diplomacy_panel.has_signal("action_done"):
 		diplomacy_panel.action_done.connect(_on_diplomacy_action)
+	if army_ui and army_ui.has_signal("army_selected"):
+		army_ui.army_selected.connect(_on_army_wizard_army_selected)
+	if army_ui and army_ui.has_signal("move_dialog_opened"):
+		army_ui.move_dialog_opened.connect(_on_army_wizard_move_dialog_opened)
+	if army_ui and army_ui.has_signal("army_moved"):
+		army_ui.army_moved.connect(_on_army_wizard_army_moved)
 	if battle_view and battle_view.has_signal("action_chosen"):
 		battle_view.action_chosen.connect(_on_battle_action)
 	if turn_report and turn_report.continue_pressed:
@@ -252,7 +258,7 @@ func _coach_style() -> StyleBoxFlat:
 	return s
 
 
-# ─── Army wizard — P1 kontrakt §3.2: click-through overlay sequence ───
+# ─── Army wizard — P1 kontrakt §3.2: signal-driven W1–W4 sekvencia ───
 
 func _try_show_army_wizard() -> void:
 	"""Zobraz army wizard overlay, ak je prístupný a nie je dokončený."""
@@ -264,7 +270,6 @@ func _try_show_army_wizard() -> void:
 	var year: int = int(gs.year)
 	if year < 906:
 		return
-	# Reset a zobraz wizard od začiatku
 	_army_wizard_step = 0
 	_army_wizard_overlay_active = false
 	_army_wizard_cleanup()
@@ -272,7 +277,7 @@ func _try_show_army_wizard() -> void:
 
 
 func _show_army_wizard() -> void:
-	"""Zobraz wizard overlay s aktuálnym krokom (W1–W4). Click-through sekvencia."""
+	"""Zobraz wizard overlay – čaká na hernú akciu (výber armády, presun)."""
 	var gs = GameManager.game_state
 	if gs == null or gs.army_wizard_done:
 		return
@@ -284,7 +289,6 @@ func _show_army_wizard() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_theme_stylebox_override("panel", _coach_style())
 
-	# Dim background
 	var dim := ColorRect.new()
 	dim.name = "ArmyWizardDim"
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -292,7 +296,6 @@ func _show_army_wizard() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(dim)
 
-	# Content vbox
 	var vbox := VBoxContainer.new()
 	vbox.name = "ArmyWizardContent"
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -302,7 +305,6 @@ func _show_army_wizard() -> void:
 	vbox.offset_top = 60
 	vbox.set_h_size_flags(Control.SIZE_EXPAND_FILL)
 
-	# Title
 	var title_lbl := Label.new()
 	title_lbl.theme_type_variation = &"TitleLabel"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -318,7 +320,6 @@ func _show_army_wizard() -> void:
 			title_lbl.text = "Príprava na Devín — Krok 4/4"
 	vbox.add_child(title_lbl)
 
-	# Body — presne podľa P1 kontrakt §3.2
 	var body_lbl := Label.new()
 	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -326,18 +327,17 @@ func _show_army_wizard() -> void:
 	body_lbl.add_theme_font_size_override("font_size", 16)
 	match _army_wizard_step:
 		0:
-			body_lbl.text = "Pošli armádu k Devínu — Maďari sa zhromažďujú."
+			body_lbl.text = "Pošli armádu k Devínu — Maďari sa zhromažďujú.\n\nOtvor panel Armády vpravo a klikni na armádu, ktorú chceš použiť."
 		1:
-			body_lbl.text = "Rok 906. Maďarské družiny sa zhromažďujú za Karpatskými priesmykmi. Priprav armádu, kým prišla zima neuzavrie cesty."
+			body_lbl.text = "Rok 906. Maďarské družiny sa zhromažďujú za Karpatskými priesmykmi.\n\nTeraz klikni na tlačidlo „Presunúť“ a v dialógu vyber cieľ."
 		2:
-			body_lbl.text = "Vyber veliteľa — Radomír z Gemera je skúsený vojak."
+			body_lbl.text = "Vyber veliteľa.\n\nRadomír z Gemera je skúsený vojak — potvrď výber tlačidlom nižšie."
 		3:
-			body_lbl.text = "Armáda smeruje k Devínu. Bitka sa odohrá v roku 907."
+			body_lbl.text = "Armáda smeruje k Devínu.\n\nKlikni na Devín v otvorenom dialógi presunu.\nBitka sa odohrá v roku 907."
 	vbox.add_child(body_lbl)
 
 	overlay.add_child(vbox)
 
-	# Button row (STOP mouse filter — clickable)
 	var btn_row := HBoxContainer.new()
 	btn_row.name = "ArmyWizardButtons"
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -346,41 +346,28 @@ func _show_army_wizard() -> void:
 	btn_row.offset_top = 180
 	btn_row.set_h_size_flags(Control.SIZE_EXPAND_FILL)
 
-	if _army_wizard_step < 3:
-		# Close button — pauses wizard
-		var close_btn := Button.new()
-		close_btn.custom_minimum_size = Vector2(0, 48)
-		close_btn.text = "Zavrieť"
-		close_btn.pressed.connect(func():
-			_army_wizard_overlay_active = false
-			_army_wizard_cleanup()
-			_notify("Armádny wizard pozastavený. Otvor panel Armády, keď budeš pripravený.")
-		)
-		btn_row.add_child(close_btn)
+	# Zavrieť – vždy dostupný (pozastaví wizard)
+	var close_btn := Button.new()
+	close_btn.custom_minimum_size = Vector2(0, 48)
+	close_btn.text = "Zavrieť"
+	close_btn.pressed.connect(func():
+		_army_wizard_overlay_active = false
+		_army_wizard_cleanup()
+		_notify("Armádny wizard pozastavený. Otvor panel Armády, keď budeš pripravený.")
+	)
+	btn_row.add_child(close_btn)
 
-		# Ďalej button — advances to next step
-		var next_btn := Button.new()
-		next_btn.custom_minimum_size = Vector2(0, 48)
-		next_btn.text = "Ďalej"
-		next_btn.pressed.connect(func():
-			_army_wizard_step += 1
+	# Krok 2 (W3): tlačidlo „Vybrať veliteľa“ – skutočná akcia
+	if _army_wizard_step == 2:
+		var select_cmd_btn := Button.new()
+		select_cmd_btn.custom_minimum_size = Vector2(0, 48)
+		select_cmd_btn.text = "Vybrať Radomíra z Gemera"
+		select_cmd_btn.pressed.connect(func():
+			_army_wizard_step = 3
 			_army_wizard_cleanup()
 			call_deferred("_show_army_wizard")
 		)
-		btn_row.add_child(next_btn)
-	else:
-		# Dokončiť button — final step, marks wizard done
-		var done_btn := Button.new()
-		done_btn.custom_minimum_size = Vector2(0, 48)
-		done_btn.text = "Dokončiť"
-		done_btn.pressed.connect(func():
-			gs.army_wizard_done = true
-			_army_wizard_step = 0
-			_army_wizard_overlay_active = false
-			_army_wizard_cleanup()
-			_notify("Wizard dokončený. Armáda je na ceste k Devínu — sleduj ďalšie mesiace.")
-		)
-		btn_row.add_child(done_btn)
+		btn_row.add_child(select_cmd_btn)
 
 	add_child(overlay)
 	add_child(btn_row)
@@ -393,6 +380,53 @@ func _army_wizard_cleanup() -> void:
 	var buttons := get_node_or_null("ArmyWizardButtons")
 	if buttons != null:
 		buttons.queue_free()
+
+
+func _on_army_wizard_army_selected(army_id: String) -> void:
+	"""W1->W2: hráč vybral armádu → postup iba ak wizard čaká v kroku 0."""
+	if not _army_wizard_overlay_active:
+		return
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	if _army_wizard_step != 0:
+		return
+	_army_wizard_step = 1
+	_army_wizard_cleanup()
+	call_deferred("_show_army_wizard")
+
+
+func _on_army_wizard_move_dialog_opened() -> void:
+	"""W2->W3: hráč otvoril dialóg presunu → postup iba ak wizard čaká v kroku 1."""
+	if not _army_wizard_overlay_active:
+		return
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	if _army_wizard_step != 1:
+		return
+	_army_wizard_step = 2
+	_army_wizard_cleanup()
+	call_deferred("_show_army_wizard")
+
+
+func _on_army_wizard_army_moved(army_id: String, target_province: String) -> void:
+	"""W3->W4->DONE: hráč úspešne presunul armádu k Devínu.
+	Postupuje IBA ak cieľ = devin. Iný cieľ alebo neúspešný presun nemenia krok."""
+	if not _army_wizard_overlay_active:
+		return
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	if _army_wizard_step != 3:
+		return
+	if target_province != "devin":
+		return
+	gs.army_wizard_done = true
+	_army_wizard_step = 0
+	_army_wizard_overlay_active = false
+	_army_wizard_cleanup()
+	_notify("Wizard dokončený. Armáda smeruje k Devínu — bitka sa odohrá v roku 907.")
 
 
 func _on_side_tab_changed(tab_index: int) -> void:
