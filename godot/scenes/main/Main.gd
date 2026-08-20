@@ -26,7 +26,8 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var bg_art: TextureRect = $BackgroundArt
 @onready var army_ui: Control = $UI/Body/SidePanel/SideTabs/Armády
 @onready var diplomacy_panel: Control = $"UI/Body/SidePanel/SideTabs/Diplomacia"
-@onready var objectives_panel: Node = $UI/Body/SidePanel/ObjectivesPanel
+@onready var objectives_panel: Node = $UI/ObjectivesPanel
+@onready var threat_clock: Node = $UI/ThreatClockRow/ThreatClock
 @onready var event_art: TextureRect = $UI/Body/MainColumn/EventPanel/EventVBox/EventArt
 @onready var hero_art: TextureRect = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroArt
 @onready var hero_caption: Label = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroCaption
@@ -44,6 +45,7 @@ func _ready() -> void:
 	_apply_regnum_theme()
 	_setup_background_art()
 	_setup_default_hero()
+	_setup_ui_panels()
 	next_month_btn.pressed.connect(_on_next_month)
 	skirmish_btn.pressed.connect(_on_skirmish)
 	devine_btn.pressed.connect(_on_devine)
@@ -188,6 +190,12 @@ func _setup_default_hero() -> void:
 			ruler_art.visible = true
 
 
+func _setup_ui_panels() -> void:
+	# ThreatClock and ObjectivesPanel are instance nodes in Main.tscn
+	# (direct children of UI, between StatusBarRow and Body)
+	pass
+
+
 func _set_hero_art(art_id: String, caption: String = "") -> void:
 	if hero_art == null:
 		return
@@ -205,21 +213,6 @@ func _update_story_line() -> void:
 	if story_line == null or GameManager == null or GameManager.game_state == null:
 		return
 	var gs = GameManager.game_state
-	var y: int = int(gs.year)
-	var m: int = int(gs.month)
-	# Threat clock
-	var clock_text: String = ""
-	var gs2 = gs
-	if gs2.devine_resolved and y < 907:
-		clock_text = "Devín už rozhodol osud ríše"
-	elif y < 907:
-		var months_left: int = (907 - y) * 12 + (7 - m)
-		if months_left <= 0:
-			months_left = 1
-		clock_text = "Do maďarskej invázie: ~%d mes." % months_left
-	else:
-		var years_left: int = maxi(0, 1000 - y)
-		clock_text = "Po Devíne · zostáva ~%d r. do 1000" % years_left
 	# Threat strip: worst loyalty, hostile faction, food runway
 	var threats: Array = []
 	var worst_loyalty := 100.0
@@ -254,7 +247,7 @@ func _update_story_line() -> void:
 	var threat_text: String = ""
 	if not threats.is_empty():
 		threat_text = "  ⚠ " + " · ".join(threats)
-	story_line.text = clock_text + "  ·  ťah = Ďalší mesiac" + threat_text
+	story_line.text = "ťah = Ďalší mesiac" + threat_text
 
 
 func _on_next_month() -> void:
@@ -547,6 +540,8 @@ func _refresh_ui() -> void:
 		map_view.call("refresh")
 	if objectives_panel and objectives_panel.has_method("refresh"):
 		objectives_panel.call("refresh")
+	if threat_clock and threat_clock.has_method("refresh"):
+		threat_clock.call("refresh")
 	if army_ui and army_ui.has_method("_update_army_list"):
 		army_ui.call("_update_army_list")
 	if diplomacy_panel and diplomacy_panel.has_method("refresh"):
