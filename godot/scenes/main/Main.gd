@@ -7,7 +7,7 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var status_bar: HBoxContainer = $UI/StatusBarRow/StatusBar
 @onready var religion_axis: HBoxContainer = $UI/StatusBarRow/ReligionAxis
 @onready var map_view: Control = $UI/Body/MainColumn/MapView
-@onready var chronicle_label: RichTextLabel = $UI/Body/MainColumn/Chronicle
+@onready var chronicle_label: RichTextLabel = $UI/Body/MainColumn/ChroniclePanel/Chronicle
 @onready var next_month_btn: Button = $UI/PrimaryRow/NextMonthButton
 @onready var skirmish_btn: Button = $UI/ToolsRow/SkirmishButton
 @onready var devine_btn: Button = $UI/ToolsRow/DevineButton
@@ -284,15 +284,10 @@ func _apply_regnum_theme() -> void:
 func _setup_background_art() -> void:
 	if bg_art == null:
 		return
-	var tex: Texture2D = ArtCatalog.texture("regnum_visual_style_master")
-	if tex == null:
-		tex = ArtCatalog.texture("moravian_court_interior")
-	if tex != null:
-		bg_art.texture = tex
-		bg_art.modulate = Color(1, 1, 1, 0.18)
-		bg_art.visible = true
-	else:
-		bg_art.visible = false
+	# BackgroundArt is hidden — the map's _draw() provides its own illustrated
+	# backdrop. An extra TextureRect behind everything creates visual noise
+	# (interior images bleeding through panel gaps and under map text).
+	bg_art.visible = false
 
 
 func _setup_default_hero() -> void:
@@ -744,7 +739,8 @@ func _refresh_ui() -> void:
 func _append_chronicle(text: String) -> void:
 	if chronicle_label:
 		chronicle_label.append_text(text + "\n")
-	_notify(text)
+	# Chronicle-only: do NOT push to NotificationFeed,
+	# so text appears only once in the scrollable log.
 
 
 func _notify(text: String) -> void:

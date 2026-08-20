@@ -3,6 +3,7 @@
 extends PanelContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const C = preload("res://assets/theme/colors.gd")
 const MAX_LINES := 8
 
 var _list: VBoxContainer
@@ -12,6 +13,8 @@ var _lines: Array = []
 func _ready() -> void:
 	if theme == null:
 		theme = _ThemeFactory.build()
+	var panel_style := C.create_panel_style()
+	add_theme_stylebox_override("panel", panel_style)
 	custom_minimum_size = Vector2(0, 72)
 	_build()
 

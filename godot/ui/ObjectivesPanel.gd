@@ -14,6 +14,9 @@ var _state_label: Label
 func _ready() -> void:
 	if theme == null:
 		theme = _ThemeFactory.build()
+	# Explicit opaque panel backdrop so it never appears transparent over map.
+	var panel_style := C.create_panel_style()
+	add_theme_stylebox_override("panel", panel_style)
 	_build()
 	refresh()
 
