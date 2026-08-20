@@ -39,7 +39,7 @@ check() {
         echo "$output" | tail -5
         failures=$((failures + 1))
     # Pass on recognised success marker
-    elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|TURNREPORT_RUNTIME_PASS|ARMY_WIZARD_RUNTIME_PASS|Tests [0-9]+ passed)"; then
+	elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|TURNREPORT_RUNTIME_PASS|ARMY_WIZARD_RUNTIME_PASS|VŠETKY VIZUÁLNE A TEXTOVÉ KONTROLY PREŠLI BEZ CHÝB|Tests [0-9]+ passed)"; then
         echo -e "${GREEN}PASS${NC}"
     else
         echo -e "${RED}FAIL${NC} (no success marker)"
@@ -82,17 +82,19 @@ check "Smoke M6" $GODOT -s res://tools/smoke_test.m6.gd --quit-after 30
 echo "4. TurnReport runtime"
 check "TurnReport runtime" $GODOT res://tools/test_turnreport_runtime.tscn --quit-after 10
 
-# 5. Army wizard runtime — reálny Main.tscn callback flow W1→W4 (autoloads + Main.tscn)
-echo "5. Army wizard runtime"
+# 5. UI Slovak Labels Verification (Runtime components & fallbacks)
+echo "5. UI Slovak labels"
+check "UI Slovak labels" $GODOT res://tools/verify_ui_labels.tscn --quit-after 10
+
+# 6. Army wizard runtime — reálny Main.tscn callback flow W1→W4 (autoloads + Main.tscn)
+echo "6. Army wizard runtime"
 check "Army wizard runtime" $GODOT res://tools/review_wizard_runtime.tscn --quit-after 20
 
-# 6. TS tests (run from project root)
-echo "6. npm test"
+# 7. TS tests (run from project root)
+echo "7. npm test"
 echo -n "  npm test ... "
-set +e
 ts_output=$(cd "$PROJECT_ROOT" && npm run test 2>&1)
 ts_rc=$?
-set -e
 if [ $ts_rc -ne 0 ]; then
     echo -e "${RED}FAIL${NC} (exit code $ts_rc)"
     echo "$ts_output" | tail -5

@@ -2,6 +2,8 @@
 class_name DiplomacyManager
 extends RefCounted
 
+const _Translations := preload("res://scripts/ui/BattleViewTranslations.gd")
+
 var game_state
 var rng: RandomNumberGenerator
 
@@ -38,8 +40,17 @@ func _ensure_default_factions() -> void:
 			if not f.has("mood"):
 				f["mood"] = 50.0
 			if not f.has("name"):
-				f["name"] = str(faction_id)
+				f["name"] = "Neznáma frakcia"
 	game_state.factions = factions
+
+
+func _display_faction_name(faction: Dictionary, faction_id: String = "") -> String:
+	var name: String = str(faction.get("name", "")).strip_edges()
+	if name != "" and not "_" in name and name != faction_id:
+		return name
+	if faction_id != "":
+		return _Translations.translate_faction(faction_id)
+	return "Neznáma frakcia"
 
 
 func process_diplomacy() -> Dictionary:
@@ -77,7 +88,7 @@ func list_factions() -> Array:
 		var f: Dictionary = game_state.factions[fid]
 		out.append({
 			"id": fid,
-			"name": str(f.get("name", fid)),
+			"name": _display_faction_name(f, fid),
 			"mood": float(f.get("mood", 50.0)),
 			"relations": f.get("relations", {}).duplicate(true) if typeof(f.get("relations", {})) == TYPE_DICTIONARY else {},
 		})
@@ -109,7 +120,7 @@ func send_gift(faction_id: String, gold_cost: int = 50) -> Dictionary:
 	var f: Dictionary = fv2
 	f["mood"] = clampf(float(f.get("mood", 50.0)) + 10.0, 0.0, 100.0)
 	game_state.factions[faction_id] = f
-	return {"ok": true, "mood": f["mood"], "chronicle": "Dar pre %s (−%d zlata, nálada +10)." % [str(f.get("name", faction_id)), gold_cost]}
+	return {"ok": true, "mood": f["mood"], "chronicle": "Dar pre %s (−%d zlata, nálada +10)." % [_display_faction_name(f, faction_id), gold_cost]}
 
 
 func threaten(faction_id: String) -> Dictionary:
@@ -134,7 +145,7 @@ func threaten(faction_id: String) -> Dictionary:
 	return {
 		"ok": true,
 		"mood": f["mood"],
-		"chronicle": "Hrozba voči %s (nálada %.0f, prestíž +%d)." % [str(f.get("name", faction_id)), f["mood"], prestige_gain],
+		"chronicle": "Hrozba voči %s (nálada %.0f, prestíž +%d)." % [_display_faction_name(f, faction_id), f["mood"], prestige_gain],
 	}
 
 
@@ -165,5 +176,5 @@ func set_treaty(faction_id: String, treaty: String, enabled: bool = true) -> Dic
 		"ok": true,
 		"mood": f["mood"],
 		"relations": rel.duplicate(true),
-		"chronicle": "%s s %s: %s." % [label.capitalize(), str(f.get("name", faction_id)), "uzavretá" if enabled else "zrušená"],
+		"chronicle": "%s s %s: %s." % [label.capitalize(), _display_faction_name(f, faction_id), "uzavretá" if enabled else "zrušená"],
 	}

@@ -3,6 +3,7 @@ class_name NarrationManager
 extends RefCounted
 
 const _GameState := preload("res://scripts/core/GameState.gd")
+const _Translations := preload("res://scripts/ui/BattleViewTranslations.gd")
 
 # Priorita sub-reportov: prvý non-prázdny vyhrá.
 const _PRIORITY: Array = ["event", "war", "diplomacy", "succession", "religion", "nobility", "economy", "armies", "campaign", "victory"]
@@ -125,7 +126,7 @@ func _apply_anti_repetition(template: String) -> String:
 func _get_province_name(province_id: String) -> String:
 	if PROVINCE_NAMES.has(province_id):
 		return PROVINCE_NAMES[province_id]
-	return province_id.capitalize()
+	return "Neznáma župa"
 
 
 func _get_province_locative(province_id: String) -> String:
@@ -249,9 +250,10 @@ func _generate_armies_text(report: Dictionary) -> String:
 	if events.size() > 0 and typeof(events[0]) == TYPE_DICTIONARY:
 		var ev: Dictionary = events[0]
 		if ev.get("type", "") == "army_desertion":
-			var aid: String = str(ev.get("army_id", "družina"))
+			var aid: String = str(ev.get("army_id", ""))
+			var aname: String = _Translations.translate_army_name({}, aid) if aid != "" else "Pohraničný oddiel"
 			var loss: int = int(ev.get("size_loss", 0))
-			return "Moravská družina %s stráca %d bojovníkov pre nedostatok zásob na pohraničí." % [aid, loss]
+			return "Oddiel %s stráca %d bojovníkov pre nedostatok zásob na pohraničí." % [aname, loss]
 		return "Na zhromaždisku družín v Nitre panuje ruch — bojovníci pripravujú výstroj."
 	return ""
 

@@ -2,6 +2,7 @@
 extends VBoxContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 const C = preload("res://assets/theme/colors.gd")
 
 signal action_done
@@ -119,7 +120,9 @@ func refresh() -> void:
 		b.custom_minimum_size = Vector2(0, 48)
 		var mood: float = float(f.get("mood", 50))
 		var stance: String = "nepriateľ" if mood < 35.0 else ("spojenec" if mood > 65.0 else "neutrál")
-		b.text = "%s · %.0f (%s)" % [str(f.get("name", f.get("id", "?"))), mood, stance]
+		var stored_fname: String = str(f.get("name", ""))
+		var fac_name: String = _Translations.translate_faction(stored_fname if stored_fname != "" else fid)
+		b.text = "%s · %.0f (%s)" % [fac_name, mood, stance]
 		b.pressed.connect(_on_select.bind(fid))
 		row.add_child(b)
 		_list.add_child(row)
@@ -151,8 +154,10 @@ func _on_select(faction_id: String) -> void:
 			_emblem.visible = false
 	var rel_raw = f.get("relations", {})
 	var rel: Dictionary = rel_raw if typeof(rel_raw) == TYPE_DICTIONARY else {}
+	var stored_fname: String = str(f.get("name", ""))
+	var fac_name: String = _Translations.translate_faction(stored_fname if stored_fname != "" else faction_id)
 	_info.text = "%s\nNálada: %.0f\nNAP: %s · Obchod: %s · Pakt: %s" % [
-		str(f.get("name", faction_id)),
+		fac_name,
 		float(f.get("mood", 50)),
 		"áno" if bool(rel.get("nap", false)) else "nie",
 		"áno" if bool(rel.get("trade", false)) else "nie",

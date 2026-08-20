@@ -3,6 +3,7 @@ extends Control
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 const _Colors = preload("res://assets/theme/colors.gd")
+const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 
 @onready var status_bar: HBoxContainer = $UI/StatusBarRow/StatusBar
 @onready var religion_axis: HBoxContainer = $UI/StatusBarRow/ReligionAxis
@@ -581,7 +582,7 @@ func _set_hero_art(art_id: String, caption: String = "") -> void:
 	else:
 		hero_art.visible = false
 	if hero_caption:
-		hero_caption.text = caption if caption != "" else art_id
+		hero_caption.text = caption
 
 
 # ─── Help strip / CTA ───
@@ -638,7 +639,8 @@ func _update_story_line() -> void:
 		var loy: float = float(p.get("loyalty", 50))
 		if loy < worst_loyalty:
 			worst_loyalty = loy
-			worst_province = str(p.get("name", pid))
+			var stored_prov_name: String = str(p.get("name", ""))
+			worst_province = _Translations.translate_province(stored_prov_name if stored_prov_name != "" else pid)
 	if worst_loyalty < 40 and worst_province != "":
 		threats.append("lojalita %s: %.0f" % [worst_province, worst_loyalty])
 	var worst_mood := 100.0
@@ -652,7 +654,8 @@ func _update_story_line() -> void:
 		var mood: float = float(f.get("mood", 50))
 		if mood < worst_mood:
 			worst_mood = mood
-			worst_faction = str(f.get("name", fid))
+			var stored_fac_name: String = str(f.get("name", ""))
+			worst_faction = _Translations.translate_faction(stored_fac_name if stored_fac_name != "" else fid)
 	if worst_mood < 35 and worst_faction != "":
 		threats.append("%s: %.0f" % [worst_faction, worst_mood])
 	var food: int = int(gs.resources.get("food", 0))
@@ -684,11 +687,20 @@ func _on_next_month() -> void:
 	# Δ resources
 	var deltas: Array = []
 	var res_after: Dictionary = GameManager.game_state.resources
+	var res_names_sk: Dictionary = {
+		"gold": "Zlato",
+		"food": "Jedlo",
+		"wood": "Drevo",
+		"stone": "Kameň",
+		"iron": "Železo",
+		"prestige": "Prestíž"
+	}
 	for key in ["gold", "food", "wood", "stone", "iron", "prestige"]:
 		var d: int = int(res_after.get(key, 0)) - int(res_before.get(key, 0))
 		if d != 0:
 			var sign: String = "+" if d > 0 else ""
-			deltas.append("%s%s%d" % [key, sign, d])
+			var label_sk: String = str(res_names_sk.get(key, key))
+			deltas.append("%s: %s%d" % [label_sk, sign, d])
 	var delta_str: String = ""
 	if not deltas.is_empty():
 		delta_str = " Δ: %s" % ", ".join(deltas)
@@ -719,7 +731,7 @@ func _on_next_month() -> void:
 	elif gs.year == 907 and gs.month == 1:
 		_show_devin_modal("prepare")
 	# Show turn report card
-	_show_turn_report_via_node(deltas, report.get("chronicle", ""))
+	_show_turn_report_via_node(res_before, res_after, report.get("chronicle", ""))
 
 
 func _on_skirmish() -> void:
@@ -837,12 +849,17 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 
 func _on_province_selected(province_id: String) -> void:
 	var p = GameManager.game_state.provinces.get(province_id, {})
+	var stored_prov_name: String = str(p.get("name", "")) if typeof(p) == TYPE_DICTIONARY else ""
+	var prov_name: String = _Translations.translate_province(stored_prov_name if stored_prov_name != "" else province_id)
 	if typeof(p) != TYPE_DICTIONARY:
-		selection_label.text = "Župa: %s" % province_id
+		selection_label.text = "Župa: %s" % prov_name
 		return
+	var owner_raw: String = str(p.get("owner_faction", "moravia"))
+	var owner_name: String = _Translations.translate_faction(owner_raw)
+	var name_sk: String = prov_name
 	selection_label.text = "Župa %s · vlastník %s · lojalita %s · prosperita %s  →  ďalej: Ďalší mesiac alebo Diplomacia" % [
-		str(p.get("name", province_id)),
-		str(p.get("owner_faction", "?")),
+		name_sk,
+		owner_name,
 		str(p.get("loyalty", "?")),
 		str(p.get("prosperity", "?"))
 	]
@@ -850,7 +867,7 @@ func _on_province_selected(province_id: String) -> void:
 	if art_id == "":
 		art_id = "mojmir_dynasty_emblem"
 	selection_art_id = art_id
-	_set_hero_art(art_id, "%s · tvoja ríša" % str(p.get("name", province_id)))
+	_set_hero_art(art_id, "%s · tvoja ríša" % name_sk)
 
 
 func _show_event(ev: Variant) -> void:
@@ -1023,18 +1040,15 @@ func _notify(text: String) -> void:
 
 # ─── TurnReport card ───
 
-func _show_turn_report_via_node(deltas: Array, chronicle_line: String) -> void:
+func _show_turn_report_via_node(res_before: Dictionary, res_after: Dictionary, chronicle_line: String) -> void:
 	if turn_report == null:
 		return
 	var gs = GameManager.game_state
 	var res_delta: Dictionary = {}
 	for key in ["gold", "food", "wood", "stone", "iron", "prestige"]:
-		for d in deltas:
-			if key in str(d):
-				var val: int = int(d.replace(key, "").replace("+", "").replace("-", ""))
-				if "-" in str(d):
-					val = -val
-				res_delta[key] = val
+		var d: int = int(res_after.get(key, 0)) - int(res_before.get(key, 0))
+		if d != 0:
+			res_delta[key] = d
 	# Disable buttons — CTA musí byť jediný krok pokračovania
 	if next_month_btn:
 		next_month_btn.disabled = true
