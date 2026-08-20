@@ -441,5 +441,10 @@ func _init() -> void:
 	check(gs_old.last_event_id == "", "P0.7a from_dict: starý save bez last_event_id → prázdny default")
 	print("P0.7a last_event_id round-trip OK (to_dict + from_dict + old-save default)")
 
+	# 7) TurnReport exists and has report API
+	check(FileAccess.file_exists("res://ui/TurnReport.tscn"), "TurnReport scene exists")
+	check(FileAccess.file_exists("res://ui/TurnReport.gd"), "TurnReport script file exists")
+	print("TurnReport OK")
+
 	print("SMOKE_M6_PASS")
 	quit(0)

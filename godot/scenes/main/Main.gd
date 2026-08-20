@@ -35,6 +35,7 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var ruler_art: TextureRect = $UI/Body/SidePanel/RulerRow/RulerArt
 @onready var notification_feed: Node = $UI/Body/MainColumn/NotificationFeed
 @onready var battle_view: Node = $UI/Body/MainColumn/BattleView
+@onready var turn_report: PanelContainer = $TurnReport
 
 var selection_art_id: String = "mojmir_ii_master_portrait"
 var _months_played: int = 0
@@ -61,6 +62,8 @@ func _ready() -> void:
 		diplomacy_panel.action_done.connect(_on_diplomacy_action)
 	if battle_view and battle_view.has_signal("action_chosen"):
 		battle_view.action_chosen.connect(_on_battle_action)
+	if turn_report and turn_report.continue_pressed:
+		turn_report.continue_pressed.connect(_on_turn_report_dismissed)
 	event_panel.visible = false
 	if event_art:
 		event_art.visible = false
@@ -445,7 +448,7 @@ func _on_next_month() -> void:
 	elif gs.year == 907 and gs.month == 1:
 		_show_devin_modal("prepare")
 	# Show turn report card
-	_show_turn_report(deltas, report.get("chronicle", ""))
+	_show_turn_report_via_node(deltas, report.get("chronicle", ""))
 
 
 func _on_skirmish() -> void:
@@ -731,70 +734,33 @@ func _notify(text: String) -> void:
 
 # ─── TurnReport card ───
 
-func _show_turn_report(deltas: Array, chronicle_line: String) -> void:
-	var card := PanelContainer.new()
-	card.name = "TurnReportCard"
-	card.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	card.custom_minimum_size = Vector2(480, 0)
-	card.add_theme_stylebox_override("panel", _card_style())
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	var title_lbl := Label.new()
-	title_lbl.text = "Ťah %d/%02d" % [GameManager.game_state.year, GameManager.game_state.month]
-	title_lbl.theme_type_variation = &"SubtitleLabel"
-	vbox.add_child(title_lbl)
-	if chronicle_line != "":
-		var chr := Label.new()
-		chr.text = str(chronicle_line)
-		chr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		vbox.add_child(chr)
-	if not deltas.is_empty():
-		var hbox := HBoxContainer.new()
-		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		hbox.add_theme_constant_override("separation", 10)
-		for delta in deltas:
-			var lbl := Label.new()
-			lbl.text = str(delta)
-			lbl.add_theme_font_size_override("font_size", 13)
-			if "+" in str(delta):
-				lbl.add_theme_color_override("font_color", _Colors.SUCCESS)
-			else:
-				lbl.add_theme_color_override("font_color", _Colors.WARNING)
-			hbox.add_child(lbl)
-		vbox.add_child(hbox)
-	else:
-		var empty_lbl := Label.new()
-		empty_lbl.text = "žiadne zmeny zdrojov"
-		empty_lbl.add_theme_color_override("font_color", _Colors.TEXT_MUTED)
-		vbox.add_child(empty_lbl)
-	card.add_child(vbox)
-	add_child(card)
-	# Auto-remove after 4 seconds
-	var timer := Timer.new()
-	timer.wait_time = 4.0
-	timer.one_shot = true
-	timer.timeout.connect(func(): card.queue_free())
-	add_child(timer)
-	timer.start()
-	# Click to dismiss
-	card.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed:
-			card.queue_free()
-	)
+func _show_turn_report_via_node(deltas: Array, chronicle_line: String) -> void:
+	if turn_report == null:
+		return
+	var gs = GameManager.game_state
+	var res_delta: Dictionary = {}
+	for key in ["gold", "food", "wood", "stone", "iron", "prestige"]:
+		for d in deltas:
+			if key in str(d):
+				var val: int = int(d.replace(key, "").replace("+", "").replace("-", ""))
+				if "-" in str(d):
+					val = -val
+				res_delta[key] = val
+	turn_report.show_report({
+		"year": gs.year,
+		"month": gs.month,
+		"resources_delta": res_delta,
+		"narration": chronicle_line if chronicle_line != "" else "Mesiac uplynul v tichu dvorov a polí.",
+	})
 
 
-func _card_style() -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.10, 0.07, 0.04, 0.92)
-	s.border_color = Color(_Colors.BYZANTINE_GOLD.r, _Colors.BYZANTINE_GOLD.g, _Colors.BYZANTINE_GOLD.b, 0.35)
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(12)
-	s.content_margin_left = 20
-	s.content_margin_top = 12
-	s.content_margin_right = 20
-	s.content_margin_bottom = 12
-	return s
+func _on_turn_report_dismissed() -> void:
+	if next_month_btn:
+		next_month_btn.disabled = false
+	if skirmish_btn:
+		skirmish_btn.disabled = false
+	if devine_btn:
+		devine_btn.disabled = false
 
 
 # ─── Devín chapter modal ───
