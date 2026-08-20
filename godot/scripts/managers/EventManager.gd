@@ -292,12 +292,35 @@ func resolve_choice(choice_id: String) -> Dictionary:
 		var delta: int = int(choice_dict["religionChange"])
 		_religion_shift(delta)
 
-	# Update cooldown for the triggered event
 	var eid: String = str(pending.get("id", ""))
 	if eid != "":
 		var cooldowns: Dictionary = game_state.event_cooldowns
 		cooldowns[eid] = game_state.year * 12 + game_state.month
 		game_state.event_cooldowns = cooldowns
+
+	# Build narration hook context
+	var province_ids: Array = []
+	if choice_dict.has("zupaLoyalty") and typeof(choice_dict["zupaLoyalty"]) == TYPE_DICTIONARY:
+		var zl_dict: Dictionary = choice_dict["zupaLoyalty"]
+		for k in zl_dict.keys():
+			province_ids.append(str(k))
+
+	var faction_ids: Array = []
+	if choice_dict.has("moodChanges") and typeof(choice_dict["moodChanges"]) == TYPE_DICTIONARY:
+		var mc_dict: Dictionary = choice_dict["moodChanges"]
+		for k in mc_dict.keys():
+			var resolved_fid: String = _resolve_faction_id(str(k))
+			if resolved_fid != "" and not faction_ids.has(resolved_fid):
+				faction_ids.append(resolved_fid)
+
+	var next_ev_str: String = str(choice_dict.get("next_event", ""))
+
+	var hook_context: Dictionary = {
+		"year": int(game_state.year),
+		"province_ids": province_ids,
+		"faction_ids": faction_ids,
+		"next_event": next_ev_str,
+	}
 
 	# If not a chain event, clear pending
 	var has_next: bool = choice_dict.has("next_event")
@@ -317,6 +340,9 @@ func resolve_choice(choice_id: String) -> Dictionary:
 		"ok": true,
 		"effect": effect,
 		"chronicle": chronicle,
+		"event_id": eid,
+		"choice_result": choice_id,
+		"context": hook_context,
 	}
 
 
@@ -336,24 +362,72 @@ func _religion_shift(delta: int) -> void:
 
 
 func _build_council_event() -> Dictionary:
+	var council_desc: String = "Županka zo Spiša namieta, že kniežacie dary prúdia len do Nitry a pohraničie ostáva napospas osudu. Kniežacia rada žiada rozhodnutie, kam nasmerovať pozornosť dvoru a prostriedky ríše. Nespokojnosť zhromaždených veľmožov môže prerásť do otvoreného odporu, ak knieža nezaujme jasný postoj."
 	return {
 		"id": "council",
 		"title": "Rada županov",
-		"text": "Rada županov: Ako chcete posilniť ríšu?",
-		"body": "Rada županov: Ako chcete posilniť ríšu?",
+		"text": council_desc,
+		"body": council_desc,
 		"art_id": "event_council_of_zhupans",
 		"choices": {
 			"gifts": {
 				"id": "gifts",
-				"text": "Rozdať dary (500 zlata, +10 prestíž)",
-				"effect": {"gold": -500, "prestige": 10},
+				"text": "Odmeniť verných županov darmi",
+				"effect": {
+					"gold": -400,
+					"prestige": 8
+				},
+				"zupaLoyalty": {
+					"bratislava": 5,
+					"devin": 5,
+					"gemer": 5,
+					"hont": 5,
+					"morava": 5,
+					"nitra": 5,
+					"novohrad": 5,
+					"spis": 5,
+					"tekov": 5,
+					"trencin": 5,
+					"uzhorod": 5,
+					"zemplin": 5
+				}
 			},
 			"fortify": {
 				"id": "fortify",
-				"text": "Postaviť opevnenie (300 zlata, +5 prestíž)",
-				"effect": {"gold": -300, "prestige": 5},
+				"text": "Investovať do opevnení pohraničných žúp",
+				"effect": {
+					"gold": -100,
+					"prestige": -4
+				},
+				"zupaLoyalty": {
+					"gemer": 10,
+					"novohrad": 10,
+					"uzhorod": 10,
+					"zemplin": 10
+				}
 			},
-		},
+			"taxes": {
+				"id": "taxes",
+				"text": "Odmietnuť žiadosti a zvýšiť dane",
+				"effect": {
+					"gold": 200
+				},
+				"zupaLoyalty": {
+					"bratislava": -15,
+					"devin": -15,
+					"gemer": -15,
+					"hont": -15,
+					"morava": -15,
+					"nitra": -15,
+					"novohrad": -15,
+					"spis": -15,
+					"tekov": -15,
+					"trencin": -15,
+					"uzhorod": -15,
+					"zemplin": -15
+				}
+			}
+		}
 	}
 
 

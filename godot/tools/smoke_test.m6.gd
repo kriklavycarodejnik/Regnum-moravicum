@@ -185,7 +185,226 @@ func _init() -> void:
 	check(ev_seed_a == ev_seed_b, "event RNG seed determinism: same save_seed → same event seed")
 	print("Event RNG seed: a=%d b=%d" % [ev_seed_a, ev_seed_b])
 
-	# 10) P0.7a No-immediate-repeat poistka
+	# 10) P0.5 Narration hook kontrakt a overenie 8 MVP eventov
+	print("--- Testing P0.5 Narration hook contract across all 8 MVP events ---")
+	var p05_gs = GameState.new()
+	p05_gs.ensure_resources()
+	p05_gs.year = 905
+	p05_gs.month = 6
+	# Initialize 12 provinces
+	var all_12_provinces: Array = [
+		"bratislava", "devin", "gemer", "hont", "morava", "nitra",
+		"novohrad", "spis", "tekov", "trencin", "uzhorod", "zemplin"
+	]
+	p05_gs.provinces = {}
+	for pid in all_12_provinces:
+		p05_gs.provinces[pid] = {"name": pid, "loyalty": 50.0, "religion": 50}
+
+	var p05_dip = DiplomacyManager.new()
+	p05_dip._init(p05_gs)
+
+	var p05_em = EventManager.new()
+	p05_em._init(p05_gs)
+	p05_em._load_catalog()
+
+	# Helper to find catalog event by id
+	var find_catalog_event = func(target_id: String) -> Dictionary:
+		for ev in p05_em._catalog:
+			if typeof(ev) == TYPE_DICTIONARY and str(ev.get("id", "")) == target_id:
+				return ev.duplicate(true)
+		return {}
+
+	# 1. hist_papal_legation_903
+	var ev1 = find_catalog_event.call("hist_papal_legation_903")
+	check(not ev1.is_empty(), "found hist_papal_legation_903")
+	p05_gs.pending_event = ev1.duplicate(true)
+	var res1_rome = p05_em.resolve_choice("rome")
+	check(res1_rome.get("ok", false) and res1_rome.get("event_id") == "hist_papal_legation_903", "event 1 rome ok")
+	check(res1_rome.get("choice_result") == "rome", "event 1 rome choice_result")
+	check(res1_rome.get("context", {}).get("faction_ids") == ["franks"], "event 1 rome faction_ids")
+	check(res1_rome.get("context", {}).get("province_ids") == [], "event 1 rome province_ids")
+
+	p05_gs.pending_event = ev1.duplicate(true)
+	var res1_dec = p05_em.resolve_choice("decline")
+	check(res1_dec.get("choice_result") == "decline" and res1_dec.get("context", {}).get("faction_ids") == ["franks"], "event 1 decline")
+
+	# 2.1 byz_bride_proposal_906
+	var ev2_1 = find_catalog_event.call("byz_bride_proposal_906")
+	check(not ev2_1.is_empty(), "found byz_bride_proposal_906")
+	p05_gs.pending_event = ev2_1.duplicate(true)
+	var res2_acc = p05_em.resolve_choice("accept")
+	check(res2_acc.get("event_id") == "byz_bride_proposal_906" and res2_acc.get("choice_result") == "accept", "event 2.1 accept")
+	check(res2_acc.get("context", {}).get("faction_ids") == ["byzantium"], "event 2.1 accept faction_ids")
+	check(res2_acc.get("context", {}).get("next_event") == "byz_bride_wedding_907", "event 2.1 accept next_event")
+
+	p05_gs.pending_event = ev2_1.duplicate(true)
+	var res2_dec = p05_em.resolve_choice("decline")
+	check(res2_dec.get("choice_result") == "decline" and res2_dec.get("context", {}).get("next_event") == "byz_bride_insult_907", "event 2.1 decline")
+
+	# 2.2 byz_bride_wedding_907
+	var ev2_2 = find_catalog_event.call("byz_bride_wedding_907")
+	check(not ev2_2.is_empty(), "found byz_bride_wedding_907")
+	p05_gs.pending_event = ev2_2.duplicate(true)
+	var res2_grand = p05_em.resolve_choice("grand")
+	check(res2_grand.get("event_id") == "byz_bride_wedding_907" and res2_grand.get("choice_result") == "grand", "event 2.2 grand")
+	var facs_grand: Array = res2_grand.get("context", {}).get("faction_ids", [])
+	check(facs_grand.has("byzantium") and facs_grand.has("moravia"), "event 2.2 grand factions")
+
+	p05_gs.pending_event = ev2_2.duplicate(true)
+	var res2_modest = p05_em.resolve_choice("modest")
+	check(res2_modest.get("choice_result") == "modest" and res2_modest.get("context", {}).get("faction_ids") == ["byzantium"], "event 2.2 modest")
+
+	# 2.3 byz_bride_insult_907
+	var ev2_3 = find_catalog_event.call("byz_bride_insult_907")
+	check(not ev2_3.is_empty(), "found byz_bride_insult_907")
+	p05_gs.pending_event = ev2_3.duplicate(true)
+	var res2_apol = p05_em.resolve_choice("apologize")
+	check(res2_apol.get("event_id") == "byz_bride_insult_907" and res2_apol.get("context", {}).get("faction_ids") == ["byzantium"], "event 2.3 apologize")
+
+	p05_gs.pending_event = ev2_3.duplicate(true)
+	var res2_stand = p05_em.resolve_choice("stand")
+	check(res2_stand.get("choice_result") == "stand" and res2_stand.get("context", {}).get("faction_ids") == ["byzantium"], "event 2.3 stand")
+
+	# 3.1 hist_bogata_conspiracy_915
+	var ev3_1 = find_catalog_event.call("hist_bogata_conspiracy_915")
+	check(not ev3_1.is_empty(), "found hist_bogata_conspiracy_915")
+	p05_gs.pending_event = ev3_1.duplicate(true)
+	var res3_arr = p05_em.resolve_choice("arrest")
+	check(res3_arr.get("event_id") == "hist_bogata_conspiracy_915" and res3_arr.get("choice_result") == "arrest", "event 3.1 arrest")
+	check(res3_arr.get("context", {}).get("province_ids") == ["uzhorod"], "event 3.1 arrest province_ids")
+	check(res3_arr.get("context", {}).get("next_event") == "bogata_trial_916", "event 3.1 arrest next_event")
+
+	p05_gs.pending_event = ev3_1.duplicate(true)
+	var res3_wat = p05_em.resolve_choice("watch")
+	check(res3_wat.get("choice_result") == "watch" and res3_wat.get("context", {}).get("next_event") == "bogata_uprising_917", "event 3.1 watch")
+
+	# 3.2 bogata_trial_916
+	var ev3_2 = find_catalog_event.call("bogata_trial_916")
+	check(not ev3_2.is_empty(), "found bogata_trial_916")
+	for tr_c in ["exile", "death", "pardon"]:
+		p05_gs.pending_event = ev3_2.duplicate(true)
+		var res3_tr = p05_em.resolve_choice(tr_c)
+		check(res3_tr.get("event_id") == "bogata_trial_916" and res3_tr.get("choice_result") == tr_c, "event 3.2 " + tr_c)
+		check(res3_tr.get("context", {}).get("province_ids") == ["uzhorod"], "event 3.2 " + tr_c + " province_ids")
+
+	# 3.3 bogata_uprising_917
+	var ev3_3 = find_catalog_event.call("bogata_uprising_917")
+	check(not ev3_3.is_empty(), "found bogata_uprising_917")
+	for up_c in ["crush", "negotiate"]:
+		p05_gs.pending_event = ev3_3.duplicate(true)
+		var res3_up = p05_em.resolve_choice(up_c)
+		check(res3_up.get("event_id") == "bogata_uprising_917" and res3_up.get("choice_result") == up_c, "event 3.3 " + up_c)
+		check(res3_up.get("context", {}).get("province_ids") == ["uzhorod"], "event 3.3 " + up_c + " province_ids")
+
+	# 4. rand_bad_harvest
+	var ev4 = find_catalog_event.call("rand_bad_harvest")
+	check(not ev4.is_empty(), "found rand_bad_harvest")
+	for h_c in ["open", "ignore"]:
+		p05_gs.pending_event = ev4.duplicate(true)
+		var res4 = p05_em.resolve_choice(h_c)
+		check(res4.get("event_id") == "rand_bad_harvest" and res4.get("choice_result") == h_c, "event 4 " + h_c)
+		check(res4.get("context", {}).get("province_ids") == ["zemplin"], "event 4 " + h_c + " province_ids")
+
+	# 5. rand_border_raid
+	var ev5 = find_catalog_event.call("rand_border_raid")
+	check(not ev5.is_empty(), "found rand_border_raid")
+	p05_gs.pending_event = ev5.duplicate(true)
+	var res5_chase = p05_em.resolve_choice("chase")
+	check(res5_chase.get("event_id") == "rand_border_raid" and res5_chase.get("choice_result") == "chase", "event 5 chase")
+	check(res5_chase.get("context", {}).get("province_ids") == ["gemer"], "event 5 chase province_ids")
+	check(res5_chase.get("context", {}).get("faction_ids") == ["hungary"], "event 5 chase faction_ids")
+
+	p05_gs.pending_event = ev5.duplicate(true)
+	var res5_fort = p05_em.resolve_choice("fortify")
+	check(res5_fort.get("choice_result") == "fortify" and res5_fort.get("context", {}).get("province_ids") == ["gemer"], "event 5 fortify")
+	check(res5_fort.get("context", {}).get("faction_ids") == [], "event 5 fortify faction_ids empty")
+
+	# 6. council
+	var ev6 = p05_em._build_council_event()
+	check(not ev6.is_empty(), "council event built")
+	p05_gs.pending_event = ev6.duplicate(true)
+	var res6_gifts = p05_em.resolve_choice("gifts")
+	check(res6_gifts.get("event_id") == "council" and res6_gifts.get("choice_result") == "gifts", "council gifts")
+	check(res6_gifts.get("context", {}).get("province_ids").size() == 12, "council gifts 12 provinces")
+
+	p05_gs.pending_event = ev6.duplicate(true)
+	var res6_fort = p05_em.resolve_choice("fortify")
+	check(res6_fort.get("choice_result") == "fortify", "council fortify")
+	var fort_provs: Array = res6_fort.get("context", {}).get("province_ids", [])
+	check(fort_provs.size() == 4 and fort_provs.has("gemer") and fort_provs.has("novohrad") and fort_provs.has("uzhorod") and fort_provs.has("zemplin"), "council fortify 4 border provinces")
+
+	p05_gs.pending_event = ev6.duplicate(true)
+	var res6_tax = p05_em.resolve_choice("taxes")
+	check(res6_tax.get("choice_result") == "taxes" and res6_tax.get("context", {}).get("province_ids").size() == 12, "council taxes 12 provinces")
+
+	# 7. rand_noble_feud
+	var ev7 = find_catalog_event.call("rand_noble_feud")
+	check(not ev7.is_empty(), "found rand_noble_feud")
+	for f_c in ["nitra_side", "trencin_side", "no_ruling"]:
+		p05_gs.pending_event = ev7.duplicate(true)
+		var res7 = p05_em.resolve_choice(f_c)
+		check(res7.get("event_id") == "rand_noble_feud" and res7.get("choice_result") == f_c, "event 7 " + f_c)
+		var pids7: Array = res7.get("context", {}).get("province_ids", [])
+		check(pids7.has("nitra") and pids7.has("trencin"), "event 7 province_ids nitra and trencin")
+
+	# 8. rand_missionary_dispute
+	var ev8 = find_catalog_event.call("rand_missionary_dispute")
+	check(not ev8.is_empty(), "found rand_missionary_dispute")
+	p05_gs.pending_event = ev8.duplicate(true)
+	var res8_latin = p05_em.resolve_choice("latin")
+	check(res8_latin.get("event_id") == "rand_missionary_dispute" and res8_latin.get("choice_result") == "latin", "event 8 latin")
+	check(res8_latin.get("context", {}).get("province_ids") == ["morava"], "event 8 latin province_ids")
+	check(res8_latin.get("context", {}).get("faction_ids") == ["franks"], "event 8 latin faction_ids")
+
+	p05_gs.pending_event = ev8.duplicate(true)
+	var res8_byz = p05_em.resolve_choice("byzantine")
+	check(res8_byz.get("choice_result") == "byzantine", "event 8 byzantine")
+	var facs8_byz: Array = res8_byz.get("context", {}).get("faction_ids", [])
+	check(facs8_byz.has("franks") and facs8_byz.has("byzantium"), "event 8 byzantine factions")
+
+	p05_gs.pending_event = ev8.duplicate(true)
+	var res8_ban = p05_em.resolve_choice("ban")
+	check(res8_ban.get("choice_result") == "ban" and res8_ban.get("context", {}).get("province_ids") == ["morava"], "event 8 ban")
+	check(res8_ban.get("context", {}).get("faction_ids") == [], "event 8 ban faction_ids empty")
+
+	print("P0.5 8 MVP Events narration hooks verified successfully!")
+
+	# 11) Structural sentence count assertion (3-6 Slovak sentences per event body + council)
+	print("--- Testing sentence count assertion (3-6 sentences) on all catalog events and council ---")
+	var count_sentences = func(text: String) -> int:
+		var cleaned = text.strip_edges()
+		if cleaned == "":
+			return 0
+		var count: int = 0
+		var in_sentence: bool = false
+		for i in range(cleaned.length()):
+			var c = cleaned[i]
+			if c in [".", "!", "?"]:
+				# Avoid counting abbreviations or duplicate punctuation if preceded by char
+				if in_sentence:
+					count += 1
+					in_sentence = false
+			elif c != " " and c != "	" and c != "\n":
+				in_sentence = true
+		if in_sentence:
+			count += 1
+		return count
+
+	for cat in p05_em._catalog:
+		if typeof(cat) != TYPE_DICTIONARY:
+			continue
+		var eid: String = str(cat.get("id", ""))
+		var body_str: String = str(cat.get("body", ""))
+		var sc: int = count_sentences.call(body_str)
+		check(sc >= 3 and sc <= 6, "event %s body sentence count (%d) in range 3..6" % [eid, sc])
+
+	var council_ev: Dictionary = p05_em._build_council_event()
+	var council_body: String = str(council_ev.get("body", council_ev.get("text", "")))
+	var council_sc: int = count_sentences.call(council_body)
+	check(council_sc >= 3 and council_sc <= 6, "council fallback body sentence count (%d) in range 3..6" % council_sc)
+	print("Sentence count assertions OK: all catalog events and council have 3-6 sentences.")
+
+	# 12) P0.7a No-immediate-repeat poistka
 	#     Acceptancia: v 20 po sebe idúcich ťahoch sa žiadny event
 	#     neopakuje dva ťahy za sebou (rovnaké id na pozíciách i a i+1).
 	#     Re-runuje sekvenciu cez existujúci helper _run_event_sequence.
@@ -206,7 +425,7 @@ func _init() -> void:
 	if repeat_found:
 		print("  FAIL detail: opakovanie na pozícii %d ('%s')" % [repeat_at, str(seq_rep[repeat_at])])
 
-	# 11) P0.7a last_event_id perzistencia v save/loade (to_dict/from_dict round-trip)
+	# 13) P0.7a last_event_id perzistencia v save/loade (to_dict/from_dict round-trip)
 	#     Nové pole na GameState musí prežiť serializáciu + deserializáciu.
 	var gs_rt = GameState.new()
 	gs_rt.ensure_resources()
