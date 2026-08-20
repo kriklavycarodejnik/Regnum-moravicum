@@ -800,7 +800,7 @@ func _show_devin_modal(stage: String) -> void:
 	match stage:
 		"warning":
 			title_lbl.text = "Rok 906 — Blíži sa invázia"
-			body_lbl.text = "Kupci a vyzvedaci hlásia zhromažďovanie maďarských jazdcov za hranicami.\nRok 907 prinesie rozhodujúcu bitku pri Devíne.\n\nPriprav sa: posilni armády, uzatvor spojenectvá (Diplomacia),\na opevni Nitru a Devín („Ďalší mesiac“ → opevňovacie eventy)."
+			body_lbl.text = "Kupci a vyzvedači hlásia zhromažďovanie maďarských jazdcov za hranicami.\nRok 907 prinesie rozhodujúcu bitku pri Devíne.\n\nPriprav sa: posilni armády, uzatvor spojenectvá (Diplomacia),\na opevni Nitru a Devín („Ďalší mesiac“ → opevňovacie eventy)."
 		"prepare":
 			title_lbl.text = "Rok 907 — Devín volá"
 			body_lbl.text = "Maďarské vojská sa valia na Devín!\nToto je rozhodujúci moment tvojej vlády.\n\nScenár Devín 907 je pripravený — klikni na tlačidlo\n„★ Scenár: Devín 907“ v nástrojoch dole."
