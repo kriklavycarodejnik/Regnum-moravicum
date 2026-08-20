@@ -66,74 +66,163 @@ func _ready() -> void:
 	_refresh_ui()
 	_append_chronicle("Rok 902. Mojmír II. zasadá na trón Veľkej Moravy. Kronika sa otvára.")
 	_append_chronicle("Tvoj cieľ: udržať dynastiu a aspoň jednu župu do roku 1000.")
-	_notify("Hlavný ťah = tlačidlo „Ďalší mesiac“.")
 	if not GameManager.game_state.tutorial_done:
+		# Connect coach advancement before normal handlers
+		if map_view and map_view.has_signal("province_selected") and not map_view.province_selected.is_connected(_coach_on_province_selected):
+			map_view.province_selected.connect(_coach_on_province_selected)
 		_show_coach_overlay()
 
+
+# ─── Coach / Tutorial ───
 
 func _show_coach_overlay() -> void:
 	var gs = GameManager.game_state
 	if gs.tutorial_done:
 		return
-	var step: int = gs.tutorial_step
+	var step: int = gs.tutorial_step  # 0, 1, or 2
+
 	var overlay := PanelContainer.new()
 	overlay.name = "CoachOverlay"
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_PASS
 	overlay.add_theme_stylebox_override("panel", _coach_style())
+
+	# Dim background — fully passive, clicks pass through
+	var dim := ColorRect.new()
+	dim.name = "CoachDim"
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.0, 0.0, 0.0, 0.55)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(dim)
+
+	# Content vbox — also passive (text only, no click-catch)
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.name = "CoachContent"
+	vbox.mouse_filter = Control.MOUSE_FILTER_PASS
+	vbox.add_theme_constant_override("separation", 10)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.anchors_preset = Control.PRESET_CENTER_TOP
+	vbox.offset_top = 60
+	vbox.set_h_size_flags(Control.SIZE_EXPAND_FILL)
+
+	# Title: "Krok N/3"
 	var title_lbl := Label.new()
 	title_lbl.text = "Krok %d/3" % [step + 1]
 	title_lbl.theme_type_variation = &"TitleLabel"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(title_lbl)
+
+	# Body text — one sentence from spec §2.2
 	var body_lbl := Label.new()
 	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body_lbl.add_theme_font_size_override("font_size", 16)
 	match step:
 		0:
-			body_lbl.text = "Vitaj v Regnum Moravicum!\nKlikni na župu Nitra na mape (v strede mapy, zelený kruh)."
+			body_lbl.text = "Klikni na Nitru — srdce tvojej ríše a sídlo rodu Mojmírovcov."
 		1:
-			body_lbl.text = "Výborne! Teraz klikni na „Ďalší mesiac“ — postúpiš o jeden mesiac vpred."
+			body_lbl.text = "Toto je tvoje poslanie: udržať Nitru a dynastiu Mojmírovcov do roku 1000. Pozri si ho hore nad mapou."
 		2:
-			body_lbl.text = "Skvelé! Preskúmaj Diplomaciu v bočnom paneli vpravo.\nMôžeš rokovať so susednými ríšami."
+			body_lbl.text = "Stlač „Ďalší mesiac“ dole — každý mesiac posunie tvoju vládu bližšie k roku 907, keď prídu Maďari."
 	vbox.add_child(body_lbl)
+
+	# Arrow indicator pointing to target
+	var arrow_text := Label.new()
+	arrow_text.name = "CoachArrowChar"
+	arrow_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	arrow_text.add_theme_font_size_override("font_size", 32)
+	arrow_text.add_theme_color_override("font_color", _Colors.BYZANTINE_GOLD)
+	arrow_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var target_node: Control = null
+	var target_is_above: bool = false  # true if arrow should be below target, pointing up
+	match step:
+		0:
+			target_node = map_view
+			target_is_above = false
+		1:
+			target_node = objectives_panel if is_instance_valid(objectives_panel) else null
+			target_is_above = true
+		2:
+			target_node = next_month_btn
+			target_is_above = false
+	if target_node != null and is_instance_valid(target_node):
+		arrow_text.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_call_deferred_arrow_pos(arrow_text, target_node, overlay, target_is_above)
+	overlay.add_child(arrow_text)
+
+	overlay.add_child(vbox)
+
+	# Button row — these DO catch clicks (STOP)
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	btn_row.add_theme_constant_override("separation", 12)
+	btn_row.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	# Skip button (always visible)
 	var skip_btn := Button.new()
 	skip_btn.text = "Preskočiť tutoriál"
 	skip_btn.custom_minimum_size = Vector2(0, 48)
 	skip_btn.pressed.connect(func():
 		gs.tutorial_step = 3
 		gs.tutorial_done = true
-		overlay.queue_free()
+		_coach_cleanup()
 		_notify("Tutoriál preskočený. Hlavný ťah = „Ďalší mesiac“.")
 	)
 	btn_row.add_child(skip_btn)
-	if step < 2:
-		var next_btn := Button.new()
-		next_btn.text = "Ďalej"
-		next_btn.custom_minimum_size = Vector2(0, 48)
-		next_btn.pressed.connect(func():
-			gs.tutorial_step += 1
-			overlay.queue_free()
+
+	# Step 1: "Rozumiem" acknowledge button (per spec §2.2 — only exception for overlay click-through)
+	if step == 1:
+		var ack_btn := Button.new()
+		ack_btn.text = "Rozumiem"
+		ack_btn.custom_minimum_size = Vector2(0, 48)
+		ack_btn.pressed.connect(func():
+			gs.tutorial_step = 2
+			_coach_cleanup()
 			_show_coach_overlay()
 		)
-		btn_row.add_child(next_btn)
-	else:
-		var done_btn := Button.new()
-		done_btn.text = "Rozumiem, začať hrať"
-		done_btn.custom_minimum_size = Vector2(0, 48)
-		done_btn.pressed.connect(func():
-			gs.tutorial_done = true
-			overlay.queue_free()
-			_notify("Tutoriál dokončený. Veľa šťastia, Mojmír II.!")
-		)
-		btn_row.add_child(done_btn)
+		btn_row.add_child(ack_btn)
+
 	vbox.add_child(btn_row)
-	overlay.add_child(vbox)
+
 	add_child(overlay)
+
+
+func _call_deferred_arrow_pos(arrow: Label, target: Control, overlay_parent: Control, is_above: bool) -> void:
+	# Wait one frame so layout is computed
+	await get_tree().process_frame
+	if not is_instance_valid(arrow) or not is_instance_valid(target):
+		return
+	var target_gr := target.get_global_rect()
+	var overlay_gr := overlay_parent.get_global_rect()
+	var ox: float = target_gr.position.x - overlay_gr.position.x + target_gr.size.x / 2 - 16
+	var oy: float
+	if is_above:
+		# Arrow below target, pointing UP
+		oy = target_gr.position.y - overlay_gr.position.y + target_gr.size.y + 4
+		arrow.text = "▲"
+	else:
+		# Arrow above target, pointing DOWN
+		oy = target_gr.position.y - overlay_gr.position.y - 36
+		arrow.text = "▼"
+	arrow.position = Vector2(ox, oy)
+
+
+func _coach_cleanup() -> void:
+	var overlay := get_node_or_null("CoachOverlay")
+	if overlay != null:
+		overlay.queue_free()
+
+
+func _coach_on_province_selected(province_id: String) -> void:
+	var gs = GameManager.game_state
+	if gs.tutorial_done:
+		return
+	if gs.tutorial_step == 0 and province_id == "nitra":
+		gs.tutorial_step = 1
+		_coach_cleanup()
+		_show_coach_overlay()
 
 
 func _coach_style() -> StyleBoxFlat:
@@ -251,6 +340,14 @@ func _update_story_line() -> void:
 
 
 func _on_next_month() -> void:
+	var gs = GameManager.game_state
+	# Coach completion: step 2 + pressed = finish tutorial, then normal month
+	if not gs.tutorial_done and gs.tutorial_step == 2:
+		gs.tutorial_done = true
+		gs.tutorial_step = 3
+		_coach_cleanup()
+		_notify("Tutoriál dokončený. Veľa šťastia, Mojmír II.!")
+
 	if GameManager.has_pending_event():
 		_show_event(GameManager.get_pending_event())
 		_notify("Najprv vyrieš udalosť — vyber voľbu A alebo B.")
@@ -283,7 +380,6 @@ func _on_next_month() -> void:
 		])
 	_check_ending()
 	# Post-tick notifications
-	var gs = GameManager.game_state
 	if GameManager.has_pending_event():
 		_show_event(GameManager.get_pending_event())
 		_notify("Udalosť! Vyber jednu z dvoch volieb.")
@@ -503,6 +599,7 @@ func _on_choice_a() -> void:
 func _on_choice_b() -> void:
 	_resolve(str(choice_b_btn.get_meta("choice_id", "")))
 
+
 func _on_choice_c() -> void:
 	_resolve(str(choice_c_btn.get_meta("choice_id", "")))
 
@@ -556,7 +653,7 @@ func _refresh_ui() -> void:
 		else:
 			devine_btn.disabled = false
 			if y >= 906 and y <= 908:
-				devine_btn.text = "★ Scénár: Devín 907 (odporúčané)"
+				devine_btn.text = "★ Scénar: Devín 907 (odporúčané)"
 			else:
 				devine_btn.text = "Scénár: Devín 907"
 
@@ -661,10 +758,10 @@ func _show_devin_modal(stage: String) -> void:
 	match stage:
 		"warning":
 			title_lbl.text = "Rok 906 — Blíži sa invázia"
-			body_lbl.text = "Kupci a vyzvedači hlásia zhromažďovanie maďarských jazdcov za hranicami.\nRok 907 prinesie rozhodujúcu bitku pri Devíne.\n\nPriprav sa: posilni armády, uzatvor spojenectvá (Diplomacia),\na opevni Nitru a Devín („Ďalší mesiac“ → opevňovacie eventy)."
+			body_lbl.text = "Kupci a vyzvedaci hlásia zhromažďovanie maďarských jazdcov za hranicami.\nRok 907 prinesie rozhodujúcu bitku pri Devíne.\n\nPriprav sa: posilni armády, uzatvor spojenectvá (Diplomacia),\na opevni Nitru a Devín („Ďalší mesiac“ → opevňovacie eventy)."
 		"prepare":
 			title_lbl.text = "Rok 907 — Devín volá"
-			body_lbl.text = "Maďarské vojská sa valia na Devín!\nToto je rozhodujúci moment tvojej vlády.\n\nScenár Devín 907 je pripravený — klikni na tlačidlo\n„★ Scénár: Devín 907“ v nástrojoch dole."
+			body_lbl.text = "Maďarské vojská sa valia na Devín!\nToto je rozhodujúci moment tvojej vlády.\n\nScenár Devín 907 je pripravený — klikni na tlačidlo\n„★ Scenár: Devín 907“ v nástrojoch dole."
 		"epilogue":
 			title_lbl.text = "Po Devíne — kríza prežitá"
 			body_lbl.text = "Bitka pri Devíne sa skončila. Maďari zvíťazili —\nako predpovedali kroniky, ako varovali kupci.\n\nMorava však stojí. Dynastia žije.\nTvoj cieľ: vydržať do roku 1000.\n\nPokračuj „Ďalší mesiac“."
