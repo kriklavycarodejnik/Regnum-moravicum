@@ -10,7 +10,8 @@ const LAYOUT_PATH := "res://data/map_layout.json"
 var _layout: Dictionary = {}
 var _selected_id: String = ""
 var _hover_id: String = ""
-var _tooltip: Label
+var _tooltip_container: PanelContainer
+var _tooltip_label: Label
 var _bg_tex: Texture2D
 var _marker_tex: Dictionary = {}  # pid -> Texture2D
 var _settlement_small: Texture2D
@@ -27,15 +28,18 @@ func _ready() -> void:
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_load_layout()
 	_load_art()
-	_tooltip = Label.new()
-	_tooltip.visible = false
-	_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tooltip.add_theme_font_size_override("font_size", 13)
-	_tooltip.add_theme_color_override("font_color", C.PARCHMENT)
-	_tooltip.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
-	_tooltip.add_theme_constant_override("shadow_offset_x", 1)
-	_tooltip.add_theme_constant_override("shadow_offset_y", 1)
-	add_child(_tooltip)
+	# Tooltip as a styled panel with opaque background, not bare text.
+	_tooltip_container = PanelContainer.new()
+	_tooltip_container.visible = false
+	_tooltip_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tooltip_container.add_theme_stylebox_override("panel", _tooltip_style())
+	_tooltip_container.custom_minimum_size = Vector2(120, 0)
+	_tooltip_label = Label.new()
+	_tooltip_label.add_theme_font_size_override("font_size", 13)
+	_tooltip_label.add_theme_color_override("font_color", C.PARCHMENT)
+	_tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tooltip_container.add_child(_tooltip_label)
+	add_child(_tooltip_container)
 	queue_redraw()
 
 
@@ -103,6 +107,20 @@ func _faction_color(faction: String) -> Color:
 			return Color("3A5A6B")
 		_:
 			return C.STONE_WALL
+
+
+# Tooltip style — opaque panel so text never bleeds into map.
+static func _tooltip_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color(0.15, 0.10, 0.06, 0.96)
+	s.border_color = Color(C.BYZANTINE_GOLD.r, C.BYZANTINE_GOLD.g, C.BYZANTINE_GOLD.b, 0.50)
+	s.set_border_width_all(1)
+	s.set_corner_radius_all(6)
+	s.content_margin_left = 8
+	s.content_margin_right = 8
+	s.content_margin_top = 5
+	s.content_margin_bottom = 5
+	return s
 
 
 func _loyalty_ring(loyalty: float) -> Color:
@@ -320,28 +338,28 @@ func _hit_test(pos: Vector2) -> String:
 
 
 func _update_tooltip(mouse_pos: Vector2) -> void:
-	if _tooltip == null:
+	if _tooltip_container == null or _tooltip_label == null:
 		return
 	var id := _hover_id if _hover_id != "" else _selected_id
 	if id == "":
-		_tooltip.visible = false
+		_tooltip_container.visible = false
 		return
 	var provs := _provinces()
 	var p: Dictionary = {}
 	var raw = provs.get(id, {})
 	if typeof(raw) == TYPE_DICTIONARY:
 		p = raw
-	_tooltip.text = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
+	_tooltip_label.text = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
 		str(p.get("name", id)),
 		str(p.get("owner_faction", "?")),
 		str(p.get("loyalty", "?")),
 		str(p.get("prosperity", "?")),
 		str(p.get("religion", "?")),
 	]
-	_tooltip.visible = true
-	_tooltip.position = mouse_pos + Vector2(14, 14)
-	var br := _tooltip.get_minimum_size()
-	if _tooltip.position.x + br.x > size.x:
-		_tooltip.position.x = size.x - br.x - 4
-	if _tooltip.position.y + br.y > size.y:
-		_tooltip.position.y = size.y - br.y - 4
+	_tooltip_container.visible = true
+	_tooltip_container.position = mouse_pos + Vector2(14, 14)
+	var br := _tooltip_container.get_minimum_size()
+	if _tooltip_container.position.x + br.x > size.x:
+		_tooltip_container.position.x = size.x - br.x - 4
+	if _tooltip_container.position.y + br.y > size.y:
+		_tooltip_container.position.y = size.y - br.y - 4

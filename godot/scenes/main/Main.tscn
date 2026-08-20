@@ -134,7 +134,11 @@ layout_mode = 2
 [node name="NotificationFeed" parent="UI/Body/MainColumn" instance=ExtResource("7")]
 layout_mode = 2
 
-[node name="Chronicle" type="RichTextLabel" parent="UI/Body/MainColumn"]
+[node name="ChroniclePanel" type="PanelContainer" parent="UI/Body/MainColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Chronicle" type="RichTextLabel" parent="UI/Body/MainColumn/ChroniclePanel"]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 size_flags_vertical = 3

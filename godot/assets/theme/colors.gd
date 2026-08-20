@@ -32,3 +32,21 @@ const RELIGION_BYZ := Color("C9A227")
 
 static func gold_hairline() -> Color:
 	return BORDER_SOFT
+
+
+# Opaque panel stylebox: dark oak background, gold border, rounded corners.
+# Used by every panel container so text never bleeds through layers.
+static func create_panel_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = OAK_DARK
+	s.border_color = BORDER_SOFT
+	s.set_border_width_all(1)
+	s.set_corner_radius_all(14)
+	s.content_margin_left = 12
+	s.content_margin_top = 10
+	s.content_margin_right = 12
+	s.content_margin_bottom = 10
+	s.shadow_color = Color(0, 0, 0, 0.35)
+	s.shadow_size = 4
+	s.shadow_offset = Vector2(0, 2)
+	return s
