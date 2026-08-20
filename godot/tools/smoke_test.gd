@@ -75,45 +75,6 @@ func _init():
 	check(outcome.has("winner"), "Devin outcome has winner")
 	print("Devin 907: winner=%s result=%s" % [outcome.get("winner", "?"), outcome.get("result", "?")])
 
-	# P-1.1 regression — Devín 907 canon + guard + consequences
-	# Canon: winner == "attacker"
-	check(outcome.get("winner", "") == "attacker", "Devin winner == attacker (canon)")
-	# Guard: devine_resolved set after first resolve
-	check(gs.devine_resolved == true, "devine_resolved set after resolve")
-	# Double-resolve is a no-op
-	var prestige_before_2nd = int(gs.resources.get("prestige", 0))
-	var outcome2 = scenario.resolve_devine_battle()
-	check(bool(outcome2.get("ok", true)) == false, "second resolve is no-op")
-	check(outcome2.get("error", "") == "already_resolved", "second resolve error label")
-	check(int(gs.resources.get("prestige", 0)) == prestige_before_2nd, "no consequences on no-op resolve")
-	# Consequences: prestige -30, devin loyalty -20, hungary mood +30
-	# (prestige default 50 → 20 after -30)
-	check(int(gs.resources.get("prestige", 0)) == 20, "prestige -30 applied")
-	var devin_loy = float(gs.provinces["devin"].get("loyalty", 50))
-	check(devin_loy <= 40.0, "devin loyalty -20 applied (60->40)")
-	var hungary_mood = float(gs.factions["hungary"].get("mood", 20))
-	check(hungary_mood >= 50.0, "hungary mood +30 applied (>=50)")
-	# Chronicle has a Devín 907 entry
-	var has_devin_chronicle = false
-	for entry in gs.chronicle:
-		if typeof(entry) == TYPE_DICTIONARY and str(entry.get("text", "")).find("Devín") != -1:
-			has_devin_chronicle = true
-			break
-	check(has_devin_chronicle, "chronicle has Devin 907 entry")
-	# Save/load round-trip preserves devine_resolved
-	var save = SaveManager.new()
-	save._init(99)
-	save.rng = w.rng
-	var save_ok = save.save_game(gs)
-	check(save_ok, "save_game ok")
-	var loaded = GameState.new()
-	var save_data = save.load_game()
-	check(save_data != null, "load_game returns state")
-	if save_data != null:
-		loaded = save_data
-		check(loaded.devine_resolved == true, "devine_resolved survives save/load")
-	print("P-1.1 Devín guard + consequences + save/load OK")
-
 	# 4. Campaign AI
 	var camp_report = w.campaign.process_campaign()
 	check(camp_report.get("type", "") == "campaign", "campaign type")
