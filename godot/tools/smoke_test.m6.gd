@@ -188,8 +188,8 @@ func _init() -> void:
 	check(ev_seed_a == ev_seed_b, "event RNG seed determinism: same save_seed → same event seed")
 	print("Event RNG seed: a=%d b=%d" % [ev_seed_a, ev_seed_b])
 
-	# 10) P0.5 Narration hook kontrakt a overenie 8 MVP eventov
-	print("--- Testing P0.5 Narration hook contract across all 8 MVP events ---")
+	# 10) P0.5 Narration hook kontrakt a overenie MVP eventov (vrátane 902 openingov)
+	print("--- Testing P0.5 Narration hook contract across all MVP events (including 902 openings) ---")
 	var p05_gs = GameState.new()
 	p05_gs.ensure_resources()
 	p05_gs.year = 905
@@ -216,6 +216,34 @@ func _init() -> void:
 			if typeof(ev) == TYPE_DICTIONARY and str(ev.get("id", "")) == target_id:
 				return ev.duplicate(true)
 		return {}
+
+	# 0. hist_mojmir_coronation_902
+	var ev0_1 = find_catalog_event.call("hist_mojmir_coronation_902")
+	check(not ev0_1.is_empty(), "found hist_mojmir_coronation_902")
+	p05_gs.pending_event = ev0_1.duplicate(true)
+	var res0_grand = p05_em.resolve_choice("grand")
+	check(res0_grand.get("ok", false) and res0_grand.get("event_id") == "hist_mojmir_coronation_902", "event 0.1 grand ok")
+	check(res0_grand.get("choice_result") == "grand", "event 0.1 grand choice_result")
+	check(res0_grand.get("context", {}).get("faction_ids") == ["moravia"], "event 0.1 grand faction_ids")
+	check(res0_grand.get("context", {}).get("province_ids") == [], "event 0.1 grand province_ids")
+
+	p05_gs.pending_event = ev0_1.duplicate(true)
+	var res0_modest = p05_em.resolve_choice("modest")
+	check(res0_modest.get("choice_result") == "modest" and res0_modest.get("context", {}).get("province_ids") == ["nitra"], "event 0.1 modest")
+
+	# 0.2 hist_magyar_reports_902
+	var ev0_2 = find_catalog_event.call("hist_magyar_reports_902")
+	check(not ev0_2.is_empty(), "found hist_magyar_reports_902")
+	p05_gs.pending_event = ev0_2.duplicate(true)
+	var res0_scouts = p05_em.resolve_choice("scouts")
+	check(res0_scouts.get("ok", false) and res0_scouts.get("event_id") == "hist_magyar_reports_902", "event 0.2 scouts ok")
+	check(res0_scouts.get("choice_result") == "scouts", "event 0.2 scouts choice_result")
+	check(res0_scouts.get("context", {}).get("faction_ids") == ["hungary"], "event 0.2 scouts faction_ids")
+	check(res0_scouts.get("context", {}).get("province_ids") == ["zemplin"], "event 0.2 scouts province_ids")
+
+	p05_gs.pending_event = ev0_2.duplicate(true)
+	var res0_ignore = p05_em.resolve_choice("ignore")
+	check(res0_ignore.get("choice_result") == "ignore" and res0_ignore.get("context", {}).get("faction_ids") == ["hungary"], "event 0.2 ignore")
 
 	# 1. hist_papal_legation_903
 	var ev1 = find_catalog_event.call("hist_papal_legation_903")
@@ -370,7 +398,7 @@ func _init() -> void:
 	check(res8_ban.get("choice_result") == "ban" and res8_ban.get("context", {}).get("province_ids") == ["morava"], "event 8 ban")
 	check(res8_ban.get("context", {}).get("faction_ids") == [], "event 8 ban faction_ids empty")
 
-	print("P0.5 8 MVP Events narration hooks verified successfully!")
+	print("P0.5 MVP Events narration hooks verified successfully!")
 
 	# 11) Structural sentence count assertion (3-6 Slovak sentences per event body + council)
 	print("--- Testing sentence count assertion (3-6 sentences) on all catalog events and council ---")
@@ -448,6 +476,120 @@ func _init() -> void:
 	check(FileAccess.file_exists("res://ui/TurnReport.tscn"), "TurnReport scene exists")
 	check(FileAccess.file_exists("res://ui/TurnReport.gd"), "TurnReport script file exists")
 	print("TurnReport OK")
+
+	# 14) P0 Design Gate 4a — NarrationManager dispatch z TickManager reportu
+	#     TickManager odovzdá celý tick report (s kľúčmi year, month, economy,
+	#     nobility, war, event, ...) NarrationManager.generate_chronicle().
+	#     Starý kód robil match report.get("type", "") → vždy "" → fallback.
+	#     Nový kód iteruje sub-reporty v prioritnom poradí a vráti prvý
+	#     non-prázdny text. Tu overujeme, že:
+	#     (a) full tick report s ekonomikou → non-prázdny text (nie fallback)
+	#     (b) event sub-report → event text (nie fallback)
+	#     (c) war sub-report → war text (nie fallback)
+	#     (d) prázdny report (žiadne sub-reporty) → "" (nie náhodný text)
+	print("--- Testing P0 Design Gate 4a: NarrationManager dispatch ---")
+	var NarrationMgr = preload("res://scripts/managers/NarrationManager.gd")
+	var nm_test = NarrationMgr.new()
+	nm_test._init(p05_gs)
+	var _FALLBACK = "Mesiac uplynul v tichu dvorov a polí."
+
+	# (a) Full tick report s ekonomikou → non-prázdny text (nie fallback)
+	var eco_sub: Dictionary = {
+		"type": "economy",
+		"prosperity_growth": {"nitra": 65.5},
+		"upkeep": {"nobles": 100, "army_food": 20},
+		"production": {"gold": 10, "food": 50, "wood": 5},
+		"balance": {},
+	}
+	var full_tick_report: Dictionary = {
+		"year": 903,
+		"month": 1,
+		"economy": eco_sub,
+	}
+	var eco_narration: String = nm_test.generate_chronicle(full_tick_report)
+	check(eco_narration != "", "4a(a) economy narration non-empty (got: '%s')" % eco_narration)
+	check(eco_narration != _FALLBACK, "4a(a) economy narration is not the fallback string")
+	print("4a(a) economy narration: ", eco_narration)
+
+	# (b) Event sub-report → event text (nie fallback)
+	var event_sub: Dictionary = {
+		"type": "event",
+		"id": "rand_bad_harvest",
+		"title": "Neúroda",
+		"text": "Neúroda postihla Zemplín!",
+		"body": "Neúroda postihla Zemplín!",
+		"art_id": "",
+		"choices": [],
+	}
+	var event_tick_report: Dictionary = {
+		"year": 903,
+		"month": 2,
+		"event": event_sub,
+		"economy": eco_sub,  # event má vyššiu prioritu ako economy
+	}
+	var event_narration: String = nm_test.generate_chronicle(event_tick_report)
+	check(event_narration != "", "4a(b) event narration non-empty")
+	check(event_narration != _FALLBACK, "4a(b) event narration is not the fallback string")
+	# Event narration must contain the event text (dispatch worked, not economy fallback)
+	check(event_narration.find("Neúroda") != -1, "4a(b) event narration contains event text 'Neúroda'")
+	print("4a(b) event narration: ", event_narration)
+
+	# (c) War sub-report → war text (nie fallback)
+	var war_sub: Dictionary = {
+		"type": "war",
+		"battles": [{"winner": "attacker", "result": "decisive_victory"}],
+		"occupations": [],
+	}
+	var war_tick_report: Dictionary = {
+		"year": 907,
+		"month": 7,
+		"war": war_sub,
+		"economy": eco_sub,  # war má vyššiu prioritu ako economy
+	}
+	var war_narration: String = nm_test.generate_chronicle(war_tick_report)
+	check(war_narration != "", "4a(c) war narration non-empty")
+	check(war_narration != _FALLBACK, "4a(c) war narration is not the fallback string")
+	# War narration must mention something battle-related (dispatch worked)
+	check(war_narration.find("Devín") != -1 or war_narration.find("obran") != -1 or war_narration.find("nepriateľ") != -1, "4a(c) war narration mentions Devín/obrana/nepriateľ")
+	print("4a(c) war narration: ", war_narration)
+
+	# (d) Prázdny report (žiadne sub-reporty) → "" (nie náhodný text)
+	var empty_report: Dictionary = {"year": 903, "month": 3}
+	var empty_narration: String = nm_test.generate_chronicle(empty_report)
+	check(empty_narration == "", "4a(d) empty report returns empty string")
+	print("4a(d) empty narration: '", empty_narration, "'")
+
+	# (e) Prázdny event sub-report (id="", text="") → skip, fallback na economy
+	#     Používame fresh NarrationManager (anti-repetition by potlačil rovnaký text ako v (a))
+	var nm_test2 = NarrationMgr.new()
+	nm_test2._init(p05_gs)
+	var empty_event_sub: Dictionary = {
+		"type": "event", "id": "", "title": "", "text": "", "body": "", "art_id": "", "choices": []
+	}
+	var mixed_report: Dictionary = {
+		"year": 903, "month": 4,
+		"event": empty_event_sub,
+		"economy": eco_sub,
+	}
+	var mixed_narration: String = nm_test2.generate_chronicle(mixed_report)
+	check(mixed_narration != "", "4a(e) mixed report (empty event + economy) returns economy text")
+	check(mixed_narration != _FALLBACK, "4a(e) mixed report narration is not the fallback string")
+	print("4a(e) mixed narration: ", mixed_narration)
+
+	# (f) Spätná kompatibilita: sub-report volaný samostatne (má "type")
+	var nm_test3 = NarrationMgr.new()
+	nm_test3._init(p05_gs)
+	var standalone_sub: Dictionary = {
+		"type": "economy",
+		"prosperity_growth": {"morava": 70.0},
+		"upkeep": {"nobles": 50},
+	}
+	var standalone_narration: String = nm_test3.generate_chronicle(standalone_sub)
+	check(standalone_narration != "", "4a(f) standalone sub-report (direct type) returns text")
+	check(standalone_narration != _FALLBACK, "4a(f) standalone narration is not the fallback string")
+	print("4a(f) standalone narration: ", standalone_narration)
+
+	print("P0 Design Gate 4a NarrationManager dispatch verified!")
 
 	if _m6_failed:
 		print("SMOKE_M6_FAIL: one or more checks failed (see above)")

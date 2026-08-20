@@ -1,5 +1,83 @@
 [
   {
+    "id": "hist_mojmir_coronation_902",
+    "type": "historical",
+    "title": "Korunovačka Mojmíra II.",
+    "body": "Po smrti Svätopluka zasadol na kniežací stolec Mojmír II. V Nitre sa schádzajú veľmoži zo všetkých hradísk na slávnostnú korunováciu. Kniežací dvor očakáva jasné gesto nového panovníka. Veľkolepá hostina ukáže silu ríše susedom, no skromný obrad ušetrí dôležité prostriedky na hroziace nebezpečenstvo.",
+    "art_id": "moravian_court_interior",
+    "conditions": {
+      "year": 902,
+      "yearMin": 0
+    },
+    "once": true,
+    "choices": [
+      {
+        "id": "grand",
+        "text": "Veľkolepá korunovácia — nech dvor vidí moc ríše",
+        "effect": {
+          "gold": -50,
+          "prestige": 5
+        },
+        "moodChanges": {
+          "moravia": {
+            "trust": 5
+          }
+        }
+      },
+      {
+        "id": "modest",
+        "text": "Skromný obrad — prostriedky nechaj na hrozbu z východu",
+        "effect": {
+          "prestige": 1
+        },
+        "zupaLoyalty": {
+          "nitra": 10
+        }
+      }
+    ]
+  },
+  {
+    "id": "hist_magyar_reports_902",
+    "type": "historical",
+    "title": "Prvé správy o Maďaroch",
+    "body": "Kupci zo Zemplína prinášajú do Nitry znepokojivé správy. Za karpatskými priesmykmi sa zhromažďujú početné maďarské jazdecké družiny. Knieža musí rozhodnúť o ďalšom postupe na východnej hranici. Vyslanie vyzvedačov odhalí skutočnú silu nomádov, no ich ignorovanie umožní sústrediť sa na vnútorné záležitosti.",
+    "art_id": "event_border_raid",
+    "conditions": {
+      "year": 902,
+      "yearMin": 0
+    },
+    "once": true,
+    "choices": [
+      {
+        "id": "scouts",
+        "text": "Vyslať vyzvedačov za Karpaty",
+        "effect": {
+          "gold": -20
+        },
+        "moodChanges": {
+          "hungary": {
+            "anger": -5
+          }
+        },
+        "zupaLoyalty": {
+          "zemplin": 5
+        }
+      },
+      {
+        "id": "ignore",
+        "text": "Ignorovať — ríša má dosť vnútorných starostí",
+        "effect": {
+          "prestige": -2
+        },
+        "moodChanges": {
+          "hungary": {
+            "anger": 5
+          }
+        }
+      }
+    ]
+  },
+  {
     "id": "hist_papal_legation_903",
     "type": "historical",
     "title": "Pápežské posolstvo",
