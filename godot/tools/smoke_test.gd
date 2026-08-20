@@ -275,6 +275,30 @@ func _init():
 	check(BVT.translate_phase("decision") == "rozhodnutie", "BattleViewTranslations.phase('decision') -> rozhodnutie")
 	# Fallback: unknown phase
 	check(BVT.translate_phase("unknown_phase") == "neznáma fáza", "BattleViewTranslations.phase fallback -> neznáma fáza")
+
+	var NarrationManagerCls = load("res://scripts/managers/NarrationManager.gd")
+	var narr_mgr = NarrationManagerCls.new(GameState.new())
+	check(narr_mgr._get_province_name("unknown_prov_xyz") == "Neznáma župa", "NarrationManager unknown province name -> Neznáma župa")
+	check(narr_mgr._get_province_locative("unknown_prov_xyz") == "v kraji Neznáma župa", "NarrationManager unknown province locative -> v kraji Neznáma župa")
+
+	var dip_mgr_test = DiplomacyManager.new(GameState.new())
+	check(dip_mgr_test._display_faction_name({}, "unknown_fac_id") == "Neznáma frakcia", "DiplomacyManager unknown faction fallback -> Neznáma frakcia")
+
+	# Verify army, province, faction translations (no raw IDs in UI)
+	check(BVT.translate_army_name({}, "moravia_levy_1") == "Nitrianska hotovosť", "BVT.translate_army_name(moravia_levy_1) -> Nitrianska hotovosť")
+	check(BVT.translate_army_name({}, "moravia_feudal_1") == "Bratislavská družina", "BVT.translate_army_name(moravia_feudal_1) -> Bratislavská družina")
+	check(BVT.translate_army_name({}, "madari_horde_1") == "Maďarská horda pri Užhorode", "BVT.translate_army_name(madari_horde_1) -> Maďarská horda pri Užhorode")
+	check(BVT.translate_army_name({}, "unknown_army_xyz") == "Neznámy oddiel", "BVT.translate_army_name(unknown_army_xyz) -> Neznámy oddiel")
+	check(BVT.translate_province("nitra") == "Nitra", "BVT.translate_province(nitra) -> Nitra")
+	check(BVT.translate_province("uzhorod") == "Užhorod", "BVT.translate_province(uzhorod) -> Užhorod")
+	check(BVT.translate_province("unknown_prov_xyz") == "Neznáma župa", "BVT.translate_province(unknown_prov_xyz) -> Neznáma župa")
+	check(BVT.translate_province_locative("unknown_prov_xyz") == "v neznámej župe", "BVT.translate_province_locative(unknown_prov_xyz) -> v neznámej župe")
+	check(BVT.translate_faction("moravia") == "Veľká Morava", "BVT.translate_faction(moravia) -> Veľká Morava")
+	check(BVT.translate_faction("hungary") == "Maďari", "BVT.translate_faction(hungary) -> Maďari")
+	check(BVT.translate_faction("unknown_faction_xyz") == "Neznáma frakcia", "BVT.translate_faction(unknown_faction_xyz) -> Neznáma frakcia")
+	check(BVT.translate_army_status("idle") == "V tábore", "BVT.translate_army_status(idle) -> V tábore")
+	check(BVT.translate_army_status("marching") == "Na pochode", "BVT.translate_army_status(marching) -> Na pochode")
+	check(BVT.translate_army_status("unknown_status_xyz") == "Neznámy stav", "BVT.translate_army_status(unknown_status_xyz) -> Neznámy stav")
 	print("BattleView UI translation methods verified via shared helper script")
 
 	# Main.gd A-%d → Ú-%d in chronicle output

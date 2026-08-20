@@ -329,7 +329,10 @@ func _diplomacy_side_goal(gm) -> Dictionary:
 		var mood: float = float(f.get("mood", 50.0))
 		if mood < worst_mood:
 			worst_mood = mood
-			worst_name = str(f.get("name", ""))
+			var fid: String = str(f.get("id", ""))
+			var stored_name: String = str(f.get("name", ""))
+			var BVT = load("res://scripts/ui/BattleViewTranslations.gd")
+			worst_name = BVT.translate_faction(stored_name if stored_name != "" else fid)
 	if worst_name == "" or worst_mood >= 50.0:
 		return {}
 	if worst_mood < 30.0:

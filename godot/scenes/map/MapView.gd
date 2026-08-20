@@ -5,6 +5,7 @@ extends Control
 signal province_selected(province_id: String)
 
 const C = preload("res://assets/theme/colors.gd")
+const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 const LAYOUT_PATH := "res://data/map_layout.json"
 
 # Prahy pre threat markery (P1 kontrakt §4.2)
@@ -374,8 +375,8 @@ func _draw() -> void:
 		elif pid == _hover_id:
 			draw_arc(center, max_r + 7.0, 0.0, TAU, 40, C.PARCHMENT, 2.0, true)
 
-		# --- Label with per-province offset ---
-		var name_sk: String = PROVINCE_NAMES.get(pid, pid.capitalize())
+# Label with per-province offset — using central translation layer
+		var name_sk: String = _Translations.translate_province(pid)
 		var fs_label := 11
 		var text_size := font.get_string_size(name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_label)
 		var off: Vector2 = LABEL_OFFSETS.get(pid, Vector2(0.0, 0.85))
@@ -681,9 +682,13 @@ func _update_tooltip(mouse_pos: Vector2) -> void:
 	var raw = provs.get(id, {})
 	if typeof(raw) == TYPE_DICTIONARY:
 		p = raw
+	var stored_pname: String = str(p.get("name", ""))
+	var prov_name: String = _Translations.translate_province(stored_pname if stored_pname != "" else id)
+	var owner_raw: String = str(p.get("owner_faction", "moravia"))
+	var owner_name: String = _Translations.translate_faction(owner_raw)
 	var tooltip_text: String = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
-		str(p.get("name", id)),
-		str(p.get("owner_faction", "?")),
+		prov_name,
+		owner_name,
 		str(p.get("loyalty", "?")),
 		str(p.get("prosperity", "?")),
 		str(p.get("religion", "?")),
@@ -692,7 +697,7 @@ func _update_tooltip(mouse_pos: Vector2) -> void:
 	# Pridať threat marker tooltip pre kriticky nízku lojalitu
 	var loyalty: float = float(p.get("loyalty", 50))
 	if loyalty < THREAT_LOYALTY_THRESHOLD:
-		tooltip_text += "\n\n⚠ Lojalita %s: %.0f — hrozba vzbury" % [str(p.get("name", id)), loyalty]
+		tooltip_text += "\n\n⚠ Lojalita %s: %.0f — hrozba vzbury" % [prov_name, loyalty]
 	_tooltip_label.text = tooltip_text
 	_tooltip_container.visible = true
 	_tooltip_container.position = mouse_pos + Vector2(14, 14)

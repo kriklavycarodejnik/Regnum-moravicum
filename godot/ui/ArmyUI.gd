@@ -2,6 +2,7 @@
 extends VBoxContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 
 @onready var army_list: VBoxContainer = $ArmyList
 @onready var army_info: Label = $ArmyInfo
@@ -62,7 +63,7 @@ func _update_army_list() -> void:
 	_clear_list()
 	if army_manager == null:
 		if army_info:
-			army_info.text = "ArmyManager nie je pripravený."
+			army_info.text = "Správa armád nie je pripravená."
 		return
 	var armies = army_manager.list_armies()
 	var list: Array = []
@@ -81,7 +82,10 @@ func _update_army_list() -> void:
 			continue
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 48)
-		button.text = "%s (%s)" % [str(army.get("id", "?")), str(army.get("province_id", "?"))]
+		var army_name: String = _Translations.translate_army_name(army)
+		var prov_id: String = str(army.get("province_id", ""))
+		var prov_name: String = _Translations.translate_province(prov_id) if prov_id != "" else "?"
+		button.text = "%s (%s)" % [army_name, prov_name]
 		var aid: String = str(army.get("id", ""))
 		button.pressed.connect(_on_army_selected.bind(aid))
 		army_list.add_child(button)
@@ -98,13 +102,18 @@ func _on_army_selected(army_id: String) -> void:
 	if typeof(army) != TYPE_DICTIONARY:
 		army_info.text = "Armáda nenájdená."
 		return
+	var prov_id: String = str(army.get("province_id", ""))
+	var prov_name: String = _Translations.translate_province(prov_id) if prov_id != "" else "?"
+	var status_raw: String = str(army.get("status", ""))
+	var status_sk: String = _Translations.translate_army_status(status_raw)
+	var display_name: String = _Translations.translate_army_name(army, army_id)
 	army_info.text = "Armáda: %s\nProvincia: %s\nVeľkosť: %s\nMorálka: %s\nZásoby: %s\nStatus: %s" % [
-		str(army.get("id", "?")),
-		str(army.get("province_id", "?")),
+		display_name,
+		prov_name,
 		str(army.get("size", army.get("strength", "?"))),
 		str(army.get("morale", "?")),
 		str(army.get("supply", "?")),
-		str(army.get("status", "?")),
+		status_sk,
 	]
 
 
@@ -127,7 +136,7 @@ func _on_move_button_pressed() -> void:
 	for province_id in neighbors:
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 48)
-		button.text = str(province_id)
+		button.text = _Translations.translate_province(str(province_id))
 		button.pressed.connect(_on_target_province_selected.bind(selected_army_id, str(province_id)))
 		vbox.add_child(button)
 	add_child(dialog)
@@ -147,10 +156,10 @@ func _on_target_province_selected(army_id: String, target_province_id: String) -
 func _on_battle_button_pressed() -> void:
 	if selected_army_id == "" or army_manager == null or army_info == null:
 		return
-	army_info.text = "Bitka: použi Skirmish/Devín tlačidlá alebo Campaign AI."
+	army_info.text = "Bitka: použi tlačidlá Cvičná bitka alebo Devín."
 
 
 func _on_siege_button_pressed() -> void:
 	if selected_army_id == "" or army_info == null:
 		return
-	army_info.text = "Obliehanie — CampaignManager (M6+)."
+	army_info.text = "Obliehanie — správa výprav (ďalšia verzia)."
