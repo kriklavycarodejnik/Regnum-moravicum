@@ -186,14 +186,15 @@ hráč vie, že Maďari prídu, a rozhoduje sa, ako s nimi zaobchádzať *skôr*
 | Voľba | Cena | Dôsledok |
 |---|---|---|
 | **Vyslať jazdu na prenasledovanie nájazdníkov** | `gold -10`, `hungary.mood anger +8` | `prestige +2`, `zupaLoyalty: {"gemer": +5}` |
-| **Posilniť miestnu posádku, nechať nájazdníkov ujsť** | `gold -15` | `zupaLoyalty: {"gemer": +8}`, `hungary.mood` nezmenené |
+| **Posilniť miestnu posádku, nechať nájazdníkov ujsť** | `gold -15`, `prestige -1` | `zupaLoyalty: {"gemer": +8}`, `hungary.mood` nezmenené |
 
-**Prečo nie je jedna zjavne lepšia:** prenasledovanie je lacnejšie a dáva prestíž, ale
-**dráždi Maďarov v mene, ktorá sa spätne prejaví pri Devíne** — hráč, ktorý pozná threat
-clock, vie, že provokovať nepriateľa, ktorý o pár rokov aj tak zaútočí, je stávka, nie
-voľná výhra. Posádka je drahšia, ale neutrálna k jedinému nepriateľovi, ktorý napokon
-vyhráva vždy (§15.6 invariant) — takže "lepšia" voľba závisí od toho, či hráč verí, že
-prestíž teraz stojí za skoré napnutie vzťahu s víťazom 907.
+**Prečo nie je jedna zjavne lepšia:** obe voľby platia v dvoch menách.
+Prenasledovanie je lacnejšie v zlate a dáva prestíž, ale **dráždi Maďarov** — hráč,
+ktorý pozná threat clock, vie, že provokovať nepriateľa, ktorý o pár rokov aj tak
+zaútočí, je stávka, nie voľná výhra. Posádka je drahšia v zlate a stojí prestíž (kráľ
+nechá nájazdníkov ujsť — vyzerá pasívne), ale nezvýši napätie s Maďarmi a posilní
+vernosť Gemera. "Lepšia" voľba závisí od toho, či hráč verí, že prestíž a úspora zlata
+teraz stojí za skoré napnutie vzťahu s víťazom 907.
 
 ---
 
@@ -211,10 +212,11 @@ aj #4). Nahraď 3 voľbami — **primárna mena každej voľby je iná** (zlato 
 | **Odmietnuť žiadosti, zvýšiť dane** — `choice_result: taxes` | `zupaLoyalty: {"bratislava": -15, "devin": -15, "gemer": -15, "hont": -15, "morava": -15, "nitra": -15, "novohrad": -15, "spis": -15, "tekov": -15, "trencin": -15, "uzhorod": -15, "zemplin": -15}` | — | `gold +200` | Autokrat, ktorý ťaží ekonomiku na úkor dôvery |
 
 **Presný strojový zápis (pre `rm-content`, nedohadúvať):** `zupaLoyalty` je vždy explicitný
-dict `{"province_id": delta}` s **presne týmito 12 kľúčmi** z §0.1, nikdy skratka typu
-"všetky" — `EventManager.resolve_choice()` iteruje iba cez klúče, ktoré sú v dict-e prítomné
-(`godot/scripts/managers/EventManager.gd:219-224`). Devín je v zozname zahrnutý — je to
-bežná provincia z hľadiska rady županov, nezávisle od scenára Devín 907.
+dict `{"province_id": delta}`. `gifts` a `taxes` vypisujú všetkých 12 kľúčov z §0.1;
+`fortify` vypisuje iba 4 (`gemer`, `novohrad`, `uzhorod`, `zemplin`). Nikdy skratka typu
+"všetky" — `EventManager.resolve_choice()` iteruje iba cez kľúče, ktoré sú v dict-e prítomné
+(`godot/scripts/managers/EventManager.gd:219-224`). Devín je v `gifts` a `taxes` zahrnutý —
+je to bežná provincia z hľadiska rady županov, nezávisle od scenára Devín 907.
 
 **Prečo nie je jedna zjavne lepšia:** dary sú drahé v zlate a plytké v efekte; opevnenia
 platia prestížou (dvor vyzerá slabo, že rieši hranice namiesto dvorskej veľkoleposti) a
@@ -322,9 +324,12 @@ nie pre `rm-design` — nasledujúca tabuľka je špecifikácia, podľa čoho sa
 | 3.2 | `bogata_trial_916` | `exile`, `death`, `pardon` | všetky tri → `["uzhorod"]` | — | — |
 | 3.3 | `bogata_uprising_917` | `crush`, `negotiate` | oba → `["uzhorod"]` | — | — |
 | 4 | `rand_bad_harvest` | `open`, `ignore` | oba → `["zemplin"]` | — | — |
-| 5 | `rand_border_raid` | `chase`, `fortify` | oba → `["gemer"]` | `chase` → `["hungary"]` | — |
-| 6 | `council` | `gifts`, `fortify`, `taxes` | všetky tri → 12 kľúčov z §0.1 | — | — |
-| 7 | `rand_noble_feud` | `nitra_side`, `trencin_side`, `no_ruling` | všetky tri → `["nitra", "trencin"]` (podmnožina podľa voľby) | — | — |
+| 5a | `rand_border_raid` | `chase` | `["gemer"]` | `["hungary"]` | — |
+| 5b | `rand_border_raid` | `fortify` | `["gemer"]` | `[]` | — |
+| 6a | `council` | `gifts` | `["bratislava","devin","gemer","hont","morava","nitra","novohrad","spis","tekov","trencin","uzhorod","zemplin"]` | `[]` | — |
+| 6b | `council` | `fortify` | `["gemer","novohrad","uzhorod","zemplin"]` | `[]` | — |
+| 6c | `council` | `taxes` | `["bratislava","devin","gemer","hont","morava","nitra","novohrad","spis","tekov","trencin","uzhorod","zemplin"]` | `[]` | — |
+| 7 | `rand_noble_feud` | `nitra_side`, `trencin_side`, `no_ruling` | všetky tri → `["nitra", "trencin"]` | — | — |
 | 8 | `rand_missionary_dispute` | `latin`, `byzantine`, `ban` | všetky tri → `["morava"]` | `latin` → `["franks"]`; `byzantine` → `["byzantium"]` | — |
 
 **Poznámka k voľbám #6 a #7:** existujúci `_build_council_event()` má dnes `choice_result`
@@ -341,11 +346,13 @@ aby zodpovedali 3 voľbám z §7 (súčasný katalóg má len 2, čo je tiež ne
 - [ ] Žiadny `moodChanges` na frakciu mimo `moravia, franks, bavaria, hungary, poland, bohemia, byzantium`.
 - [ ] Bogata reťaz (3, 3.1–3.3) používa `zupaLoyalty: {"uzhorod": ...}`, nie `hungary` mood.
 - [ ] Všetky `next_event` odkazy použijú kľúč `next_event` (snake_case), nikdy `nextEvent`.
-- [ ] Border raid (5) má cenu v dvoch rôznych menách pre obe voľby — žiadna voľba nesmie
-      byť lacnejšia AJ výnosnejšia súčasne ako druhá.
-- [ ] Rada županov (6) má 3 voľby (`gifts`, `fortify`, `taxes`), každá inú menu ako primárnu
-      cenu; `zupaLoyalty` v každej voľbe vypisuje všetkých 12 kľúčov z §0.1 explicitne
-      (žiadne "všetky", žiadny wildcard — `EventManager` ho nepodporuje).
+- [ ] Border raid (5) má cenu v dvoch rôznych menách pre obe voľby: `chase` platí zlatom
+      a vzťahom s Maďarmi (`hungary.mood anger +8`), `fortify` platí zlatom a prestížou
+      (`prestige -1`) — žiadna voľba nesmie byť lacnejšia AJ výnosnejšia súčasne ako druhá.
+- [ ] Rada županov (6) má 3 voľby (`gifts`, `fortify`, `taxes`), každú inú menu ako primárnu
+      cenu; `zupaLoyalty` v `gifts` a `taxes` vypisuje všetkých 12 kľúčov z §0.1 explicitne,
+      `fortify` vypisuje 4 kľúče (`gemer`, `novohrad`, `uzhorod`, `zemplin`) — žiadne
+      "všetky", žiadny wildcard (`EventManager` ho nepodporuje).
 - [ ] Spor o pasienky (7) má 3 voľby s `choice_result` `nitra_side`/`trencin_side`/`no_ruling`
       (nie pôvodné `law`/`ignore` z katalógu).
 - [ ] Neúroda (4) a Border raid (5) menujú konkrétnu župu v texte (Zemplín, Gemer) —
