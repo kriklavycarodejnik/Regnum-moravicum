@@ -357,11 +357,25 @@ func _show_army_wizard() -> void:
 	)
 	btn_row.add_child(close_btn)
 
-	# Krok 2 (W3): tlačidlo „Vybrať veliteľa“ – skutočná akcia
+	# Krok 2 (W3): tlačidlo „Potvrdiť veliteľa“ – číta skutočného veliteľa z vybranej armády
 	if _army_wizard_step == 2:
 		var select_cmd_btn := Button.new()
 		select_cmd_btn.custom_minimum_size = Vector2(0, 48)
-		select_cmd_btn.text = "Vybrať Radomíra z Gemera"
+		# Čítať veliteľa z vybranej armády (nie hardcoded, per review §3.2)
+		var cmd_name: String = "Radomír z Gemera"
+		var cmd_skill: int = 5
+		if army_ui != null and army_ui.selected_army_id != "":
+			var gm = GameManager
+			if gm != null and gm.army_manager != null:
+				var selected_army: Dictionary = gm.army_manager.get_army(army_ui.selected_army_id)
+				if not selected_army.is_empty():
+					var cmd: Dictionary = selected_army.get("commander", {})
+					if typeof(cmd) == TYPE_DICTIONARY and not cmd.is_empty():
+						var n: String = str(cmd.get("name", ""))
+						if n != "":
+							cmd_name = n
+						cmd_skill = int(cmd.get("skill", 5))
+		select_cmd_btn.text = "Potvrdiť veliteľa: %s (skill %d)" % [cmd_name, cmd_skill]
 		select_cmd_btn.pressed.connect(func():
 			_army_wizard_step = 3
 			_army_wizard_cleanup()
