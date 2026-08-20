@@ -264,6 +264,8 @@ func _coach_style() -> StyleBoxFlat:
 
 func _try_show_army_wizard() -> void:
 	"""Zobraz army wizard overlay, ak je prístupný a nie je dokončený."""
+	if _army_wizard_overlay_active:
+		return
 	if GameManager == null or GameManager.game_state == null:
 		return
 	var gs = GameManager.game_state
@@ -377,15 +379,13 @@ func _show_army_wizard() -> void:
 							cmd_name = n
 							cmd_skill = int(cmd.get("skill", 0))
 							has_valid_commander = true
+							# Aktualizovať body text s reálnym menom veliteľa
+							body_lbl.text = "Vyber veliteľa.\n\n%s je skúsený vojak — potvrď výber tlačidlom nižšie." % [cmd_name]
 		if has_valid_commander:
 			var select_cmd_btn := Button.new()
 			select_cmd_btn.custom_minimum_size = Vector2(0, 48)
 			select_cmd_btn.text = "Potvrdiť veliteľa: %s (zručnosť %d)" % [cmd_name, cmd_skill]
-			select_cmd_btn.pressed.connect(func():
-				_army_wizard_step = 3
-				_army_wizard_cleanup()
-				call_deferred("_show_army_wizard")
-			)
+			select_cmd_btn.pressed.connect(_on_army_wizard_commander_confirmed)
 			btn_row.add_child(select_cmd_btn)
 		else:
 			# Bez platnej armády/veliteľa — tlačidlo nie je dostupné
@@ -433,9 +433,39 @@ func _on_army_wizard_move_dialog_opened() -> void:
 	call_deferred("_show_army_wizard")
 
 
+func _on_army_wizard_commander_confirmed() -> void:
+	"""W3->W4: hráč potvrdil veliteľa pre vybranú armádu.
+	Znovu overí, že vybraná armáda stále platí a má veliteľa."""
+	if not _army_wizard_overlay_active:
+		return
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	if _army_wizard_step != 2:
+		return
+	# Overiť, že vybraná armáda stále existuje a má veliteľa
+	var valid: bool = false
+	if army_ui != null and army_ui.selected_army_id != "":
+		var gm = GameManager
+		if gm != null and gm.army_manager != null:
+			var selected_army: Dictionary = gm.army_manager.get_army(army_ui.selected_army_id)
+			if not selected_army.is_empty():
+				var cmd: Dictionary = selected_army.get("commander", {})
+				if typeof(cmd) == TYPE_DICTIONARY and not cmd.is_empty():
+					var n: String = str(cmd.get("name", ""))
+					if n != "":
+						valid = true
+	if not valid:
+		return
+	_army_wizard_step = 3
+	_army_wizard_cleanup()
+	call_deferred("_show_army_wizard")
+
+
 func _on_army_wizard_army_moved(army_id: String, target_province: String) -> void:
 	"""W3->W4->DONE: hráč úspešne presunul armádu k Devínu.
-	Postupuje IBA ak cieľ = devin. Iný cieľ alebo neúspešný presun nemenia krok."""
+	Postupuje IBA ak cieľ = devin a army_id = aktuálne vybraná armáda.
+	Iný cieľ alebo neúspešný presun nemenia krok."""
 	if not _army_wizard_overlay_active:
 		return
 	var gs = GameManager.game_state
@@ -444,6 +474,9 @@ func _on_army_wizard_army_moved(army_id: String, target_province: String) -> voi
 	if _army_wizard_step != 3:
 		return
 	if target_province != "devin":
+		return
+	# Overiť, že presunutá armáda je tá istá, ktorú hráč vybral v ArmyUI
+	if army_ui == null or army_id != army_ui.selected_army_id:
 		return
 	gs.army_wizard_done = true
 	_army_wizard_step = 0
