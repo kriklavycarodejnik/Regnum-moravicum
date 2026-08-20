@@ -69,6 +69,8 @@ func _ready() -> void:
 		army_ui.move_dialog_opened.connect(_on_army_wizard_move_dialog_opened)
 	if army_ui and army_ui.has_signal("army_moved"):
 		army_ui.army_moved.connect(_on_army_wizard_army_moved)
+	if notification_feed and notification_feed.has_signal("notification_clicked"):
+		notification_feed.notification_clicked.connect(_on_action_notification_clicked)
 	if battle_view and battle_view.has_signal("action_chosen"):
 		battle_view.action_chosen.connect(_on_battle_action)
 	if turn_report and turn_report.continue_pressed:
@@ -357,13 +359,12 @@ func _show_army_wizard() -> void:
 	)
 	btn_row.add_child(close_btn)
 
-	# Krok 2 (W3): tlačidlo „Potvrdiť veliteľa“ – číta skutočného veliteľa z vybranej armády
+	# Krok 2 (W3): tlačidlo „Potvrdiť veliteľa“ – vyžaduje platnú vybranú armádu s veliteľom
 	if _army_wizard_step == 2:
-		var select_cmd_btn := Button.new()
-		select_cmd_btn.custom_minimum_size = Vector2(0, 48)
-		# Čítať veliteľa z vybranej armády (nie hardcoded, per review §3.2)
-		var cmd_name: String = "Radomír z Gemera"
-		var cmd_skill: int = 5
+		# Zistiť, či je vybraná armáda a má veliteľa
+		var has_valid_commander: bool = false
+		var cmd_name: String = ""
+		var cmd_skill: int = 0
 		if army_ui != null and army_ui.selected_army_id != "":
 			var gm = GameManager
 			if gm != null and gm.army_manager != null:
@@ -374,14 +375,22 @@ func _show_army_wizard() -> void:
 						var n: String = str(cmd.get("name", ""))
 						if n != "":
 							cmd_name = n
-						cmd_skill = int(cmd.get("skill", 5))
-		select_cmd_btn.text = "Potvrdiť veliteľa: %s (skill %d)" % [cmd_name, cmd_skill]
-		select_cmd_btn.pressed.connect(func():
-			_army_wizard_step = 3
-			_army_wizard_cleanup()
-			call_deferred("_show_army_wizard")
-		)
-		btn_row.add_child(select_cmd_btn)
+							cmd_skill = int(cmd.get("skill", 0))
+							has_valid_commander = true
+		if has_valid_commander:
+			var select_cmd_btn := Button.new()
+			select_cmd_btn.custom_minimum_size = Vector2(0, 48)
+			select_cmd_btn.text = "Potvrdiť veliteľa: %s (zručnosť %d)" % [cmd_name, cmd_skill]
+			select_cmd_btn.pressed.connect(func():
+				_army_wizard_step = 3
+				_army_wizard_cleanup()
+				call_deferred("_show_army_wizard")
+			)
+			btn_row.add_child(select_cmd_btn)
+		else:
+			# Bez platnej armády/veliteľa — tlačidlo nie je dostupné
+			# (wizard čaká, kým hráč vyberie armádu s veliteľom cez ArmyUI)
+			pass
 
 	add_child(overlay)
 	add_child(btn_row)
@@ -441,6 +450,19 @@ func _on_army_wizard_army_moved(army_id: String, target_province: String) -> voi
 	_army_wizard_overlay_active = false
 	_army_wizard_cleanup()
 	_notify("Wizard dokončený. Armáda smeruje k Devínu — bitka sa odohrá v roku 907.")
+
+
+func _on_action_notification_clicked(action_id: String) -> void:
+	"""Spracuje klik na akčnú notifikáciu (napr. armádny wizard)."""
+	if action_id == "army_wizard":
+		# Prepnúť na záložku Armády a spustiť wizard
+		if side_tabs:
+			# Hľadať index záložky Armády
+			for i in range(side_tabs.tab_count):
+				if side_tabs.get_tab_title(i) == "Armády":
+					side_tabs.current_tab = i
+					break
+		_try_show_army_wizard()
 
 
 func _on_side_tab_changed(tab_index: int) -> void:
@@ -654,7 +676,11 @@ func _on_next_month() -> void:
 	elif gs.year == 906 and gs.month == 1:
 		_show_devin_modal("warning")
 	elif gs.year >= 906 and gs.month >= 6 and not gs.army_wizard_done:
-		_notify("Pošli armádu k Devínu — Maďari sa zhromažďujú.")
+		# Použiť push_action — klikateľná notifikácia spustí armádny wizard
+		if notification_feed and notification_feed.has_method("push_action"):
+			notification_feed.call("push_action", "Pošli armádu k Devínu — Maďari sa zhromažďujú.", "army_wizard")
+		else:
+			_notify("Pošli armádu k Devínu — Maďari sa zhromažďujú.")
 	elif gs.year == 907 and gs.month == 1:
 		_show_devin_modal("prepare")
 	# Show turn report card

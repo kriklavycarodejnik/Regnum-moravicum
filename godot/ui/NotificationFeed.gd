@@ -1,10 +1,14 @@
 # ui/NotificationFeed.gd
 # Krátke herné notifikácie (posledných N riadkov).
+# Podporuje aj klikateľné notifikácie (push_action) pre armádny wizard.
 extends PanelContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 const C = preload("res://assets/theme/colors.gd")
 const MAX_LINES := 8
+
+# Emitovaná keď hráč klikne na akčnú notifikáciu (push_action).
+signal notification_clicked(action_id: String)
 
 var _list: VBoxContainer
 var _lines: Array = []
@@ -54,7 +58,18 @@ func push(text: String) -> void:
 	var line: String = text.strip_edges()
 	if line == "":
 		return
-	_lines.push_front(line)
+	_lines.push_front({"text": line, "action_id": ""})
+	while _lines.size() > MAX_LINES:
+		_lines.pop_back()
+	_rebuild()
+
+
+func push_action(text: String, action_id: String) -> void:
+	"""Pridá klikateľnú notifikáciu. Kliknutie emituje notification_clicked(action_id)."""
+	var line: String = text.strip_edges()
+	if line == "" or action_id == "":
+		return
+	_lines.push_front({"text": line, "action_id": action_id})
 	while _lines.size() > MAX_LINES:
 		_lines.pop_back()
 	_rebuild()
@@ -78,8 +93,26 @@ func _rebuild() -> void:
 		_list.add_child(empty)
 		return
 	for i in range(_lines.size()):
-		var lbl := Label.new()
-		lbl.text = "• " + str(_lines[i])
-		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lbl.add_theme_font_size_override("font_size", 12)
-		_list.add_child(lbl)
+		var entry: Dictionary = _lines[i] if typeof(_lines[i]) == TYPE_DICTIONARY else {"text": str(_lines[i]), "action_id": ""}
+		var action_id: String = str(entry.get("action_id", ""))
+		var line_text: String = str(entry.get("text", ""))
+		if action_id != "":
+			# Klikateľná notifikácia — Button namiesto Label
+			var btn := Button.new()
+			btn.flat = true
+			btn.text = "→ " + line_text
+			btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			btn.add_theme_font_size_override("font_size", 12)
+			btn.custom_minimum_size = Vector2(0, 32)
+			btn.pressed.connect(_on_action_notification_pressed.bind(action_id))
+			_list.add_child(btn)
+		else:
+			var lbl := Label.new()
+			lbl.text = "• " + line_text
+			lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			lbl.add_theme_font_size_override("font_size", 12)
+			_list.add_child(lbl)
+
+
+func _on_action_notification_pressed(action_id: String) -> void:
+	notification_clicked.emit(action_id)
