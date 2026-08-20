@@ -587,9 +587,52 @@ func _init() -> void:
 	var standalone_narration: String = nm_test3.generate_chronicle(standalone_sub)
 	check(standalone_narration != "", "4a(f) standalone sub-report (direct type) returns text")
 	check(standalone_narration != _FALLBACK, "4a(f) standalone narration is not the fallback string")
-	print("4a(f) standalone narration: ", standalone_narration)
 
 	print("P0 Design Gate 4a NarrationManager dispatch verified!")
+
+	# 15) P0.5 Rok 902 opening eventy timing & no-repeat runtime test
+	print("--- Testing P0.5 Rok 902 opening events timing & no-repeat runtime ---")
+	var gs_902 = GameState.new()
+	gs_902.ensure_resources()
+	gs_902.year = 902
+	gs_902.month = 1
+	var em_902 = EventManager.new()
+	em_902._init(gs_902)
+	em_902._load_catalog()
+
+	# Tick 902/02: first processed tick at 902/02 must return hist_mojmir_coronation_902
+	gs_902.month = 2
+	var rep_02: Dictionary = em_902.process_events()
+	check(str(rep_02.get("id", "")) == "hist_mojmir_coronation_902", "902/02 returns hist_mojmir_coronation_902 (got: '%s')" % str(rep_02.get("id", "")))
+	var res_02: Dictionary = em_902.resolve_choice("grand")
+	check(res_02.get("ok", false) and res_02.get("event_id") == "hist_mojmir_coronation_902", "902/02 resolve_choice grand ok")
+	check(gs_902.pending_event == null, "902/02 pending_event cleared after resolve")
+
+	# Advance to 902/06: processed tick must return hist_magyar_reports_902
+	gs_902.month = 6
+	var rep_06: Dictionary = em_902.process_events()
+	check(str(rep_06.get("id", "")) == "hist_magyar_reports_902", "902/06 returns hist_magyar_reports_902 (got: '%s')" % str(rep_06.get("id", "")))
+	var res_06: Dictionary = em_902.resolve_choice("scouts")
+	check(res_06.get("ok", false) and res_06.get("event_id") == "hist_magyar_reports_902", "902/06 resolve_choice scouts ok")
+	check(gs_902.pending_event == null, "902/06 pending_event cleared after resolve")
+
+	# Advance and process another 902 tick (e.g. 902/07): neither opening ID may be returned again
+	gs_902.month = 7
+	var rep_07: Dictionary = em_902.process_events()
+	var rep_07_id: String = str(rep_07.get("id", ""))
+	check(rep_07_id != "hist_mojmir_coronation_902" and rep_07_id != "hist_magyar_reports_902", "902/07 neither opening ID repeated (got: '%s')" % rep_07_id)
+
+	# Both IDs must be present exactly once in triggered_events
+	var tr_count_coronation: int = 0
+	var tr_count_magyar: int = 0
+	for te in gs_902.triggered_events:
+		if str(te) == "hist_mojmir_coronation_902":
+			tr_count_coronation += 1
+		elif str(te) == "hist_magyar_reports_902":
+			tr_count_magyar += 1
+	check(tr_count_coronation == 1, "hist_mojmir_coronation_902 present exactly once in triggered_events (count=%d)" % tr_count_coronation)
+	check(tr_count_magyar == 1, "hist_magyar_reports_902 present exactly once in triggered_events (count=%d)" % tr_count_magyar)
+	print("P0.5 Rok 902 opening events timing and no-repeat assertions OK!")
 
 	if _m6_failed:
 		print("SMOKE_M6_FAIL: one or more checks failed (see above)")
