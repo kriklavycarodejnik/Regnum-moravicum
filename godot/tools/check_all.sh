@@ -24,9 +24,9 @@ check() {
     set -e
 
     # Fail on any FAIL marker (M5 or M6) — must be before success markers
-    if echo "$output" | grep -qE "(FAIL:|SMOKE_FAIL|SMOKE_M5_FAIL|SMOKE_M6_FAIL)"; then
+    if echo "$output" | grep -qE "(FAIL:|SMOKE_FAIL|SMOKE_M5_FAIL|SMOKE_M6_FAIL|ARMY_WIZARD_RUNTIME_FAIL)"; then
         echo -e "${RED}FAIL${NC} (FAIL marker detected)"
-        echo "$output" | grep -E "(FAIL:|SMOKE_FAIL|SMOKE_M5_FAIL|SMOKE_M6_FAIL)"
+        echo "$output" | grep -E "(FAIL:|SMOKE_FAIL|SMOKE_M5_FAIL|SMOKE_M6_FAIL|ARMY_WIZARD_RUNTIME_FAIL)"
         failures=$((failures + 1))
     # Fail on any SCRIPT ERROR or Parse Error (runtime errors in Godot)
     elif echo "$output" | grep -qE "(SCRIPT ERROR|Parse Error)"; then
@@ -39,7 +39,7 @@ check() {
         echo "$output" | tail -5
         failures=$((failures + 1))
     # Pass on recognised success marker
-    elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|TURNREPORT_RUNTIME_PASS|Tests [0-9]+ passed)"; then
+    elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|TURNREPORT_RUNTIME_PASS|ARMY_WIZARD_RUNTIME_PASS|Tests [0-9]+ passed)"; then
         echo -e "${GREEN}PASS${NC}"
     else
         echo -e "${RED}FAIL${NC} (no success marker)"
@@ -82,8 +82,12 @@ check "Smoke M6" $GODOT -s res://tools/smoke_test.m6.gd --quit-after 30
 echo "4. TurnReport runtime"
 check "TurnReport runtime" $GODOT res://tools/test_turnreport_runtime.tscn --quit-after 10
 
-# 5. TS tests (run from project root)
-echo "5. npm test"
+# 5. Army wizard runtime — reálny Main.tscn callback flow W1→W4 (autoloads + Main.tscn)
+echo "5. Army wizard runtime"
+check "Army wizard runtime" $GODOT res://tools/review_wizard_runtime.tscn --quit-after 20
+
+# 6. TS tests (run from project root)
+echo "6. npm test"
 echo -n "  npm test ... "
 set +e
 ts_output=$(cd "$PROJECT_ROOT" && npm run test 2>&1)
