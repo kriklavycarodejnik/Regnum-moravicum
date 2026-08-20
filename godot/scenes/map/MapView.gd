@@ -1,11 +1,32 @@
 # scenes/map/MapView.gd
-# Mapa žúp s ilustračným pozadím + art markermi pre kľúčové lokality.
+# Mapa žúp s neprekrývajúcimi sa polygónmi, čitateľnými popiskami a jasným odlíšením výberu.
 extends Control
 
 signal province_selected(province_id: String)
 
 const C = preload("res://assets/theme/colors.gd")
 const LAYOUT_PATH := "res://data/map_layout.json"
+
+# Scale factor for polygon radius — r*0.60 ensures no overlap even for closest pair (devin-bratislava)
+const POLY_SCALE := 0.60
+# Jitter level — ±15% for natural shapes without excessive irregularity
+const JITTER_RANGE := 0.15
+
+# Per-province label offset (in multiples of r from center) to prevent name overlapping
+const LABEL_OFFSETS := {
+	"morava":     Vector2(0.0, -1.3),   # above center
+	"bratislava": Vector2(-1.2, 1.0),   # left-down
+	"devin":      Vector2(1.4, 0.6),    # right
+	"nitra":      Vector2(0.0, -1.4),   # above
+	"trencin":    Vector2(-0.8, 0.8),   # left-down
+	"tekov":      Vector2(0.0, 1.2),    # below
+	"hont":       Vector2(0.0, 1.2),    # below
+	"novohrad":   Vector2(1.0, 0.8),    # right-down
+	"gemer":      Vector2(0.0, -1.3),   # above
+	"spis":       Vector2(-0.7, 1.1),   # left-below
+	"zemplin":    Vector2(0.6, -1.2),   # up-right
+	"uzhorod":    Vector2(-1.0, 0.9),   # left-down
+}
 
 var _layout: Dictionary = {}
 var _selected_id: String = ""
@@ -67,9 +88,9 @@ func _load_art() -> void:
 		var aid: String = cat.province_art_id(pid) if cat.has_method("province_art_id") else ""
 		if aid == "":
 			continue
-		var t: Texture2D = cat.texture(aid)
-		if t != null:
-			_marker_tex[pid] = t
+		var tex: Texture2D = cat.texture(aid)
+		if tex != null:
+			_marker_tex[pid] = tex
 
 
 func refresh() -> void:
@@ -113,6 +134,11 @@ func _loyalty_ring(loyalty: float) -> Color:
 	return C.MORAVIA_CRIMSON
 
 
+# Pre-compute max polygon radius for a province (scale * max_jitter)
+func _poly_max_r(r: float) -> float:
+	return r * POLY_SCALE * (1.0 + JITTER_RANGE)
+
+
 func _draw() -> void:
 	var w := size.x
 	var h := size.y
@@ -128,9 +154,9 @@ func _draw() -> void:
 	# Art backdrop (dimmed chronicle plate)
 	if _bg_tex != null:
 		var tex_size := _bg_tex.get_size()
-		var scale: float = maxf(inner.size.x / tex_size.x, inner.size.y / tex_size.y)
-		var dw := tex_size.x * scale
-		var dh := tex_size.y * scale
+		var tex_scale: float = maxf(inner.size.x / tex_size.x, inner.size.y / tex_size.y)
+		var dw := tex_size.x * tex_scale
+		var dh := tex_size.y * tex_scale
 		var dx := inner.position.x + (inner.size.x - dw) * 0.5
 		var dy := inner.position.y + (inner.size.y - dh) * 0.5
 		draw_texture_rect(_bg_tex, Rect2(dx, dy, dw, dh), false, Color(1, 1, 1, 0.42))
@@ -161,7 +187,7 @@ func _draw() -> void:
 	if font == null:
 		return
 
-	# Neighbor lines (soft)
+	# --- Neighbor lines (soft gold) ---
 	for pid in layout_p:
 		var node: Dictionary = layout_p[pid]
 		var cx0: float = float(node.get("x", 0.5)) * w
@@ -178,12 +204,13 @@ func _draw() -> void:
 			if not layout_p.has(nid):
 				continue
 			if str(pid) > nid:
-				continue  # draw once
+				continue  # draw each pair once
 			var nnode: Dictionary = layout_p[nid]
 			var cx1: float = float(nnode.get("x", 0.5)) * w
 			var cy1: float = float(nnode.get("y", 0.5)) * h
 			draw_line(Vector2(cx0, cy0), Vector2(cx1, cy1), Color(C.BYZANTINE_GOLD.r, C.BYZANTINE_GOLD.g, C.BYZANTINE_GOLD.b, 0.22), 1.5, true)
 
+	# --- Province polygons and overlays ---
 	for pid in layout_p:
 		var node2: Dictionary = layout_p[pid]
 		var cx: float = float(node2.get("x", 0.5)) * w
@@ -196,44 +223,69 @@ func _draw() -> void:
 		var owner: String = str(pdata.get("owner_faction", "moravia"))
 		var loyalty: float = float(pdata.get("loyalty", 50))
 		var center := Vector2(cx, cy)
+		var max_r: float = _poly_max_r(r)
 
-		# Soft shadow
-		draw_circle(center + Vector2(2, 3), r + 2.0, Color(0, 0, 0, 0.35))
+		# Build polygon (now smaller — scale 0.60, no overlap)
+		var poly := _province_polygon(pid, cx, cy, r)
+
+		# Soft shadow under polygon
+		var shadow_offset := Vector2(2, 3)
+		var shadow_poly := PackedVector2Array()
+		for pt in poly:
+			shadow_poly.append(pt + shadow_offset)
+		draw_colored_polygon(shadow_poly, Color(0, 0, 0, 0.30))
 
 		var has_art: bool = _marker_tex.has(pid)
+
 		if has_art:
+			# Art provinces: dark polygon backdrop + art marker
+			draw_colored_polygon(poly, C.OAK_DARK)
+			# Thin gold border so territory is visible even without colored fill
+			var closed_poly := PackedVector2Array(poly)
+			closed_poly.append(poly[0])
+			draw_polyline(closed_poly, C.BYZANTINE_GOLD, 1.5, true)
+
 			var tex: Texture2D = _marker_tex[pid]
-			var d := r * 2.0
-			var dest := Rect2(cx - r, cy - r, d, d)
-			draw_colored_polygon(_province_polygon(pid, cx, cy, r), C.OAK_DARK)
+			# Scale art marker to fit within polygon (use 0.8 of poly diameter)
+			var art_size: float = max_r * 2.0 * 0.8
+			var dest := Rect2(cx - art_size * 0.5, cy - art_size * 0.5, art_size, art_size)
 			draw_texture_rect(tex, dest, false, Color(1, 1, 1, 0.92))
+			# Thin faction-color rim around art
 			var rim := _faction_color(owner)
 			rim.a = 0.9
-			draw_arc(center, r + 2.0, 0.0, TAU, 48, rim, 4.0, true)
+			draw_arc(center, max_r + 3.0, 0.0, TAU, 48, rim, 3.0, true)
 		else:
-			# Use settlement marker based on prosperity
+			# Non-art provinces: faction-colored fill + border for separation
 			var marker_tex: Texture2D = _settlement_medium
 			var prosperity: float = float(pdata.get("prosperity", 50))
 			if prosperity >= 70:
 				marker_tex = _settlement_large if _settlement_large != null else _settlement_medium
 			elif prosperity < 30:
 				marker_tex = _settlement_small if _settlement_small != null else _settlement_medium
+
 			var fill := _faction_color(owner)
 			fill = fill.lightened(0.08)
 			fill.a = 0.92
-			draw_colored_polygon(_province_polygon(pid, cx, cy, r), fill)
+			draw_colored_polygon(poly, fill)
+			# Border: same faction color but darker — visually separates neighboring provinces
+			var closed_poly2 := PackedVector2Array(poly)
+			closed_poly2.append(poly[0])
+			draw_polyline(closed_poly2, fill.darkened(0.30), 1.5, true)
+
+			# Subtle highlight arc for depth
 			var hi := C.PARCHMENT
-			hi.a = 0.12
+			hi.a = 0.10
 			draw_circle(center + Vector2(-r * 0.25, -r * 0.25), r * 0.45, hi)
+
 			# Draw settlement icon
 			if marker_tex != null:
-				var ms: float = r * 0.8
+				var ms: float = max_r * 0.75
 				draw_texture_rect(marker_tex, Rect2(cx - ms, cy - ms, ms * 2, ms * 2), false)
 
 		# Fort indicator for occupied provinces
 		if pdata.has("occupier_faction") and _fort_tex != null:
-			var fs: float = r * 0.6
-			draw_texture_rect(_fort_tex, Rect2(cx + r * 0.3, cy - r * 0.7, fs, fs), false)
+			var fs: float = max_r * 0.5
+			draw_texture_rect(_fort_tex, Rect2(cx + max_r * 0.3, cy - max_r * 0.7, fs, fs), false)
 
 		# Army dot if armies present in province
 		if _army_dot != null:
@@ -241,31 +293,51 @@ func _draw() -> void:
 			for aid in armies:
 				var a = armies[aid]
 				if typeof(a) == TYPE_DICTIONARY and str(a.get("province_id", "")) == pid:
-					var ads: float = r * 0.5
-					draw_texture_rect(_army_dot, Rect2(cx - r * 0.4, cy + r * 0.1, ads, ads), false)
+					var ads: float = max_r * 0.4
+					draw_texture_rect(_army_dot, Rect2(cx - max_r * 0.4, cy + max_r * 0.1, ads, ads), false)
 					break
 
-		draw_arc(center, r + 5.0, 0.0, TAU, 40, _loyalty_ring(loyalty), 2.5, true)
+		# --- Rings outside polygon extent ---
+		# Loyalty ring: outside polygon with a gap
+		draw_arc(center, max_r + 4.0, 0.0, TAU, 40, _loyalty_ring(loyalty), 2.5, true)
 
 		# Threat marker for critically low loyalty
 		if loyalty < 30.0:
-			draw_arc(center, r + 9.0, 0.0, TAU, 60, C.WARNING, 3.0, true)
+			draw_arc(center, max_r + 8.0, 0.0, TAU, 60, C.WARNING, 3.0, true)
 
+		# Selection ring (gold, outermost) and hover ring
 		if pid == _selected_id:
-			draw_arc(center, r + 10.0, 0.0, TAU, 48, C.BYZANTINE_GOLD, 3.0, true)
+			draw_arc(center, max_r + 10.0, 0.0, TAU, 48, C.BYZANTINE_GOLD, 4.0, true)
 		elif pid == _hover_id:
-			draw_arc(center, r + 8.0, 0.0, TAU, 40, C.PARCHMENT, 2.0, true)
+			draw_arc(center, max_r + 7.0, 0.0, TAU, 40, C.PARCHMENT, 2.0, true)
 
-		# Label with shadow
+		# --- Label with per-province offset ---
 		var name_sk: String = str(pdata.get("name", pid))
-		var fs := 13 if r >= 32.0 else 11
-		var text_size := font.get_string_size(name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
-		var tp := Vector2(cx - text_size.x * 0.5, cy + r + 16)
-		draw_string(font, tp + Vector2(1, 1), name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.75))
-		draw_string(font, tp, name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, C.PARCHMENT)
+		var fs_label := 12 if r >= 32.0 else 10
+		var text_size := font.get_string_size(name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_label)
+		var off := LABEL_OFFSETS.get(pid, Vector2(0.0, 0.85))
+		# Compute label position: center + offset * max_r
+		var tp := Vector2(cx + off.x * max_r, cy + off.y * max_r)
+		# For offset=0,0 default: place below polygon bottom
+		if off == Vector2():
+			tp = Vector2(cx - text_size.x * 0.5, cy + max_r + 4.0)
 
-	# Hint strip
-	var hint := "Klikni na župu · zlatý kruh = výber · farba okraja = lojalita"
+		# Clamp to viewport edges so labels are never clipped
+		tp.x = clampf(tp.x, 4.0, w - text_size.x - 4.0)
+		tp.y = clampf(tp.y, 4.0, h - fs_label - 4.0)
+
+		# Shadow under label
+		draw_string(font, tp + Vector2(1, 1), name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_label, Color(0, 0, 0, 0.80))
+		draw_string(font, tp, name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_label, C.PARCHMENT)
+
+		# Small leader line from label to province center for clarity
+		if off != Vector2():
+			var label_anchor := tp + Vector2(text_size.x * 0.5, fs_label * 0.5)
+			var line_start := center + (label_anchor - center).normalized() * max_r
+			draw_line(line_start, label_anchor, Color(C.PARCHMENT.r, C.PARCHMENT.g, C.PARCHMENT.b, 0.25), 0.8, true)
+
+	# Hint strip at bottom
+	var hint := "Klikni na župu · zlatý kruh = výber · farebný okraj = lojalita"
 	var hfs := 11
 	var hs := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs)
 	draw_rect(Rect2(8, h - 26, hs.x + 16, 20), Color(0.08, 0.06, 0.04, 0.72), true)
@@ -279,8 +351,8 @@ func _province_polygon(pid: String, cx: float, cy: float, r: float) -> PackedVec
 	rng.seed = hash(pid)
 	for i in range(n):
 		var angle: float = (float(i) / float(n)) * TAU
-		var jitter: float = 1.0 + rng.randf_range(-0.18, 0.18)
-		var rr: float = r * 1.35 * jitter
+		var jitter: float = 1.0 + rng.randf_range(-JITTER_RANGE, JITTER_RANGE)
+		var rr: float = r * POLY_SCALE * jitter
 		pts.append(Vector2(cx + cos(angle) * rr, cy + sin(angle) * rr))
 	return pts
 
