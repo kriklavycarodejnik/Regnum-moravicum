@@ -72,7 +72,9 @@ func show_report(report: Dictionary) -> void:
 	for k in ["gold", "food", "wood", "stone", "iron", "prestige"]:
 		var d = res.get(k, 0)
 		if d != 0:
-			delta_text += "[color=#C9A227]%s %+d[/color]  " % [_RESOURCE_SK.get(k, k.capitalize()), d]
+			delta_text += "[color=#C9A227]%s %+d[/color]  " % [_RESOURCE_SK.get(k, ""), d]
 	_delta.text = delta_text.strip_edges()
+	if _delta.text == "":
+		_delta.text = "Zdroje sa nezmenili."
 	_narration.text = str(report.get("narration", "Mesiac uplynul v tichu dvorov a polí."))
 	show()
