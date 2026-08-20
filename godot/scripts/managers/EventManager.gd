@@ -6,6 +6,8 @@ const CATALOG_PATH := "res://data/events_catalog.json"
 
 var game_state
 var rng: RandomNumberGenerator
+var event_rng: RandomNumberGenerator
+var save_seed: int = 42
 var _catalog: Array = []
 var _loaded: bool = false
 
@@ -15,6 +17,21 @@ func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> v
 		game_state = state
 	if rng_ref != null:
 		rng = rng_ref
+	event_rng = RandomNumberGenerator.new()
+
+
+func set_save_seed(seed_value: int) -> void:
+	save_seed = seed_value
+
+
+func _refresh_event_rng() -> void:
+	# Event RNG has its own named stream: hash(save_seed, month_index, faction_id, "event").
+	# This isolates it from battle/economy/nobility RNG draws.
+	var month_index: int = game_state.year * 12 + game_state.month
+	var faction_id: String = "moravia"
+	if typeof(game_state.factions) == TYPE_DICTIONARY and game_state.factions.has("moravia"):
+		faction_id = "moravia"
+	event_rng.seed = hash([save_seed, month_index, faction_id, "event"])
 
 
 func _load_catalog() -> void:
@@ -37,10 +54,16 @@ func process_events() -> Dictionary:
 	if not _loaded:
 		_load_catalog()
 
+	# Re-seed the event RNG stream for this tick. This is the isolation point:
+	# event_rng depends only on (save_seed, month_index, faction_id, "event")
+	# and is unaffected by any battle/economy/nobility draws that happened before.
+	_refresh_event_rng()
+
 	var pending = game_state.pending_event
 	if pending != null and typeof(pending) == TYPE_DICTIONARY:
 		return {
 			"type": "event",
+			"id": str(pending.get("id", "")),
 			"title": pending.get("title", ""),
 			"text": pending.get("text", pending.get("body", "")),
 			"body": pending.get("text", pending.get("body", "")),
@@ -64,11 +87,12 @@ func process_events() -> Dictionary:
 		return rand_out
 
 	# 4. Fallback: council event (8% chance)
-	if rng != null and rng.randf_range(0.0, 1.0) < 0.08:
+	if event_rng != null and event_rng.randf_range(0.0, 1.0) < 0.08:
 		var ce: Dictionary = _build_council_event()
 		game_state.pending_event = ce
 		return {
 			"type": "event",
+			"id": str(ce.get("id", "council")),
 			"title": ce.get("title", "Rada županov"),
 			"text": ce.get("text", ""),
 			"body": ce.get("text", ""),
@@ -76,7 +100,7 @@ func process_events() -> Dictionary:
 			"choices": ce.get("choices", {}),
 		}
 
-	return {"type": "event", "title": "", "text": "", "body": "", "art_id": "", "choices": []}
+	return {"type": "event", "id": "", "title": "", "text": "", "body": "", "art_id": "", "choices": []}
 
 
 func _try_chain_event() -> Dictionary:
@@ -125,7 +149,7 @@ func _try_historical_event() -> Dictionary:
 
 
 func _try_random_event() -> Dictionary:
-	if rng == null:
+	if event_rng == null:
 		return {}
 	var candidates: Array = []
 	var total_weight := 0
@@ -154,7 +178,7 @@ func _try_random_event() -> Dictionary:
 		total_weight += w
 	if candidates.is_empty():
 		return {}
-	var roll: int = rng.randi_range(1, total_weight)
+	var roll: int = event_rng.randi_range(1, total_weight)
 	var acc := 0
 	for cat in candidates:
 		acc += int(cat.get("weight", 1))
@@ -167,6 +191,7 @@ func _try_random_event() -> Dictionary:
 func _event_to_report(cat: Dictionary) -> Dictionary:
 	return {
 		"type": "event",
+		"id": str(cat.get("id", "")),
 		"title": cat.get("title", ""),
 		"text": cat.get("body", cat.get("title", "")),
 		"body": cat.get("body", cat.get("title", "")),
