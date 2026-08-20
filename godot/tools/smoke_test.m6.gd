@@ -9,6 +9,7 @@ const VictoryManager = preload("res://scripts/managers/VictoryManager.gd")
 const MapManager = preload("res://scripts/managers/MapManager.gd")
 const SaveManager = preload("res://scripts/core/SaveManager.gd")
 const EventManager = preload("res://scripts/managers/EventManager.gd")
+const ObjectivesPanel = preload("res://ui/ObjectivesPanel.gd")
 
 
 var _m6_failed: bool = false
@@ -49,6 +50,47 @@ func _run_event_sequence(seed_val: int, num_months: int, battle_draws: int) -> A
 		var rep: Dictionary = em_ev.process_events()
 		ids.append(str(rep.get("id", "")))
 	return ids
+
+
+# Helper: vytvorí GameState pre testovanie compute_beats s požadovanými hodnotami.
+# dip_overrides: Dictionary {faction_id: mood_override} – prepíše mood frakcií.
+static func _make_test_gs(year: int, month: int, gold: int, food: int,
+		prestige: int, devine_resolved: bool, dip_overrides: Dictionary) -> GameState:
+	var gs_test := GameState.new()
+	gs_test.ensure_resources()
+	gs_test.year = year
+	gs_test.month = month
+	gs_test.resources["gold"] = gold
+	gs_test.resources["food"] = food
+	gs_test.resources["prestige"] = prestige
+	gs_test.devine_resolved = devine_resolved
+	# Provinces: minimal set + uzhorod with loyalty
+	if typeof(gs_test.provinces) != TYPE_DICTIONARY:
+		gs_test.provinces = {}
+	if not gs_test.provinces.has("nitra"):
+		gs_test.provinces["nitra"] = {"id": "nitra", "owner_faction": "moravia", "loyalty": 80.0, "prosperity": 60.0}
+	if not gs_test.provinces.has("bratislava"):
+		gs_test.provinces["bratislava"] = {"id": "bratislava", "owner_faction": "moravia", "loyalty": 60.0, "prosperity": 50.0}
+	if not gs_test.provinces.has("devin"):
+		gs_test.provinces["devin"] = {"id": "devin", "owner_faction": "moravia", "loyalty": 50.0, "prosperity": 30.0}
+	if not gs_test.provinces.has("uzhorod"):
+		gs_test.provinces["uzhorod"] = {"id": "uzhorod", "owner_faction": "moravia", "loyalty": 60.0, "prosperity": 40.0}
+	# Factions: ensure default set via DiplomacyManager
+	var sm_dip := SaveManager.new()
+	sm_dip._init(42)
+	var dip_mgr := DiplomacyManager.new()
+	dip_mgr._init(gs_test, sm_dip.get_rng())
+	# Apply overrides
+	for fid in dip_overrides:
+		var mood_val: float = float(dip_overrides[fid])
+		if gs_test.factions.has(fid):
+			gs_test.factions[fid]["mood"] = mood_val
+	# Also set uzhorod loyalty if overridden
+	if dip_overrides.has("uzhorod_loyalty"):
+		var uzh_prov = gs_test.provinces.get("uzhorod", {})
+		if typeof(uzh_prov) == TYPE_DICTIONARY:
+			uzh_prov["loyalty"] = float(dip_overrides["uzhorod_loyalty"])
+	return gs_test
 
 
 func _init() -> void:
@@ -805,6 +847,177 @@ func _init() -> void:
 	print("P1: deterministic seed + battle RNG isolation verified (36 months)")
 
 	print("P1: 14 event catalog regression ALL CHECKS PASSED!")
+
+	# ─── 17) P1.2 — Fázové beaty v ObjectivesPanel (§2.3) ───
+	print("--- Testing P1.2: ObjectivesPanel phased beats ---")
+	var dip_hungary_50: Array = [{"id": "hungary", "name": "Maďari", "mood": 50.0}]
+	var dip_worst_40: Array = [{"id": "franks", "name": "Frankovia", "mood": 40.0}]
+	var dip_worst_25: Array = [{"id": "franks", "name": "Frankovia", "mood": 25.0}]
+	var dip_all_good: Array = [
+		{"id": "hungary", "name": "Maďari", "mood": 60.0},
+		{"id": "franks", "name": "Frankovia", "mood": 60.0},
+		{"id": "byzantium", "name": "Byzancia", "mood": 65.0},
+	]
+	var dip_hungary_low: Array = [
+		{"id": "hungary", "name": "Maďari", "mood": 25.0},
+		{"id": "franks", "name": "Frankovia", "mood": 60.0},
+	]
+	var dip_byz_low: Array = [
+		{"id": "hungary", "name": "Maďari", "mood": 55.0},
+		{"id": "byzantium", "name": "Byzancia", "mood": 35.0},
+	]
+
+	# 17a) Phase I A1: 902/2, gold=1000 → tutorial next_step
+	var gs_a1 = _make_test_gs(902, 2, 1000, 500, 50, false, {})
+	var b_a1 = ObjectivesPanel.compute_beats(gs_a1, dip_all_good)
+	check(b_a1.get("phase_name", "").begins_with("Fáza I"), "P1.2: A1 phase_name")
+	check(str(b_a1.get("next_step", "")).find("Prečítaj") >= 0, "P1.2: A1 next_step has tutorial")
+	print("P1.2: beat A1 OK (902/2 tutorial)")
+
+	# 17b) Phase I A2: 903/6, gold=500 → economy next_step
+	var gs_a2 = _make_test_gs(903, 6, 500, 500, 50, false, {})
+	var b_a2 = ObjectivesPanel.compute_beats(gs_a2, dip_all_good)
+	check(str(b_a2.get("next_step", "")).find("Ďalší mesiac") >= 0, "P1.2: A2 next_step mentions next month")
+	print("P1.2: beat A2 OK (903/6 gold=500 -> economy)")
+
+	# 17c) Phase I A3: 905/6, gold=1000, hungary mood=25 → hungary warning
+	var gs_a3 = _make_test_gs(905, 6, 1000, 500, 50, false, {})
+	var b_a3 = ObjectivesPanel.compute_beats(gs_a3, dip_hungary_low)
+	var goals_a3: PackedStringArray = b_a3.get("goals", PackedStringArray())
+	var has_hungary_warn_a3 := false
+	for g_a3 in goals_a3:
+		if str(g_a3).find("Maďari") >= 0:
+			has_hungary_warn_a3 = true
+	check(has_hungary_warn_a3, "P1.2: A3 hungary warning present when mood < 30")
+	print("P1.2: beat A3 OK (905/6 hungary mood 25 -> warning)")
+
+	# 17d) Phase I A3: 905/6, gold=1000, hungary mood=35 → NO hungary warning
+	var b_a3b = ObjectivesPanel.compute_beats(gs_a3, dip_all_good)
+	var goals_a3b: PackedStringArray = b_a3b.get("goals", PackedStringArray())
+	var has_hungary_warn_a3b := false
+	for g_a3b in goals_a3b:
+		if str(g_a3b).find("Maďari") >= 0:
+			has_hungary_warn_a3b = true
+	check(not has_hungary_warn_a3b, "P1.2: A3 no hungary warning when mood 60")
+	print("P1.2: beat A3b OK (905/6 hungary mood 60 -> no warning)")
+
+	# 17e) Phase I A4: 906/6, gold=1000, byzantium mood=35 → byzantium warning
+	var gs_a4 = _make_test_gs(906, 6, 1000, 500, 50, false, {})
+	var b_a4 = ObjectivesPanel.compute_beats(gs_a4, dip_byz_low)
+	check(str(b_a4.get("next_step", "")).find("Blíži sa 907") >= 0, "P1.2: A4 next_step mentions Devín")
+	var goals_a4: PackedStringArray = b_a4.get("goals", PackedStringArray())
+	var has_byz_warn := false
+	for g_a4 in goals_a4:
+		if str(g_a4).find("Byzancia") >= 0:
+			has_byz_warn = true
+	check(has_byz_warn, "P1.2: A4 byzantium warning present when mood < 40")
+	print("P1.2: beat A4 OK (906/6 byzantium mood 35 -> warning)")
+
+	# 17f) Phase II B1: 907/6, devine_resolved=false → Devín button next_step
+	var gs_b1 = _make_test_gs(907, 6, 1000, 500, 50, false, {})
+	var b_b1 = ObjectivesPanel.compute_beats(gs_b1, dip_hungary_50)
+	check(b_b1.get("phase_name", "").find("Kríza") >= 0, "P1.2: B1 phase has Kríza")
+	check(str(b_b1.get("next_step", "")).find("Devín 907") >= 0, "P1.2: B1 next_step mentions Devín button")
+	print("P1.2: beat B1 OK (907/6 unresolved -> Devín button)")
+
+	# 17g) Phase II B2: 907/8, devine_resolved=true → Devín padol
+	var gs_b2 = _make_test_gs(907, 8, 1000, 500, 50, true, {"hungary": 80.0})
+	var b_b2 = ObjectivesPanel.compute_beats(gs_b2, dip_hungary_50)
+	check(str(b_b2.get("next_step", "")).find("Devín padol") >= 0, "P1.2: B2 next_step says Devín padol")
+	var goals_b2: PackedStringArray = b_b2.get("goals", PackedStringArray())
+	var has_hungary_b2 := false
+	for g_b2 in goals_b2:
+		if str(g_b2).find("Maďari") >= 0:
+			has_hungary_b2 = true
+	check(has_hungary_b2, "P1.2: B2 shows hungary mood after Devín")
+	print("P1.2: beat B2 OK (907/8 resolved -> Devín padol)")
+
+	# 17h) Phase III C1: 910/1 → obnova
+	var gs_c1 = _make_test_gs(910, 1, 1000, 500, 50, false, {})
+	var b_c1 = ObjectivesPanel.compute_beats(gs_c1, dip_all_good)
+	check(b_c1.get("phase_name", "").find("Prežitie") >= 0, "P1.2: C1 phase has Prežitie")
+	check(str(b_c1.get("next_step", "")).find("Obnov ríšu") >= 0, "P1.2: C1 next_step mentions obnova")
+	print("P1.2: beat C1 OK (910/1 -> obnova)")
+
+	# 17i) Phase III C2: 916/1, uzhorod.loyalty=35 → conspiracy warning
+	var gs_c2 = _make_test_gs(916, 1, 1000, 500, 50, true, {"uzhorod_loyalty": 35.0})
+	var b_c2 = ObjectivesPanel.compute_beats(gs_c2, dip_all_good)
+	check(str(b_c2.get("next_step", "")).find("Sprisahanie") >= 0, "P1.2: C2 next_step mentions sprisahanie")
+	var goals_c2: PackedStringArray = b_c2.get("goals", PackedStringArray())
+	var has_uzh_warn := false
+	for g_c2 in goals_c2:
+		if str(g_c2).find("Užhorod") >= 0:
+			has_uzh_warn = true
+	check(has_uzh_warn, "P1.2: C2 uzhorod warning present when loyalty < 40")
+	print("P1.2: beat C2 OK (916/1 uzhorod loyalty 35 -> conspiracy)")
+
+	# 17j) Phase III C2: 916/1, uzhorod.loyalty=60 → NO conspiracy warning
+	var gs_c2b = _make_test_gs(916, 1, 1000, 500, 50, true, {"uzhorod_loyalty": 60.0})
+	var b_c2b = ObjectivesPanel.compute_beats(gs_c2b, dip_all_good)
+	var goals_c2b: PackedStringArray = b_c2b.get("goals", PackedStringArray())
+	var has_uzh_warn_b := false
+	for g_c2b in goals_c2b:
+		if str(g_c2b).find("Užhorod") >= 0:
+			has_uzh_warn_b = true
+	check(not has_uzh_warn_b, "P1.2: C2 no uzhorod warning when loyalty >= 40")
+	print("P1.2: beat C2b OK (916/1 loyalty 60 -> no warning)")
+
+	# 17k) Phase III C3: 930/1 → diplomacia a armády
+	var gs_c3 = _make_test_gs(930, 1, 1000, 500, 50, true, {})
+	var b_c3 = ObjectivesPanel.compute_beats(gs_c3, dip_all_good)
+	check(str(b_c3.get("next_step", "")).find("Diplomacia a armády") >= 0, "P1.2: C3 next_step mentions diplomacia")
+	print("P1.2: beat C3 OK (930/1 -> diplomacia)")
+
+	# 17l) Phase IV D1: 970/1 → roky do 1000 + owned + prestige
+	var gs_d1 = _make_test_gs(970, 1, 1000, 500, 80, true, {})
+	var b_d1 = ObjectivesPanel.compute_beats(gs_d1, dip_all_good)
+	check(b_d1.get("phase_name", "").find("Cesta k 1000") >= 0, "P1.2: D1 phase name")
+	check(str(b_d1.get("next_step", "")).find("30 r.") >= 0, "P1.2: D1 next_step has years left (1000-970=30)")
+	check(str(b_d1.get("next_step", "")).find("prestíž: 80") >= 0, "P1.2: D1 next_step has prestige")
+	print("P1.2: beat D1 OK (970/1 -> years left + prestige)")
+
+	# 17m) Diplomacy side-goal: worst faction mood=40 (<50) → goal added
+	var gs_dip1 = _make_test_gs(910, 1, 1000, 500, 50, false, {})
+	var b_dip1 = ObjectivesPanel.compute_beats(gs_dip1, dip_worst_40)
+	var goals_dip1: PackedStringArray = b_dip1.get("goals", PackedStringArray())
+	var has_dip_goal := false
+	for g_dip1 in goals_dip1:
+		if str(g_dip1).find("má náladu len") >= 0:
+			has_dip_goal = true
+	check(has_dip_goal, "P1.2: diplomacy goal added when worst faction mood=40")
+	print("P1.2: diplomacy goal OK (franks mood 40 -> goal)")
+
+	# 17n) Diplomacy side-goal: worst mood=25 (<30) → urgent next_step override
+	var b_dip2 = ObjectivesPanel.compute_beats(gs_dip1, dip_worst_25)
+	var next_dip2: String = str(b_dip2.get("next_step", ""))
+	check(next_dip2.find("URGENTNÉ") >= 0, "P1.2: diplomacy next_step override when mood=25")
+	print("P1.2: diplomacy urgent OK (franks mood 25 -> URGENTNÉ)")
+
+	# 17o) Diplomacy side-goal: hungary excluded (mood 20 should not trigger for hungary)
+	var dip_hungary_mad: Array = [{"id": "hungary", "name": "Maďari", "mood": 20.0}]
+	var b_dip3 = ObjectivesPanel.compute_beats(gs_dip1, dip_hungary_mad)
+	var goals_dip3: PackedStringArray = b_dip3.get("goals", PackedStringArray())
+	var has_hungary_dip := false
+	for g_dip3 in goals_dip3:
+		# "má náladu len" je unikátna fráza z _compute_diplomacy_goal — NIE z base cieľov
+		if str(g_dip3).find("má náladu len") >= 0:
+			has_hungary_dip = true
+	check(not has_hungary_dip, "P1.2: hungary excluded from diplomacy side-goal")
+	print("P1.2: diplomacy exclusion OK (hungary mood 20 ignored)")
+
+	# 17p) Save-load round-trip: compute_beats same output after serialization
+	var gs_save = _make_test_gs(905, 6, 1000, 500, 50, false, {})
+	gs_save.ensure_resources()
+	var save_dict: Dictionary = gs_save.to_dict()
+	var gs_save_loaded = GameState.new()
+	gs_save_loaded.from_dict(save_dict)
+	var b_save_orig = ObjectivesPanel.compute_beats(gs_save, dip_all_good)
+	var b_save_load = ObjectivesPanel.compute_beats(gs_save_loaded, dip_all_good)
+	check(str(b_save_orig.get("next_step", "")) == str(b_save_load.get("next_step", "")), "P1.2: save-load next_step identical")
+	check(str(b_save_orig.get("phase_name", "")) == str(b_save_load.get("phase_name", "")), "P1.2: save-load phase_name identical")
+	print("P1.2: save-load round-trip OK (same output after to_dict/from_dict)")
+
+	print("P1.2: ObjectivesPanel phased beats ALL CHECKS PASSED!")
 
 	if _m6_failed:
 		print("SMOKE_M6_FAIL: one or more checks failed (see above)")
