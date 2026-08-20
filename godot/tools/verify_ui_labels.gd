@@ -69,7 +69,7 @@ func _ready() -> void:
 	check_surface.call("SelectionLabel Devín", sel_label.text)
 	map_view._hover_id = "devin"
 	map_view._update_tooltip(Vector2(20, 20))
-	var map_tooltip_text: String = str(map_view._tooltip.text)
+	var map_tooltip_text: String = str(map_view._tooltip_label.text)
 	print("  MapView tooltip text:\n%s" % map_tooltip_text)
 	check_surface.call("MapView tooltip", map_tooltip_text)
 	if "devin" in map_tooltip_text.to_lower() and not "Devín" in map_tooltip_text:
@@ -235,7 +235,7 @@ func _ready() -> void:
 	# MapView tooltip s raw prov
 	map_view._hover_id = "test_raw_prov"
 	map_view._update_tooltip(Vector2(50, 50))
-	var raw_tooltip: String = str(map_view._tooltip.text)
+	var raw_tooltip: String = str(map_view._tooltip_label.text)
 	print("  MapView tooltip s raw prov:\n%s" % raw_tooltip)
 	check_surface.call("MapView tooltip s raw dátami", raw_tooltip)
 	if "pagan" in raw_tooltip.to_lower() or "raw_" in raw_tooltip:
