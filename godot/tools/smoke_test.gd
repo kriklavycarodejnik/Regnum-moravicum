@@ -12,6 +12,7 @@ const DiplomacyManager = preload("res://scripts/managers/DiplomacyManager.gd")
 const HungarianWarScenario = preload("res://scripts/scenarios/HungarianWarScenario.gd")
 const Formulas = preload("res://scripts/battle/BattleFormulas.gd")
 const C = preload("res://scripts/battle/BattleConfig.gd")
+const EventManager = preload("res://scripts/managers/EventManager.gd")
 
 
 func _make_world(seed: int):
@@ -42,7 +43,7 @@ func _make_world(seed: int):
 	var campaign = CampaignManager.new()
 	campaign._init(gs, war, dip, rng, army)
 
-	return {"gs": gs, "rng": rng, "army": army, "war": war, "campaign": campaign}
+	return {"gs": gs, "rng": rng, "army": army, "war": war, "campaign": campaign, "save": save, "dip": dip}
 
 
 func _init():
@@ -62,7 +63,41 @@ func _init():
 	check(armies.size() >= 1, "army created")
 	print("Armies: %d total" % armies.size())
 
-	# 3. Devin 907
+	# 3. EventManager dedicated event RNG — check it has its own seed/state
+	var event_mgr = EventManager.new()
+	event_mgr._init(gs)
+	check(event_mgr.event_rng != null, "EventManager has own event_rng")
+	check(event_mgr.event_rng.seed == 42, "EventManager event_rng seed = 42")
+	print("EventManager event_rng seed=%d state=%d" % [event_mgr.event_rng.seed, event_mgr.event_rng.state])
+
+	# 4. DEVIN TESTS
+
+	# 4a. Pre-907 no-op via WarManager.resolve_devine_battle()
+	# Set year to 902, try resolve — must be no-op without devine_resolved or consequences
+	gs.year = 902
+	gs.month = 1
+	var prestige_before = int(gs.resources.get("prestige", 0))
+	var devin_loy_before = float(gs.provinces["devin"].get("loyalty", 50))
+	var hungary_mood_before = float(gs.factions["hungary"].get("mood", 20))
+	var chronicle_count_before: int = gs.chronicle.size()
+	check(gs.devine_resolved == false, "devine_resolved false before 907")
+	var early_outcome = w.war.resolve_devine_battle()
+	check(early_outcome.get("ok", true) == false, "pre-907 resolve returns not ok")
+	check(early_outcome.get("error", "") == "too_early", "pre-907 resolve error label")
+	check(gs.devine_resolved == false, "devine_resolved unchanged after pre-907 resolve")
+	check(int(gs.resources.get("prestige", 0)) == prestige_before, "prestige unchanged after pre-907 resolve")
+	var devin_loy_after = float(gs.provinces["devin"].get("loyalty", 50))
+	check(devin_loy_after == devin_loy_before, "devin loyalty unchanged after pre-907 resolve")
+	var hungary_mood_after = float(gs.factions["hungary"].get("mood", 20))
+	check(hungary_mood_after == hungary_mood_before, "hungary mood unchanged after pre-907 resolve")
+	check(gs.chronicle.size() == chronicle_count_before, "chronicle unchanged after pre-907 resolve")
+	print("Pre-907 no-op OK (year=902, month=1)")
+
+	# 4b. Set year to 907/07 and run resolve (canon flow)
+	gs.year = 907
+	gs.month = 7
+	printerr("Before resolve: prestige=%d" % int(gs.resources.get("prestige", 0)))
+
 	var scenario = HungarianWarScenario.new()
 	scenario.game_state = gs
 	scenario.war_manager = w.war
@@ -71,39 +106,54 @@ func _init():
 	# Ensure rng on battle_manager
 	if w.war.battle_manager and w.war.battle_manager.rng == null:
 		w.war.battle_manager.rng = w.rng
+
 	var outcome = scenario.resolve_devine_battle()
 	check(outcome.has("winner"), "Devin outcome has winner")
 	print("Devin 907: winner=%s result=%s" % [outcome.get("winner", "?"), outcome.get("result", "?")])
 
-	# P-1.1 regression — Devín 907 canon + guard + consequences
 	# Canon: winner == "attacker"
 	check(outcome.get("winner", "") == "attacker", "Devin winner == attacker (canon)")
-	# Guard: devine_resolved set after first resolve
+
+	# Exact delta values (reviewer item #5): prestige -30 (50->20), devin loyalty -20 (default 60? let's capture baseline)
+	# prestige default = 50 from GameState
+	check(int(gs.resources.get("prestige", 0)) == 20, "prestige exact -30 (50->20)")
+	# devin loyalty baseline depends on province JSON data. Let's check the delta, not the absolute.
+	var devin_loy_after_battle = float(gs.provinces["devin"].get("loyalty", 50))
+	var delta_loy = devin_loy_after_battle - devin_loy_before
+	check(delta_loy == -20.0, "devin loyalty delta exactly -20 (got %f)" % delta_loy)
+	var hungary_mood_after_battle = float(gs.factions["hungary"].get("mood", 20))
+	var delta_mood = hungary_mood_after_battle - hungary_mood_before
+	check(delta_mood == 30.0, "hungary mood delta exactly +30 (got %f)" % delta_mood)
+	print("Exact deltas: prestige -30, devin loyalty -20, hungary mood +30")
+
+	# Guard: devine_resolved set after resolve
 	check(gs.devine_resolved == true, "devine_resolved set after resolve")
-	# Double-resolve is a no-op
-	var prestige_before_2nd = int(gs.resources.get("prestige", 0))
+
+	# Double-resolve is a no-op (no additional consequences)
+	var prestige_after_1st = int(gs.resources.get("prestige", 0))
+	var chronicle_count_after_1st: int = gs.chronicle.size()
 	var outcome2 = scenario.resolve_devine_battle()
 	check(bool(outcome2.get("ok", true)) == false, "second resolve is no-op")
 	check(outcome2.get("error", "") == "already_resolved", "second resolve error label")
-	check(int(gs.resources.get("prestige", 0)) == prestige_before_2nd, "no consequences on no-op resolve")
-	# Consequences: prestige -30, devin loyalty -20, hungary mood +30
-	# (prestige default 50 → 20 after -30)
-	check(int(gs.resources.get("prestige", 0)) == 20, "prestige -30 applied")
-	var devin_loy = float(gs.provinces["devin"].get("loyalty", 50))
-	check(devin_loy <= 40.0, "devin loyalty -20 applied (60->40)")
-	var hungary_mood = float(gs.factions["hungary"].get("mood", 20))
-	check(hungary_mood >= 50.0, "hungary mood +30 applied (>=50)")
-	# Chronicle has a Devín 907 entry
-	var has_devin_chronicle = false
+	check(int(gs.resources.get("prestige", 0)) == prestige_after_1st, "no consequences on no-op resolve")
+	check(gs.chronicle.size() == chronicle_count_after_1st, "no chronicle entry on no-op resolve")
+	print("Guard: double-resolve blocked OK")
+
+	# Chronicle has exactly one Devín 907 entry (no duplicates)
+	var devin_entries = 0
 	for entry in gs.chronicle:
 		if typeof(entry) == TYPE_DICTIONARY and str(entry.get("text", "")).find("Devín") != -1:
-			has_devin_chronicle = true
-			break
-	check(has_devin_chronicle, "chronicle has Devin 907 entry")
-	# Save/load round-trip preserves devine_resolved
+			devin_entries += 1
+	check(devin_entries == 1, "chronicle has exactly 1 Devin 907 entry (got %d)" % devin_entries)
+	print("Chronicle: exactly 1 Devín entry")
+
+	# 4c. Save/load round-trip preserves devine_resolved AND event RNG seed/state
 	var save = SaveManager.new()
 	save._init(99)
 	save.rng = w.rng
+	# Copy event RNG state from game_state to SaveManager
+	save.event_rng.seed = gs.event_rng_seed
+	save.event_rng.state = gs.event_rng_state
 	var save_ok = save.save_game(gs)
 	check(save_ok, "save_game ok")
 	var loaded = GameState.new()
@@ -112,21 +162,84 @@ func _init():
 	if save_data != null:
 		loaded = save_data
 		check(loaded.devine_resolved == true, "devine_resolved survives save/load")
+		check(loaded.event_rng_seed == gs.event_rng_seed, "event_rng_seed survives save/load")
+		check(loaded.event_rng_state == gs.event_rng_state, "event_rng_state survives save/load")
+		# Verify that re-creating EventManager from loaded state preserves RNG state
+		var loaded_em = EventManager.new()
+		loaded_em._init(loaded)
+		check(loaded_em.event_rng.state == loaded.event_rng_state, "EventManager restores event_rng state from loaded GameState")
+	print("Save/load: devine_resolved + event RNG seed/state preserved")
+
 	print("P-1.1 Devín guard + consequences + save/load OK")
 
-	# 4. Campaign AI
+	# 5. Auto 907 flow via WarManager.process_wars()
+	var gs_auto = GameState.new()
+	gs_auto.year = 907
+	gs_auto.month = 7
+	gs_auto.devine_resolved = false
+	var save_auto = SaveManager.new()
+	save_auto._init(77)
+	var rng_auto = save_auto.get_rng()
+	var map_auto = MapManager.new()
+	map_auto.game_state = gs_auto
+	map_auto.load_provinces_from_dir("res://data/provinces/")
+	var dip_auto = DiplomacyManager.new()
+	dip_auto.game_state = gs_auto
+	dip_auto.rng = rng_auto
+	dip_auto._ensure_default_factions()
+	var army_auto = ArmyManager.new()
+	army_auto.game_state = gs_auto
+	army_auto.rng = rng_auto
+	army_auto._init_armies()
+	var war_auto = WarManager.new()
+	war_auto.game_state = gs_auto
+	war_auto.rng = rng_auto
+
+	var auto_report = war_auto.process_wars()
+	check(auto_report.get("type", "") == "war", "auto war report type")
+	var battles: Array = auto_report.get("battles", [])
+	check(battles.size() == 1, "auto 907 produces 1 battle")
+	if battles.size() > 0:
+		var b = battles[0]
+		check(b.get("winner", "") == "attacker", "auto 907 winner == attacker")
+	check(gs_auto.devine_resolved == true, "auto 907 sets devine_resolved")
+	print("Auto 907 flow via process_wars OK (winner=attacker, devine_resolved=true)")
+
+	# 6. Event RNG determinism: two EventManagers from same seed produce same event
+	var gs_a = GameState.new()
+	var gs_b = GameState.new()
+	gs_a.event_rng_seed = 42
+	gs_a.event_rng_state = 0
+	gs_b.event_rng_seed = 42
+	gs_b.event_rng_state = 0
+	var em_a = EventManager.new()
+	var em_b = EventManager.new()
+	em_a._init(gs_a)
+	em_b._init(gs_b)
+	check(em_a.event_rng.seed == em_b.event_rng.seed, "event RNG seeds match")
+	check(em_a.event_rng.state == em_b.event_rng.state, "event RNG states match")
+	# Step both through random events and compare
+	var roll_a: float = em_a.event_rng.randf()
+	var roll_b: float = em_b.event_rng.randf()
+	check(roll_a == roll_b, "event RNG deterministic roll (%.6f == %.6f)" % [roll_a, roll_b])
+	gs_a.event_rng_state = em_a.event_rng.state
+	gs_b.event_rng_state = em_b.event_rng.state
+	check(gs_a.event_rng_state == gs_b.event_rng_state, "event RNG state sync after roll")
+	print("Event RNG determinism OK")
+
+	# 7. Campaign AI
 	var camp_report = w.campaign.process_campaign()
 	check(camp_report.get("type", "") == "campaign", "campaign type")
 	print("Campaign: events=%d" % camp_report.get("events", []).size())
 
-	# 5. Tick determinism
+	# 8. Tick determinism
 	var w1 = _make_world(77)
 	var w2 = _make_world(77)
 	check(w1.gs.year == w2.gs.year, "year determinism")
 	check(w1.gs.month == w2.gs.month, "month determinism")
 	print("Determinism OK")
 
-	# 6. ES sanity + river morale
+	# 9. ES sanity + river morale
 	var armies_s = scenario.create_initial_armies()
 	var hung = armies_s["hungarian_main"].duplicate(true)
 	var mor = armies_s["moravian_main"].duplicate(true)

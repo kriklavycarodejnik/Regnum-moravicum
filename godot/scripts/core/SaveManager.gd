@@ -9,12 +9,15 @@ const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var rng: RandomNumberGenerator
 var save_seed: int = 42
+var event_rng: RandomNumberGenerator
 
 
 func _init(seed_value: int = 42) -> void:
 	save_seed = seed_value
 	rng = RandomNumberGenerator.new()
 	rng.seed = seed_value
+	event_rng = RandomNumberGenerator.new()
+	event_rng.seed = seed_value
 
 
 func get_rng() -> RandomNumberGenerator:
@@ -23,6 +26,9 @@ func get_rng() -> RandomNumberGenerator:
 
 func get_save_seed() -> int:
 	return save_seed
+
+func get_event_rng() -> RandomNumberGenerator:
+	return event_rng
 
 
 func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
@@ -35,7 +41,9 @@ func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
 		"version": SAVE_VERSION,
 		"seed": rng.seed,
 		"state": state.to_dict(),
-		"rng_state": rng.state
+		"rng_state": rng.state,
+		"event_rng_seed": event_rng.seed,
+		"event_rng_state": event_rng.state,
 	}
 	file.store_string(JSON.stringify(save_data))
 	file.close()
@@ -62,6 +70,8 @@ func load_game(path: String = DEFAULT_PATH) -> RefCounted:
 	save_seed = int(json.get("seed", 42))
 	rng.seed = save_seed
 	rng.state = int(json.get("rng_state", 0))
+	event_rng.seed = int(json.get("event_rng_seed", 42))
+	event_rng.state = int(json.get("event_rng_state", 0))
 	var state_dict: Dictionary = json.get("state", {})
 	if state_dict == null:
 		state_dict = {}

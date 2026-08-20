@@ -32,7 +32,8 @@ var ending: Dictionary = {}
 var devine_resolved: bool = false
 var triggered_events: Array = []
 var event_cooldowns: Dictionary = {}
-var last_event_id: String = ""
+var event_rng_seed: int = 42
+var event_rng_state: int = 0
 var tutorial_step: int = 0
 var tutorial_done: bool = false
 
@@ -54,7 +55,8 @@ func to_dict() -> Dictionary:
 		"devine_resolved": devine_resolved,
 		"triggered_events": triggered_events.duplicate(true),
 		"event_cooldowns": event_cooldowns.duplicate(true),
-		"last_event_id": last_event_id,
+		"event_rng_seed": event_rng_seed,
+		"event_rng_state": event_rng_state,
 		"tutorial_step": tutorial_step,
 		"tutorial_done": tutorial_done,
 	}
@@ -101,7 +103,8 @@ func from_dict(data: Dictionary) -> void:
 	triggered_events = trev.duplicate(true) if typeof(trev) == TYPE_ARRAY else []
 	var eco = data.get("event_cooldowns", {})
 	event_cooldowns = eco.duplicate(true) if typeof(eco) == TYPE_DICTIONARY else {}
-	last_event_id = str(data.get("last_event_id", ""))
+	event_rng_seed = int(data.get("event_rng_seed", 42))
+	event_rng_state = int(data.get("event_rng_state", 0))
 	tutorial_step = int(data.get("tutorial_step", 0))
 	tutorial_done = bool(data.get("tutorial_done", false))
 

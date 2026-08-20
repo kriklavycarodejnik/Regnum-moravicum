@@ -80,7 +80,11 @@ func resolve_devine_battle() -> Dictionary:
 	# manuálne tlačidlo) nakoniec volá túto metódu.
 	if game_state.devine_resolved:
 		return {"ok": false, "error": "already_resolved", "chronicle": "Scenár Devín 907 už bol odohraný."}
-	game_state.devine_resolved = true
+	# Defense-in-depth pre-907 guard: bitka je uzamknutá pred júlom 907
+	var y: int = game_state.year
+	var m: int = game_state.month
+	if y < 907 or (y == 907 and m < 7):
+		return {"ok": false, "error": "too_early", "chronicle": "Devín 907 ešte nenastal."}
 	var armies: Dictionary = create_initial_armies()
 	var hungarian: Dictionary = armies["hungarian_main"].duplicate(true)
 	var moravian: Dictionary = armies["moravian_main"].duplicate(true)
@@ -100,7 +104,9 @@ func resolve_devine_battle() -> Dictionary:
 	outcome["winner"] = "attacker"
 	outcome["result"] = battle_manager._evaluate_battle_result("attacker", outcome.get("attacker_es", 0.0), outcome.get("defender_es", 0.0))
 
+	# Apply consequences BEFORE setting devine_resolved (reviewer item #3)
 	_apply_devine_consequences()
+	game_state.devine_resolved = true
 
 	outcome["ok"] = true
 	outcome["chronicle"] = "907 · Devín padol: maďarské vojská prelomili riečnu obranu. Prestíž -30, lojalita Devína -20, nálada Maďarov +30."

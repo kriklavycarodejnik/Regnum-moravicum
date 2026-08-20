@@ -512,7 +512,7 @@ func _on_devine() -> void:
 		return
 	_refresh_ui()
 	if outcome.has("chronicle"):
-		_append_chronicle(str(outcome["chronicle"]))
+		_notify(str(outcome["chronicle"]))
 	_set_hero_art("battle_danube_composition", "Kríza 907 · Devín (Maďari útočia)")
 	_show_battle("Bitka pri Devíne (907)", outcome, "battle_danube_composition")
 	_log_battle_phases(outcome)
