@@ -1338,6 +1338,136 @@ func _init() -> void:
 
 	print("P1.2: objectives beats ALL CHECKS PASSED!")
 
+	# 16l) P1 plný event pool — cooldown, no-immediate-repeat, pool exhaustion, determinizmus
+	#     P1 kontrakt §1.6 (no-immediate-repeat guard), §1.7 (cooldowns), §1.3 (council fallback).
+	#     Táto karta overuje, že pri dlhom behu (24 mesiacov) sa pool nevyčerpá,
+	#     že žiadny event nepríde skôr než po svojom cooldowne, a že determinizmus
+	#     podľa save_seed drží. resolve_choice sa volá každý mesiac, aby sa
+	#     cooldown skutočne zapisal do event_cooldowns (pozri EventManager:288).
+	print("--- Testing P1: plný event pool (24 mesiacov, cooldown, determinizmus) ---")
+
+	# Helper: 24-mesačný beh s resolve_choice — simuluje hráča, ktorý každý mesiac
+	# vyberie prvú voľbu. Vracia Array[event_id] (jeden na mesiac), plus GS pre inšpekciu.
+	# Rozdiel oproti _run_event_sequence: volá resolve_choice, čiže cooldown sa zapisuje.
+	var p1pool_seed: int = 4242
+	var p1pool_gs = GameState.new()
+	p1pool_gs.ensure_resources()
+	p1pool_gs.year = 903
+	p1pool_gs.month = 0  # prvý tick bude 903/01 po inkremente
+	p1pool_gs.event_rng_seed = p1pool_seed
+	var p1pool_em = EventManager.new()
+	p1pool_em._init(p1pool_gs)
+	p1pool_em._load_catalog()
+	var p1pool_ids: Array = []
+	var p1pool_months: Array = []
+	for _mi in range(24):
+		p1pool_gs.month += 1
+		if p1pool_gs.month > 12:
+			p1pool_gs.month = 1
+			p1pool_gs.year += 1
+		p1pool_gs.pending_event = null
+		var rep_i: Dictionary = p1pool_em.process_events()
+		var eid_i: String = str(rep_i.get("id", ""))
+		p1pool_ids.append(eid_i)
+		p1pool_months.append(p1pool_gs.year * 12 + p1pool_gs.month)
+		# Ak prišiel event s voľbami, vyriešme prvú voľbu, aby sa cooldown zapisal.
+		# Council (choices = Dictionary) aj katalóg (choices = Array) majú voľby.
+		if eid_i != "":
+			var choices_i = rep_i.get("choices", {})
+			var first_cid: String = ""
+			if typeof(choices_i) == TYPE_ARRAY and choices_i.size() > 0:
+				var fc = choices_i[0]
+				if typeof(fc) == TYPE_DICTIONARY:
+					first_cid = str(fc.get("id", ""))
+			elif typeof(choices_i) == TYPE_DICTIONARY and choices_i.size() > 0:
+				first_cid = str(choices_i.keys()[0])
+			if first_cid != "":
+				p1pool_em.resolve_choice(first_cid)
+
+	# (a) Pool sa nevyčerpá: aspoň 8 z 24 mesiacov vrátilo neprázdny event
+	#     (historical v 903 + random po cooldown + 8% council fallback).
+	#     Prázdne mesiace (id=="") sú legitímne keď random zlyhá na cooldown
+	#     a council 8% roll neprejde — to NIE je vyčerpaný pool. Po oprave
+	#     condition matcheru (§1.2 year, §1.8 once) random pool = len 4 rand_*
+	#     eventy, čiže prázdne mesiace sú časté, no pool nikdy nie je prázdny.
+	var p1pool_nonempty: int = 0
+	var p1pool_distinct: Dictionary = {}
+	for eid_n in p1pool_ids:
+		if str(eid_n) != "":
+			p1pool_nonempty += 1
+			p1pool_distinct[str(eid_n)] = true
+	check(p1pool_nonempty >= 8, "P1 pool: aspoň 8/24 mesiacov má event (got %d) — pool sa nevyčerpáva" % p1pool_nonempty)
+	check(p1pool_distinct.size() >= 3, "P1 pool: aspoň 3 rôzne event_id za 24 mesiacov (got %d) — pool má varietu" % p1pool_distinct.size())
+
+	# (b) No-immediate-repeat guard (§1.6): žiadny event_id sa neopakuje
+	#     v dvoch po sebe idúcich mesiacoch (rôzny eid alebo prázdny).
+	for _ri in range(p1pool_ids.size() - 1):
+		var a_id: String = str(p1pool_ids[_ri])
+		var b_id: String = str(p1pool_ids[_ri + 1])
+		check(not (a_id != "" and a_id == b_id), "P1 no-repeat: mesiac %d a %d majú rovnaký neprázdny id '%s'" % [_ri, _ri + 1, a_id])
+
+	# (c) Cooldown enforcement (§1.7): pre každý random event_id, over,
+	#     že žiadne dva výskyty sú bližšie než jeho cooldownTicks.
+	#     cooldowns: rand_bad_harvest=24, rand_border_raid=15, rand_noble_feud=20, rand_missionary_dispute=20.
+	var p1pool_cd_map: Dictionary = {
+		"rand_bad_harvest": 24,
+		"rand_border_raid": 15,
+		"rand_noble_feud": 20,
+		"rand_missionary_dispute": 20,
+	}
+	for cd_eid in p1pool_cd_map.keys():
+		var cd_ticks: int = int(p1pool_cd_map[cd_eid])
+		var occurrences: Array = []
+		for _oi in range(p1pool_ids.size()):
+			if str(p1pool_ids[_oi]) == str(cd_eid):
+				occurrences.append(p1pool_months[_oi])
+		# Ak sa event objavil aspoň 2×, over že odstup ≥ cooldown.
+		for _oj in range(occurrences.size() - 1):
+			var gap: int = int(occurrences[_oj + 1]) - int(occurrences[_oj])
+			check(gap >= cd_ticks, "P1 cooldown: %s výskyty odstup %d ≥ %d (got %d)" % [cd_eid, gap, cd_ticks, gap])
+
+	# (d) Determinizmus podľa save_seed: rovnaký seed → rovnaká 24-mesačná sekvencia.
+	var p1pool_det_b: Array = []
+	var p1pool_gs2 = GameState.new()
+	p1pool_gs2.ensure_resources()
+	p1pool_gs2.year = 903
+	p1pool_gs2.month = 0
+	p1pool_gs2.event_rng_seed = p1pool_seed
+	var p1pool_em2 = EventManager.new()
+	p1pool_em2._init(p1pool_gs2)
+	p1pool_em2._load_catalog()
+	for _mi2 in range(24):
+		p1pool_gs2.month += 1
+		if p1pool_gs2.month > 12:
+			p1pool_gs2.month = 1
+			p1pool_gs2.year += 1
+		p1pool_gs2.pending_event = null
+		var rep_i2: Dictionary = p1pool_em2.process_events()
+		p1pool_det_b.append(str(rep_i2.get("id", "")))
+		var eid_i2: String = str(rep_i2.get("id", ""))
+		if eid_i2 != "":
+			var choices_i2 = rep_i2.get("choices", {})
+			var first_cid2: String = ""
+			if typeof(choices_i2) == TYPE_ARRAY and choices_i2.size() > 0:
+				var fc2 = choices_i2[0]
+				if typeof(fc2) == TYPE_DICTIONARY:
+					first_cid2 = str(fc2.get("id", ""))
+			elif typeof(choices_i2) == TYPE_DICTIONARY and choices_i2.size() > 0:
+				first_cid2 = str(choices_i2.keys()[0])
+			if first_cid2 != "":
+				p1pool_em2.resolve_choice(first_cid2)
+	check(p1pool_ids == p1pool_det_b, "P1 determinizmus: rovnaký seed → rovnaká 24-mesačná sekvencia")
+
+	# (e) Condition matcher regression: byz_bride_proposal_906 (year=906, once=true,
+	#     type=diplomatic) sa NESMIE objaviť v random pooli v roku 903–905.
+	#     Pred opravou preliezal do random poolu 3× (malo rovnaké id v 24 mes.).
+	#     Over, že žiadny once:true rokovaný event neunikol do random výberu.
+	var p1pool_yearlocked: Array = ["byz_bride_proposal_906", "hist_bogata_conspiracy_915"]
+	for yl_eid in p1pool_yearlocked:
+		check(not p1pool_ids.has(yl_eid), "P1 condition matcher: %s sa neobjaví v 903–905 random behu (§1.2 year, §1.8 once)" % yl_eid)
+
+	print("P1: plný event pool (cooldown + no-repeat + determinizmus) ALL CHECKS PASSED!")
+
 	print("P1: 14 event catalog regression ALL CHECKS PASSED!")
 
 	if _m6_failed:
