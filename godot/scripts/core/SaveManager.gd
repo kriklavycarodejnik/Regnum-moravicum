@@ -8,15 +8,21 @@ const AUTOSAVE_PATH := "user://autosave.dat"
 const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var rng: RandomNumberGenerator
+var save_seed: int = 42
 
 
 func _init(seed_value: int = 42) -> void:
+	save_seed = seed_value
 	rng = RandomNumberGenerator.new()
 	rng.seed = seed_value
 
 
 func get_rng() -> RandomNumberGenerator:
 	return rng
+
+
+func get_save_seed() -> int:
+	return save_seed
 
 
 func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
@@ -53,8 +59,9 @@ func load_game(path: String = DEFAULT_PATH) -> RefCounted:
 		push_error("Save file version mismatch")
 		return null
 
-	rng.seed = int(json.get("seed") or 42)
-	rng.state = json.get("rng_state") or 0
+	save_seed = int(json.get("seed", 42))
+	rng.seed = save_seed
+	rng.state = int(json.get("rng_state", 0))
 	var state_dict: Dictionary = json.get("state") or {}
 	var state = GAME_STATE.new()
 	state.from_dict(state_dict)
