@@ -201,7 +201,7 @@ func _init() -> void:
 			repeat_found = true
 			repeat_at = i
 			break
-	check(not repeat_found, "P0.7a no-immediate-repeat: žiadny event sa neopakuje dva ťahy za sebou (seq=%s)" % seq_rep)
+	check(not repeat_found, "P0.7a no-immediate-repeat: žiadny event sa neopakuje dva ťahy za sebou (seq=%s)" % str(seq_rep))
 	print("P0.7a no-immediate-repeat: seq_rep=", seq_rep)
 	if repeat_found:
 		print("  FAIL detail: opakovanie na pozícii %d ('%s')" % [repeat_at, str(seq_rep[repeat_at])])
