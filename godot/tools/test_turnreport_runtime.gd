@@ -5,10 +5,12 @@
 extends Node
 
 var _failures: int = 0
+var _passes: int = 0
 
 func check(cond: bool, label: String) -> void:
 	if cond:
 		print("  PASS: ", label)
+		_passes += 1
 	else:
 		print("  FAIL: ", label)
 		_failures += 1
@@ -16,24 +18,30 @@ func check(cond: bool, label: String) -> void:
 func _ready() -> void:
 	print("=== TurnReport runtime behavior test (autoloads enabled) ===")
 
-	# Ensure clean state — tutorial would overlay and interfere
-	if GameManager != null and GameManager.game_state != null:
-		GameManager.game_state.tutorial_done = true
-		GameManager.game_state.pending_event = null
-	else:
+	# Ensure clean state
+	if GameManager == null or GameManager.game_state == null:
 		push_error("GameManager autoload not available")
 		print("FAIL: GameManager autoload not available")
 		_failures += 1
+
+	GameManager.game_state.tutorial_done = true
+	GameManager.game_state.pending_event = null
+
+	# Advance year to 906 so devine_btn year-gate (year < 906 -> disabled)
+	# does not interfere with CTA conditional assertions for all 3 buttons.
+	GameManager.game_state.year = 906
+	GameManager.game_state.month = 2
 
 	# Load and instantiate Main.tscn
 	var MainScene := preload("res://scenes/main/Main.tscn")
 	var main = MainScene.instantiate()
 	add_child(main)
 
-	# Main._ready() has run by now — access its children
+	# Access child nodes
 	var turn_report = main.get_node("TurnReport")
 	var next_month_btn = main.get_node("UI/PrimaryRow/NextMonthButton")
 	var skirmish_btn = main.get_node("UI/ToolsRow/SkirmishButton")
+	var devine_btn = main.get_node("UI/ToolsRow/DevineButton")
 	var event_panel = main.get_node("UI/Body/MainColumn/EventPanel")
 
 	print("--- Phase 1: Initial state ---")
@@ -41,73 +49,99 @@ func _ready() -> void:
 	check(not event_panel.visible, "1.2 EventPanel initially hidden")
 	check(not next_month_btn.disabled, "1.3 NextMonthButton initially enabled")
 	check(not skirmish_btn.disabled, "1.4 SkirmishButton initially enabled")
+	# Year is 906 → devine_btn enabled (year-gate clears at 906)
+	check(not devine_btn.disabled, "1.5 DevineButton initially enabled")
 
-	print("--- Phase 2: After _on_next_month() tick ---")
+	print("--- Phase 2: No-event tick — TurnReport shows, all 3 buttons disabled ---")
+	# Suppress event generation: null event_manager rng so random/council
+	# events don't trigger; also null pending_event
+	GameManager.game_state.pending_event = null
+	var saved_rng = GameManager.event_manager.rng
+	GameManager.event_manager.rng = null
+
 	main._on_next_month()
 
-	# turn_report must be visible after every tick (even if an event also appeared)
-	check(turn_report.visible, "2.1 TurnReport visible after tick (_on_next_month)")
-	check(next_month_btn.disabled, "2.2 NextMonthButton disabled during TurnReport")
-	check(skirmish_btn.disabled, "2.3 SkirmishButton disabled during TurnReport")
+	# Clean up any stray event that slipped through
+	if GameManager.game_state.pending_event != null:
+		GameManager.game_state.pending_event = null
+	if event_panel.visible:
+		event_panel.visible = false
 
-	print("--- Phase 3: TurnReport dismiss via CTA (same as player click) ---")
-	# Record whether event_panel was visible (may be set by _show_event in the tick)
-	var event_was_visible: bool = event_panel.visible
+	check(turn_report.visible, "2.1 TurnReport visible after tick")
+	check(not event_panel.visible, "2.2 EventPanel NOT visible (no event)")
+	check(next_month_btn.disabled, "2.3 NextMonthButton disabled during TurnReport")
+	check(skirmish_btn.disabled, "2.4 SkirmishButton disabled during TurnReport")
+	check(devine_btn.disabled, "2.5 DevineButton disabled during TurnReport")
 
-	# Call _on_cta() — this emits continue_pressed signal (-> Main handler runs)
-	# AND calls hide() — same flow as player clicking "Pokračovať"
+	print("--- Phase 3: No-event CTA dismiss — all 3 buttons re-enabled ---")
 	turn_report._on_cta()
 	check(not turn_report.visible, "3.1 TurnReport hidden after CTA dismiss")
+	check(not next_month_btn.disabled, "3.2 NextMonthButton re-enabled (no event)")
+	check(not skirmish_btn.disabled, "3.3 SkirmishButton re-enabled (no event)")
+	check(not devine_btn.disabled, "3.4 DevineButton re-enabled (no event)")
 
-	if not event_was_visible:
-		# No event triggered — buttons should re-enable
-		check(not next_month_btn.disabled, "3.2 NextMonthButton re-enabled after dismiss (no event)")
-		check(not skirmish_btn.disabled, "3.3 SkirmishButton re-enabled after dismiss (no event)")
-	else:
-		# An event was triggered — buttons stay disabled (tested in phase 4)
-		print("  INFO: Event was visible after tick — buttons stay disabled (tested in Phase 4)")
-		check(next_month_btn.disabled, "3.2 NextMonthButton stays disabled (event pending)")
-		check(skirmish_btn.disabled, "3.3 SkirmishButton stays disabled (event pending)")
+	# Restore event_manager rng
+	GameManager.event_manager.rng = saved_rng
 
-	print("--- Phase 4: CTA conditional — event_panel visible ---")
-	# Ensure event_panel is visible (if it wasn't from the tick, force it)
-	if not event_panel.visible:
-		event_panel.visible = true
+	print("--- Phase 4: Event path — event_panel visible, all 3 buttons stay disabled after CTA ---")
+	# Set up a resolvable pending event
+	GameManager.game_state.pending_event = {
+		"id": "test_event",
+		"title": "Test Udalosť",
+		"text": "Test text udalosti pre runtime test.",
+		"art_id": "",
+		"choices": {
+			"test_choice_a": {
+				"id": "test_choice_a",
+				"text": "Voľba A — testovacia",
+				"effect": {"gold": 0, "prestige": 0}
+			}
+		}
+	}
+	event_panel.visible = true
 
-	# Re-show TurnReport (it was hidden by dismiss in phase 3)
-	main.turn_report.show_report({
-		"year": 902, "month": 3,
-		"resources_delta": {},
-		"narration": "Test narration.",
-	})
-	check(turn_report.visible, "4.1 TurnReport visible for CTA conditional test")
+	# Use _show_turn_report_via_node() like production _on_next_month() does —
+	# this disables all 3 buttons before showing the report
+	main._show_turn_report_via_node([], "Test chronicle pre event path.")
+	check(turn_report.visible, "4.1 TurnReport visible during event")
+	check(event_panel.visible, "4.2 EventPanel visible (event pending)")
+	check(next_month_btn.disabled, "4.3 NextMonthButton disabled during TurnReport + event")
+	check(skirmish_btn.disabled, "4.4 SkirmishButton disabled during TurnReport + event")
+	check(devine_btn.disabled, "4.5 DevineButton disabled during TurnReport + event")
 
-	# Dismiss via CTA while event_panel is visible — buttons MUST stay disabled
+	# Dismiss TurnReport — buttons stay disabled (event_panel still visible)
 	turn_report._on_cta()
-	check(not turn_report.visible, "4.2 TurnReport hidden after CTA dismiss")
-	check(next_month_btn.disabled, "4.3 NextMonthButton disabled — event_panel visible after dismiss")
-	check(skirmish_btn.disabled, "4.4 SkirmishButton disabled — event_panel visible after dismiss")
+	check(not turn_report.visible, "4.6 TurnReport hidden after CTA dismiss (event pending)")
+	check(next_month_btn.disabled, "4.7 NextMonthButton disabled — event_panel visible")
+	check(skirmish_btn.disabled, "4.8 SkirmishButton disabled — event_panel visible")
+	check(devine_btn.disabled, "4.9 DevineButton disabled — event_panel visible")
 
-	print("--- Phase 5: Event resolved — buttons re-enabled ---")
-	# Simulate _resolve(): hide event panel
-	event_panel.visible = false
+	print("--- Phase 5: Event resolved via _resolve() — all 3 buttons re-enabled ---")
+	main._resolve("test_choice_a")
+	check(not event_panel.visible, "5.1 EventPanel hidden after _resolve()")
+	check(not next_month_btn.disabled, "5.2 NextMonthButton re-enabled after _resolve()")
+	check(not skirmish_btn.disabled, "5.3 SkirmishButton re-enabled after _resolve()")
+	# _resolve() calls _refresh_ui(); year 906+ so devine_btn stays enabled
+	check(not devine_btn.disabled, "5.4 DevineButton re-enabled after _resolve()")
 
-	# Re-show TurnReport again for a clean dismiss
-	main.turn_report.show_report({
-		"year": 902, "month": 3,
-		"resources_delta": {},
-		"narration": "Test narration.",
-	})
-	check(turn_report.visible, "5.1 TurnReport visible")
+	print("--- Phase 6: TurnReport + CTA after event resolved (buttons stay enabled) ---")
+	main._show_turn_report_via_node([], "Test chronicle po resolvovani.")
+	check(turn_report.visible, "6.1 TurnReport visible")
+	check(next_month_btn.disabled, "6.2 NextMonthButton disabled during TurnReport")
+	check(skirmish_btn.disabled, "6.3 SkirmishButton disabled during TurnReport")
+	check(devine_btn.disabled, "6.4 DevineButton disabled during TurnReport")
+
 	turn_report._on_cta()
-	check(not turn_report.visible, "5.2 TurnReport hidden after CTA dismiss")
-	check(not next_month_btn.disabled, "5.3 NextMonthButton re-enabled — event resolved")
-	check(not skirmish_btn.disabled, "5.4 SkirmishButton re-enabled — event resolved")
+	check(not turn_report.visible, "6.5 TurnReport hidden after CTA dismiss")
+	check(not next_month_btn.disabled, "6.6 NextMonthButton re-enabled (event resolved)")
+	check(not skirmish_btn.disabled, "6.7 SkirmishButton re-enabled (event resolved)")
+	# _on_turn_report_dismissed() enables all 3; no _refresh_ui() call here
+	check(not devine_btn.disabled, "6.8 DevineButton re-enabled (event resolved)")
 
 	# Clean exit
 	if _failures == 0:
-		print("TURNREPORT_RUNTIME_PASS")
+		print("TURNREPORT_RUNTIME_PASS  (%d assertions)" % _passes)
 		get_tree().quit(0)
 	else:
-		print("TURNREPORT_RUNTIME_FAIL: %d failure(s)" % _failures)
+		print("TURNREPORT_RUNTIME_FAIL: %d failure(s), %d pass" % [_failures, _passes])
 		get_tree().quit(1)
