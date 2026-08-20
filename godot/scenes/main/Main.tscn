@@ -286,6 +286,5 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Cvičná bitka (Nitra)"
 
-# TurnReport overlay — posledný child = vykreslený navrchu (front-most)
 [node name="TurnReport" parent="." instance=ExtResource("10")]
 visible = false

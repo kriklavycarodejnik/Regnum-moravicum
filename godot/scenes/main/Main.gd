@@ -746,6 +746,13 @@ func _show_turn_report_via_node(deltas: Array, chronicle_line: String) -> void:
 				if "-" in str(d):
 					val = -val
 				res_delta[key] = val
+	# Disable buttons — CTA musí byť jediný krok pokračovania
+	if next_month_btn:
+		next_month_btn.disabled = true
+	if skirmish_btn:
+		skirmish_btn.disabled = true
+	if devine_btn:
+		devine_btn.disabled = true
 	turn_report.show_report({
 		"year": gs.year,
 		"month": gs.month,
@@ -755,6 +762,12 @@ func _show_turn_report_via_node(deltas: Array, chronicle_line: String) -> void:
 
 
 func _on_turn_report_dismissed() -> void:
+	# Hide the TurnReport panel
+	if turn_report:
+		turn_report.hide()
+	# If event panel is visible, buttons stay disabled until event resolved
+	if event_panel != null and event_panel.visible:
+		return
 	if next_month_btn:
 		next_month_btn.disabled = false
 	if skirmish_btn:
