@@ -84,12 +84,12 @@ set +e
 ts_output=$(cd "$PROJECT_ROOT" && npm run test 2>&1)
 ts_rc=$?
 set -e
-if echo "$ts_output" | grep -q "305 passed"; then
-    echo -e "${GREEN}PASS${NC}"
-elif [ $ts_rc -ne 0 ]; then
+if [ $ts_rc -ne 0 ]; then
     echo -e "${RED}FAIL${NC} (exit code $ts_rc)"
     echo "$ts_output" | tail -5
     failures=$((failures + 1))
+elif echo "$ts_output" | grep -q "305 passed"; then
+    echo -e "${GREEN}PASS${NC}"
 else
     echo -e "${RED}FAIL${NC} (unexpected)"
     echo "$ts_output" | tail -5

@@ -217,6 +217,8 @@ func _init():
 	gm_prod_em._sync_rng_state()
 	check(gm_prod_gs.event_rng_state == gm_prod_em.event_rng.state, "GameManager prod _sync_rng_state writes to game_state")
 	check(gm_prod_gs.event_rng_state != 0, "GameManager prod event_rng_state advanced from 0")
+	# Capture state before save (reviewer item #2)
+	var event_rng_state_before_save: int = gm_prod_gs.event_rng_state
 
 	# Create GameManager instance (NOT added to tree, so _ready() never fires)
 	var gm_node_class = preload("res://autoloads/GameManager.gd")
@@ -236,6 +238,8 @@ func _init():
 
 	# Verify after load: event RNG seed survives exactly (stored as small int in JSON, no precision loss)
 	check(gm_node.game_state.event_rng_seed == 4242, "GameManager.load_save() preserves event_rng_seed")
+	# Verify event_rng_state survived load (reviewer item #2)
+	check(gm_node.game_state.event_rng_state == event_rng_state_before_save, "GameManager.load_save() preserves event_rng_state (was %d, got %d)" % [event_rng_state_before_save, gm_node.game_state.event_rng_state])
 	# Verify devine_resolved survives (stored as bool)
 	check(gm_node.game_state.devine_resolved == true, "GameManager.load_save() preserves devine_resolved")
 
@@ -249,42 +253,31 @@ func _init():
 	check(gm_loaded_roll >= 0.0 and gm_loaded_roll <= 1.0, "GameManager loaded EventManager generates valid randf")
 	print("GameManager.save() + load_save() production round-trip: devine_resolved + event RNG verified")
 
-	# 4e. Verify BattleView UI translation methods
-	var bv_winner_attacker = "útočník"
-	var bv_winner_defender = "obranca"
-	var bv_attack = "útok"
-	var bv_counterattack = "protiútok"
-	var bv_decision = "rozhodnutie"
-	check(bv_winner_attacker == "útočník", "BattleView winner translation: attacker -> útočník")
-	check(bv_winner_defender == "obranca", "BattleView winner translation: defender -> obranca")
-	check(bv_attack == "útok", "BattleView phase translation: attack -> útok")
-	check(bv_counterattack == "protiútok", "BattleView phase translation: counterattack -> protiútok")
-	check(bv_decision == "rozhodnutie", "BattleView phase translation: decision -> rozhodnutie")
-	print("BattleView UI translation: SK labels OK")
+	# 4e. Verify BattleView UI translation methods by calling the shared translation helper
+	var BVT = load("res://scripts/ui/BattleViewTranslations.gd")
+	# _translate_winner — known values
+	check(BVT.translate_winner("attacker") == "útočník", "BattleViewTranslations.winner('attacker') -> útočník")
+	check(BVT.translate_winner("defender") == "obranca", "BattleViewTranslations.winner('defender') -> obranca")
+	check(BVT.translate_winner("decisive_victory") == "rozhodujúce víťazstvo", "BattleViewTranslations.winner('decisive_victory') -> rozhodujúce víťazstvo")
+	check(BVT.translate_winner("major_victory") == "veľké víťazstvo", "BattleViewTranslations.winner('major_victory') -> veľké víťazstvo")
+	check(BVT.translate_winner("victory") == "víťazstvo", "BattleViewTranslations.winner('victory') -> víťazstvo")
+	check(BVT.translate_winner("stalemate") == "patová situácia", "BattleViewTranslations.winner('stalemate') -> patová situácia")
+	check(BVT.translate_winner("narrow_victory") == "tesné víťazstvo", "BattleViewTranslations.winner('narrow_victory') -> tesné víťazstvo")
+	check(BVT.translate_winner("heroic_victory") == "hrdinské víťazstvo", "BattleViewTranslations.winner('heroic_victory') -> hrdinské víťazstvo")
+	# Fallback: unknown winner
+	check(BVT.translate_winner("unknown_id") == "neznámy výsledok", "BattleViewTranslations.winner fallback -> neznámy výsledok")
+	# _translate_phase — known values
+	check(BVT.translate_phase("attack") == "útok", "BattleViewTranslations.phase('attack') -> útok")
+	check(BVT.translate_phase("counterattack") == "protiútok", "BattleViewTranslations.phase('counterattack') -> protiútok")
+	check(BVT.translate_phase("decision") == "rozhodnutie", "BattleViewTranslations.phase('decision') -> rozhodnutie")
+	# Fallback: unknown phase
+	check(BVT.translate_phase("unknown_phase") == "neznáma fáza", "BattleViewTranslations.phase fallback -> neznáma fáza")
+	print("BattleView UI translation methods verified via shared helper script")
 
-	# 4f. Verify BattleView fallback/result translations (round 4 reviewer item #3)
-	# Use inline mapping — cannot instantiate BattleView in smoke test (ArtCatalog autoload unavailable at compile time)
-	var expected_translations := {
-		"attacker": "útočník",
-		"defender": "obranca",
-		"decisive_victory": "rozhodujúce víťazstvo",
-		"major_victory": "veľké víťazstvo",
-		"victory": "víťazstvo",
-		"stalemate": "patová situácia",
-		"narrow_victory": "tesné víťazstvo",
-		"heroic_victory": "hrdinské víťazstvo",
-		"attack": "útok",
-		"counterattack": "protiútok",
-		"decision": "rozhodnutie",
-	}
-	for eng in expected_translations:
-		var sk: String = expected_translations[eng]
-		check(sk != eng, "BattleView translation: '%s' -> SK differs from EN" % eng)
-		check(sk.length() > 1, "BattleView translation: '%s' has non-empty SK label" % eng)
-	# Main.gd A-%d → Ú-%d in chronicle output (reviewer item #3)
+	# Main.gd A-%d → Ú-%d in chronicle output
 	var main_log_label = "  · %s: Ú-%d O-%d"
 	check(main_log_label.find("Ú-") != -1, "Main.gd chronicle uses Ú- for útočník losses (not A-)")
-	print("BattleView fallback/result translations + Main.gd Ú- label verified")
+	print("Main.gd chronicle Ú- label verified")
 
 	# 5. Auto 907 flow via WarManager.process_wars()
 	var gs_auto = GameState.new()

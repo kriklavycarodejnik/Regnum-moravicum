@@ -6,6 +6,7 @@ signal action_chosen(action: String)
 
 const C = preload("res://assets/theme/colors.gd")
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 
 var _title: Label
 var _body: RichTextLabel
@@ -146,34 +147,11 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 
 
 func _translate_winner(w: String) -> String:
-	if w == "attacker":
-		return "útočník"
-	elif w == "defender":
-		return "obranca"
-	# Battle result fallback values (when no winner field present)
-	if w == "decisive_victory":
-		return "rozhodujúce víťazstvo"
-	elif w == "major_victory":
-		return "veľké víťazstvo"
-	elif w == "victory":
-		return "víťazstvo"
-	elif w == "stalemate":
-		return "patová situácia"
-	elif w == "narrow_victory":
-		return "tesné víťazstvo"
-	elif w == "heroic_victory":
-		return "hrdinské víťazstvo"
-	return w
+	return _Translations.translate_winner(w)
 
 
 func _translate_phase(p: String) -> String:
-	if p == "attack":
-		return "útok"
-	elif p == "counterattack":
-		return "protiútok"
-	elif p == "decision":
-		return "rozhodnutie"
-	return p
+	return _Translations.translate_phase(p)
 
 func show_actions(visible_flag: bool) -> void:
 	if _actions_row:

@@ -553,7 +553,7 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 		elif phase == "decision":
 			phase_label = "rozhodnutie"
 		else:
-			phase_label = phase
+			phase_label = "neznáma fáza"
 		if phase in ["attack", "counterattack"]:
 			_append_chronicle("  · %s: Ú-%d O-%d" % [
 				phase_label,
@@ -566,6 +566,8 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 				winner_sk = "útočník"
 			elif winner_sk == "defender":
 				winner_sk = "obranca"
+			else:
+				winner_sk = "neznámy výsledok"
 			_append_chronicle("  · výsledok: %s" % winner_sk)
 
 
