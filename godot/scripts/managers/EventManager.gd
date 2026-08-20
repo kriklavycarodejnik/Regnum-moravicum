@@ -340,11 +340,12 @@ func _religion_shift(delta: int) -> void:
 
 
 func _build_council_event() -> Dictionary:
+	var council_desc: String = "Županka zo Spiša namieta, že kniežacie dary prúdia len do Nitry a pohraničie ostáva napospas osudu. Kniežacia rada žiada rozhodnutie, kam nasmerovať pozornosť dvoru a prostriedky ríše. Nespokojnosť zhromaždených veľmožov môže prerásť do otvoreného odporu, ak knieža nezaujme jasný postoj."
 	return {
 		"id": "council",
 		"title": "Rada županov",
-		"text": "Županka zo Spiša namieta, že kniežacie dary prúdia len do Nitry a pohraničie ostáva napospas osudu. Kniežacia rada žiada rozhodnutie, kam nasmerovať pozornosť dvoru a prostriedky ríše.",
-		"body": "Županka zo Spiša namieta, že kniežacie dary prúdia len do Nitry a pohraničie ostáva napospas osudu. Kniežacia rada žiada rozhodnutie, kam nasmerovať pozornosť dvoru a prostriedky ríše.",
+		"text": council_desc,
+		"body": council_desc,
 		"art_id": "event_council_of_zhupans",
 		"choices": {
 			"gifts": {

@@ -369,5 +369,40 @@ func _init() -> void:
 
 	print("P0.5 8 MVP Events narration hooks verified successfully!")
 
+	# 11) Structural sentence count assertion (3-6 Slovak sentences per event body + council)
+	print("--- Testing sentence count assertion (3-6 sentences) on all catalog events and council ---")
+	var count_sentences = func(text: String) -> int:
+		var cleaned = text.strip_edges()
+		if cleaned == "":
+			return 0
+		var count: int = 0
+		var in_sentence: bool = false
+		for i in range(cleaned.length()):
+			var c = cleaned[i]
+			if c in [".", "!", "?"]:
+				# Avoid counting abbreviations or duplicate punctuation if preceded by char
+				if in_sentence:
+					count += 1
+					in_sentence = false
+			elif c != " " and c != "	" and c != "\n":
+				in_sentence = true
+		if in_sentence:
+			count += 1
+		return count
+
+	for cat in p05_em._catalog:
+		if typeof(cat) != TYPE_DICTIONARY:
+			continue
+		var eid: String = str(cat.get("id", ""))
+		var body_str: String = str(cat.get("body", ""))
+		var sc: int = count_sentences.call(body_str)
+		check(sc >= 3 and sc <= 6, "event %s body sentence count (%d) in range 3..6" % [eid, sc])
+
+	var council_ev: Dictionary = p05_em._build_council_event()
+	var council_body: String = str(council_ev.get("body", council_ev.get("text", "")))
+	var council_sc: int = count_sentences.call(council_body)
+	check(council_sc >= 3 and council_sc <= 6, "council fallback body sentence count (%d) in range 3..6" % council_sc)
+	print("Sentence count assertions OK: all catalog events and council have 3-6 sentences.")
+
 	print("SMOKE_M6_PASS")
 	quit(0)
