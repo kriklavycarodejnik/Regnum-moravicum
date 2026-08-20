@@ -5,33 +5,26 @@ extends RefCounted
 const CATALOG_PATH := "res://data/events_catalog.json"
 
 var game_state
-var rng: RandomNumberGenerator
 var event_rng: RandomNumberGenerator
-var save_seed: int = 42
 var _catalog: Array = []
 var _loaded: bool = false
 
 
-func _init(state: RefCounted = null, rng_ref: RandomNumberGenerator = null) -> void:
+func _init(state: RefCounted = null) -> void:
 	if state != null:
 		game_state = state
-	if rng_ref != null:
-		rng = rng_ref
-	event_rng = RandomNumberGenerator.new()
+		event_rng = RandomNumberGenerator.new()
+		event_rng.seed = game_state.event_rng_seed
+		# Only restore explicit state on reload (0 = fresh, let seed determine state)
+		if game_state.event_rng_state != 0:
+			event_rng.state = game_state.event_rng_state
 
 
-func set_save_seed(seed_value: int) -> void:
-	save_seed = seed_value
-
-
-func _refresh_event_rng() -> void:
-	# Event RNG has its own named stream: hash(save_seed, month_index, faction_id, "event").
-	# This isolates it from battle/economy/nobility RNG draws.
-	var month_index: int = game_state.year * 12 + game_state.month
-	var faction_id: String = "moravia"
-	if typeof(game_state.factions) == TYPE_DICTIONARY and game_state.factions.has("moravia"):
-		faction_id = "moravia"
-	event_rng.seed = hash([save_seed, month_index, faction_id, "event"])
+# Save event RNG state back to game_state after operations
+func _sync_rng_state() -> void:
+	if game_state == null or event_rng == null:
+		return
+	game_state.event_rng_state = event_rng.state
 
 
 func _load_catalog() -> void:
@@ -54,11 +47,6 @@ func process_events() -> Dictionary:
 	if not _loaded:
 		_load_catalog()
 
-	# Re-seed the event RNG stream for this tick. This is the isolation point:
-	# event_rng depends only on (save_seed, month_index, faction_id, "event")
-	# and is unaffected by any battle/economy/nobility draws that happened before.
-	_refresh_event_rng()
-
 	var pending = game_state.pending_event
 	if pending != null and typeof(pending) == TYPE_DICTIONARY:
 		return {
@@ -74,7 +62,7 @@ func process_events() -> Dictionary:
 	# 1. Check chain events queued via nextEvent
 	var chain_out: Dictionary = _try_chain_event()
 	if not chain_out.is_empty():
-		_record_last_event(chain_out)
+		_sync_rng_state()
 		return chain_out
 
 	# 2. Check historical (year-scoped) events
@@ -87,26 +75,23 @@ func process_events() -> Dictionary:
 	var rand_out: Dictionary = _try_random_event()
 	if not rand_out.is_empty():
 		_record_last_event(rand_out)
+		_sync_rng_state()
 		return rand_out
 
 	# 4. Fallback: council event (8% chance)
-	#    No-immediate-repeat: skip if the previous turn was also the council event.
 	if event_rng != null and event_rng.randf_range(0.0, 1.0) < 0.08:
-		if game_state.last_event_id == "council":
-			pass  # zámerné: council sa nesmie opakovať dva ťahy za sebou
-		else:
-			var ce: Dictionary = _build_council_event()
-			game_state.pending_event = ce
-			game_state.last_event_id = "council"
-			return {
-				"type": "event",
-				"id": str(ce.get("id", "council")),
-				"title": ce.get("title", "Rada županov"),
-				"text": ce.get("text", ""),
-				"body": ce.get("text", ""),
-				"art_id": ce.get("art_id", ""),
-				"choices": ce.get("choices", {}),
-			}
+		var ce: Dictionary = _build_council_event()
+		game_state.pending_event = ce
+		_sync_rng_state()
+		_record_last_event(ce)
+		return {
+			"type": "event",
+			"title": ce.get("title", "Rada županov"),
+			"text": ce.get("text", ""),
+			"body": ce.get("text", ""),
+			"art_id": ce.get("art_id", ""),
+			"choices": ce.get("choices", {}),
+		}
 
 	return {"type": "event", "id": "", "title": "", "text": "", "body": "", "art_id": "", "choices": []}
 
@@ -335,6 +320,8 @@ func resolve_choice(choice_id: String) -> Dictionary:
 	var chronicle: String = str(choice_dict.get("text", ""))
 	if chronicle == "":
 		chronicle = "Voľba prijatá."
+
+	_sync_rng_state()
 
 	return {
 		"ok": true,

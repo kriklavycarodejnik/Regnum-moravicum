@@ -54,8 +54,8 @@ func _bootstrap() -> void:
 	narration_manager = NarrationManager.new()
 	narration_manager._init(game_state, rng)
 	event_manager = EventManager.new()
-	event_manager._init(game_state, rng)
-	event_manager.set_save_seed(save_manager.get_save_seed())
+	event_manager._init(game_state)
+	_sync_event_rng_to_save_manager()
 	diplomacy_manager = DiplomacyManager.new()
 	diplomacy_manager._init(game_state, rng)
 	war_manager = WarManager.new()
@@ -156,6 +156,10 @@ func resolve_event_choice(choice_id: String) -> Dictionary:
 	return event_manager.resolve_choice(choice_id)
 
 func save() -> bool:
+	# Sync latest EventManager RNG state to game_state before saving
+	if event_manager != null and event_manager.event_rng != null:
+		event_manager._sync_rng_state()
+	_sync_event_rng_to_save_manager()
 	return save_manager.save_game(game_state)
 
 func load_save() -> bool:
@@ -186,8 +190,8 @@ func load_save() -> bool:
 	narration_manager = NarrationManager.new()
 	narration_manager._init(game_state, rng)
 	event_manager = EventManager.new()
-	event_manager._init(game_state, rng)
-	event_manager.set_save_seed(save_manager.get_save_seed())
+	event_manager._init(game_state)
+	_sync_event_rng_to_save_manager()
 	diplomacy_manager = DiplomacyManager.new()
 	diplomacy_manager._init(game_state, rng)
 	war_manager = WarManager.new()
@@ -223,6 +227,14 @@ func load_save() -> bool:
 		save_manager
 	)
 	return true
+
+
+func _sync_event_rng_to_save_manager() -> void:
+	# Keep save_manager.event_rng in sync with the authoritative EventManager/GameState
+	if save_manager == null or save_manager.event_rng == null or game_state == null:
+		return
+	save_manager.event_rng.seed = game_state.event_rng_seed
+	save_manager.event_rng.state = game_state.event_rng_state
 
 
 func reset() -> void:

@@ -9,12 +9,15 @@ const GAME_STATE := preload("res://scripts/core/GameState.gd")
 
 var rng: RandomNumberGenerator
 var save_seed: int = 42
+var event_rng: RandomNumberGenerator
 
 
 func _init(seed_value: int = 42) -> void:
 	save_seed = seed_value
 	rng = RandomNumberGenerator.new()
 	rng.seed = seed_value
+	event_rng = RandomNumberGenerator.new()
+	event_rng.seed = seed_value
 
 
 func get_rng() -> RandomNumberGenerator:
@@ -24,6 +27,9 @@ func get_rng() -> RandomNumberGenerator:
 func get_save_seed() -> int:
 	return save_seed
 
+func get_event_rng() -> RandomNumberGenerator:
+	return event_rng
+
 
 func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
 	var file = FileAccess.open(path, FileAccess.WRITE)
@@ -31,11 +37,19 @@ func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
 		push_error("Failed to open save file: " + path)
 		return false
 
+	var state_dict: Dictionary = state.to_dict()
+	# Store event_rng_state as string inside state_dict too (preserves 64-bit precision through JSON)
+	var raw_event_rng_state = state_dict.get("event_rng_state", 0)
+	state_dict["event_rng_state"] = str(raw_event_rng_state)
 	var save_data: Dictionary = {
 		"version": SAVE_VERSION,
 		"seed": rng.seed,
-		"state": state.to_dict(),
-		"rng_state": rng.state
+		"state": state_dict,
+		# Store rng state as string to preserve 64-bit precision through JSON
+		"rng_state": str(rng.state),
+		# Event RNG data comes from GameState (written by EventManager._sync_rng_state)
+		"event_rng_seed": state_dict.get("event_rng_seed", 42),
+		"event_rng_state": str(raw_event_rng_state),
 	}
 	file.store_string(JSON.stringify(save_data))
 	file.close()
@@ -62,14 +76,18 @@ func load_game(path: String = DEFAULT_PATH) -> RefCounted:
 	save_seed = int(json.get("seed", 42))
 	rng.seed = save_seed
 	rng.state = int(json.get("rng_state", 0))
-	var state_dict: Dictionary = json.get("state") or {}
+	event_rng.seed = int(json.get("event_rng_seed", 42))
+	event_rng.state = int(json.get("event_rng_state", 0))
+	var state_dict: Dictionary = json.get("state", {})
+	if state_dict == null:
+		state_dict = {}
 	var state = GAME_STATE.new()
 	state.from_dict(state_dict)
 	return state
 
 
 func autosave_if_year_end(state: RefCounted) -> bool:
-	var current_month: int = state.get("month") or 1
+	var current_month: int = state.month
 	if current_month != 12:
 		return false
 	return save_game(state, AUTOSAVE_PATH)

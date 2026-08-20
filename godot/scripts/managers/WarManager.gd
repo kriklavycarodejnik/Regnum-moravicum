@@ -30,7 +30,6 @@ func process_wars() -> Dictionary:
 
 	if current_year == 907 and current_month == 7 and not game_state.devine_resolved:
 		var outcome: Dictionary = hungarian_war_scenario.resolve_devine_battle()
-		game_state.devine_resolved = true
 		report.battles.append(outcome)
 	elif game_state.devine_resolved:
 		pass
@@ -59,8 +58,12 @@ func resolve_skirmish(province_id: String, terrain: String = "field") -> Diction
 func resolve_devine_battle() -> Dictionary:
 	if game_state.devine_resolved:
 		return {"ok": false, "error": "already_resolved", "chronicle": "Scenár Devín 907 už bol odohraný."}
+	# Pre-907 guard: Devín battle is locked until July 907
+	var y: int = game_state.year
+	var m: int = game_state.month
+	if y < 907 or (y == 907 and m < 7):
+		return {"ok": false, "error": "too_early", "chronicle": "Devín 907 ešte nenastal. Bitka nie je prístupná."}
 	var outcome: Dictionary = hungarian_war_scenario.resolve_devine_battle()
-	game_state.devine_resolved = true
 	return outcome
 
 

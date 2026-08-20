@@ -6,6 +6,7 @@ signal action_chosen(action: String)
 
 const C = preload("res://assets/theme/colors.gd")
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 
 var _title: Label
 var _body: RichTextLabel
@@ -89,7 +90,7 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 	show_actions(false)
 	if _title:
 		_title.text = title
-	
+
 	# Determine silhouettes based on art_id / battle context
 	var is_devin: bool = (art_id == "battle_danube_composition" or "Devín" in title or "devin" in title.to_lower())
 	if is_devin:
@@ -108,7 +109,7 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 		if _sil_right != null:
 			_sil_right.texture = ArtCatalog.texture("sil_cavalry")
 			_sil_right.visible = _sil_right.texture != null
-	
+
 	if _art:
 		if art_id != "":
 			var tex: Texture2D = ArtCatalog.texture(art_id)
@@ -122,24 +123,35 @@ func show_outcome(title: String, outcome: Dictionary, art_id: String = "") -> vo
 	if _body:
 		_body.clear()
 		var winner: String = str(outcome.get("winner", outcome.get("result", "?")))
-		_body.append_text("Výsledok: [b]%s[/b]\n" % winner)
+		var winner_sk: String = _translate_winner(winner)
+		_body.append_text("Výsledok: [b]%s[/b]\n" % winner_sk)
 		var logs = outcome.get("phase_logs", [])
 		if typeof(logs) == TYPE_ARRAY:
 			for log in logs:
 				if typeof(log) != TYPE_DICTIONARY:
 					continue
 				var phase: String = str(log.get("phase", "?"))
+				var phase_sk: String = _translate_phase(phase)
 				if phase in ["attack", "counterattack"]:
-					_body.append_text("· %s — A %d / D %d (ratio %.2f)\n" % [
-						phase,
+					_body.append_text("· %s — Ú %d / O %d (pomer %.2f)\n" % [
+						phase_sk,
 						int(log.get("attacker_losses", 0)),
 						int(log.get("defender_losses", 0)),
 						float(log.get("ratio", 0.0))
 					])
 				elif phase == "decision":
-					_body.append_text("· decision: %s\n" % str(log.get("winner", "?")))
+					var w: String = str(log.get("winner", "?"))
+					_body.append_text("· rozhodnutie: %s\n" % _translate_winner(w))
 		if outcome.has("chronicle"):
 			_body.append_text("\n%s\n" % str(outcome.get("chronicle")))
+
+
+func _translate_winner(w: String) -> String:
+	return _Translations.translate_winner(w)
+
+
+func _translate_phase(p: String) -> String:
+	return _Translations.translate_phase(p)
 
 func show_actions(visible_flag: bool) -> void:
 	if _actions_row:

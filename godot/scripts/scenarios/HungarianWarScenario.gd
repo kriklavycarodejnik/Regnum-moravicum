@@ -75,9 +75,19 @@ func create_initial_armies() -> Dictionary:
 
 
 func resolve_devine_battle() -> Dictionary:
-	# P-1.1 guard — Devín max 1× za run
+	# Defense-in-depth: guard against Nil game_state (uninitialised scenario)
+	if game_state == null:
+		return {"ok": false, "error": "no_state", "chronicle": "Chyba: herný stav nie je inicializovaný."}
+	# P-1.1 guard — Devín max 1× za run. Guard sa kontroluje v samotnom scenári,
+	# lebo každý call site (WarManager.process_wars, WarManager.resolve_devine_battle,
+	# manuálne tlačidlo) nakoniec volá túto metódu.
 	if game_state.devine_resolved:
 		return {"ok": false, "error": "already_resolved", "chronicle": "Scenár Devín 907 už bol odohraný."}
+	# Defense-in-depth pre-907 guard: bitka je uzamknutá pred júlom 907
+	var y: int = game_state.year
+	var m: int = game_state.month
+	if y < 907 or (y == 907 and m < 7):
+		return {"ok": false, "error": "too_early", "chronicle": "Devín 907 ešte nenastal."}
 	var armies: Dictionary = create_initial_armies()
 	var hungarian: Dictionary = armies["hungarian_main"].duplicate(true)
 	var moravian: Dictionary = armies["moravian_main"].duplicate(true)
@@ -93,30 +103,44 @@ func resolve_devine_battle() -> Dictionary:
 	# Auto-resolve
 	var outcome: Dictionary = battle_manager.auto_resolve(hungarian, moravian, TERRAIN_DEVIN)
 
-	# Apply rewards if defender wins
-	if outcome.get("winner", "") == "defender":
-		var rewards: Dictionary = {
-			"prestige": 5,
-			"gold": 1000,
-			"loyalty_bonus": 10
-		}
-		var resources: Dictionary = game_state.resources
-		resources["prestige"] = (resources.get("prestige") or 0) + rewards["prestige"]
-		resources["gold"] = (resources.get("gold") or 0) + rewards["gold"]
-		game_state.resources = resources
-		
-		var provinces: Dictionary = game_state.provinces
-		for province_id in ["nitra", "devin"]:
-			if provinces.has(province_id):
-				var province: Dictionary = provinces[province_id]
-				province["loyalty"] = province.get("loyalty", 50) + rewards["loyalty_bonus"]
-				provinces[province_id] = province
-		game_state.provinces = provinces
-		
-		outcome["rewards_applied"] = rewards
+	# Canon invariant (NAVRH §4.1): Devín 907 winner == "attacker" (Maďari)
+	outcome["winner"] = "attacker"
+	outcome["result"] = battle_manager._evaluate_battle_result("attacker", outcome.get("attacker_es", 0.0), outcome.get("defender_es", 0.0))
 
-	# Clear occupation if defender wins
-	if war_manager.set_occupier(PROVINCE_DEVIN, ""):
-		outcome["occupation_applied"] = false
+	# Apply consequences BEFORE setting devine_resolved (reviewer item #3)
+	_apply_devine_consequences()
+	game_state.devine_resolved = true
 
+	outcome["ok"] = true
+	outcome["chronicle"] = "907 · Devín padol: maďarské vojská prelomili riečnu obranu. Prestíž -30, lojalita Devína -20, nálada Maďarov +30."
 	return outcome
+
+
+# P-1.1 — mechanické dôsledky Devín 907 (canon NAVRH §4.1):
+# prestíž -30, lojalita Devína -20, mood frakcie Maďarov +30, kronika kapitola.
+func _apply_devine_consequences() -> void:
+	var resources: Dictionary = game_state.resources
+	resources["prestige"] = int(resources.get("prestige", 0)) - 30
+	game_state.resources = resources
+
+	var provinces: Dictionary = game_state.provinces
+	if provinces.has(PROVINCE_DEVIN):
+		var province: Dictionary = provinces[PROVINCE_DEVIN]
+		province["loyalty"] = float(province.get("loyalty", 50)) - 20.0
+		provinces[PROVINCE_DEVIN] = province
+	game_state.provinces = provinces
+
+	var factions: Dictionary = game_state.factions
+	if factions.has("hungary"):
+		var hungary: Dictionary = factions["hungary"]
+		hungary["mood"] = float(hungary.get("mood", 20.0)) + 30.0
+		factions["hungary"] = hungary
+	game_state.factions = factions
+
+	var chronicle: Array = game_state.chronicle
+	chronicle.append({
+		"year": 907,
+		"month": 7,
+		"text": "907 · Devín padol: maďarské vojská prelomili riečnu obranu. Prestíž -30, lojalita Devína -20, nálada Maďarov +30."
+	})
+	game_state.chronicle = chronicle
