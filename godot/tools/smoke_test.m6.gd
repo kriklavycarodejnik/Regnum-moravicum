@@ -804,6 +804,38 @@ func _init() -> void:
 	check(p1_det_a == p1_det_c, "P1 event RNG isolation: battle draws do not perturb event sequence")
 	print("P1: deterministic seed + battle RNG isolation verified (36 months)")
 
+	# 16i) Army wizard trigger conditions verification
+	var aw_gs1 = GameState.new()
+	aw_gs1.ensure_resources()
+	aw_gs1.army_wizard_done = false
+	aw_gs1.year = 906
+	var aw_show1: bool = not aw_gs1.army_wizard_done and aw_gs1.year >= 906
+	check(aw_show1 == true, "P1 wizard: year=906, done=false → show=true")
+	var aw_gs2 = GameState.new()
+	aw_gs2.ensure_resources()
+	aw_gs2.army_wizard_done = true
+	aw_gs2.year = 906
+	var aw_show2: bool = not aw_gs2.army_wizard_done and aw_gs2.year >= 906
+	check(aw_show2 == false, "P1 wizard: year=906, done=true → show=false")
+	var aw_gs3 = GameState.new()
+	aw_gs3.ensure_resources()
+	aw_gs3.army_wizard_done = false
+	aw_gs3.year = 902
+	var aw_show3: bool = not aw_gs3.army_wizard_done and aw_gs3.year >= 906
+	check(aw_show3 == false, "P1 wizard: year=902, done=false → show=false")
+	# Notification trigger condition (used in Main._on_next_month)
+	var aw_gs4 = GameState.new()
+	aw_gs4.ensure_resources()
+	aw_gs4.year = 906
+	aw_gs4.month = 6
+	aw_gs4.army_wizard_done = false
+	var aw_notify1: bool = aw_gs4.year >= 906 and aw_gs4.month >= 6 and not aw_gs4.army_wizard_done
+	check(aw_notify1 == true, "P1 wizard: notifikácia sa zobrazí v 906/06")
+	aw_gs4.army_wizard_done = true
+	var aw_notify2: bool = aw_gs4.year >= 906 and aw_gs4.month >= 6 and not aw_gs4.army_wizard_done
+	check(aw_notify2 == false, "P1 wizard: notifikácia sa neskrýva po army_wizard_done")
+	print("P1: army wizard trigger conditions verified")
+
 	print("P1: 14 event catalog regression ALL CHECKS PASSED!")
 
 	if _m6_failed:
