@@ -107,7 +107,7 @@ func _on_army_selected(army_id: String) -> void:
 	var status_raw: String = str(army.get("status", ""))
 	var status_sk: String = _Translations.translate_army_status(status_raw)
 	var display_name: String = _Translations.translate_army_name(army, army_id)
-	army_info.text = "Armáda: %s\nProvincia: %s\nVeľkosť: %s\nMorálka: %s\nZásoby: %s\nStatus: %s" % [
+	army_info.text = "Armáda: %s\nProvincia: %s\nVeľkosť: %s\nMorálka: %s\nZásoby: %s\nStav: %s" % [
 		display_name,
 		prov_name,
 		str(army.get("size", army.get("strength", "?"))),
@@ -156,10 +156,10 @@ func _on_target_province_selected(army_id: String, target_province_id: String) -
 func _on_battle_button_pressed() -> void:
 	if selected_army_id == "" or army_manager == null or army_info == null:
 		return
-	army_info.text = "Bitka: použi tlačidlá Cvičná bitka alebo Devín."
+	army_info.text = "Pre bitku použi tlačidlá Cvičná bitka alebo Devín 907."
 
 
 func _on_siege_button_pressed() -> void:
 	if selected_army_id == "" or army_info == null:
 		return
-	army_info.text = "Obliehanie — správa výprav (ďalšia verzia)."
+	army_info.text = "Obliehanie bude dostupné v ďalšej verzii."
