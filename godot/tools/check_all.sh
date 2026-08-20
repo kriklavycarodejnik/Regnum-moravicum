@@ -16,7 +16,7 @@ check() {
     local name="$1"
     shift
     echo -n "  $name ... "
-    if "$@" 2>&1 | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|SMOKE_MAIN_PASS|Tests [0-9]+ passed)"; then
+    if "$@" 2>&1 | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|SMOKE_MAIN_PASS|TURNREPORT_RUNTIME_PASS|Tests [0-9]+ passed)"; then
         echo -e "${GREEN}PASS${NC}"
     else
         echo -e "${RED}FAIL${NC}"
@@ -39,8 +39,12 @@ check "Smoke M5" $GODOT -s res://tools/smoke_test.gd --quit-after 30
 echo "3. Smoke M6"
 check "Smoke M6" $GODOT -s res://tools/smoke_test.m6.gd --quit-after 30
 
-# 4. TS tests (run from project root)
-echo "4. npm test"
+# 4. TurnReport runtime behavior test (autoloads enabled)
+echo "4. TurnReport runtime"
+check "TurnReport runtime" $GODOT res://tools/test_turnreport_runtime.tscn --quit-after 10
+
+# 5. TS tests (run from project root)
+echo "5. npm test"
 echo -n "  npm test ... "
 if (cd "$PROJECT_ROOT" && npm run test) 2>&1 | grep -q "305 passed"; then
     echo -e "${GREEN}PASS${NC}"
