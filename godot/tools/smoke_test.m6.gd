@@ -950,6 +950,17 @@ func _init() -> void:
 			a3d_found = true
 	check(a3d_found, "P1.2 beat A3: hungary.mood=25 → Maďari sa hnevajú goal")
 
+	# ─── A4 regression: 906/00 (neplatný, month=0) → nesmie dostať „Blíži sa 907“ ───
+	var a4_00_gs := GameState.new()
+	a4_00_gs.ensure_resources()
+	a4_00_gs.year = 906
+	a4_00_gs.month = 0
+	a4_00_gs.devine_resolved = false
+	a4_00_gs.resources.gold = 1000
+	var a4_00_beat := ObjectivesPanel.compute_beats(a4_00_gs)
+	check(a4_00_beat.next_step.find("Blíži sa 907") < 0, "P1.2 beat A4 regression: 906/00 !devine_resolved → neukáže „Blíži sa 907“")
+	check(a4_00_beat.next_step.find("Pokračuj") >= 0, "P1.2 beat A4 regression: 906/00 → zobrazí wait text")
+
 	# ─── A4: approach 907 (906/01, !devine_resolved, gold=1000) ───
 	var a4_gs := GameState.new()
 	a4_gs.ensure_resources()
@@ -1068,6 +1079,7 @@ func _init() -> void:
 	d1_gs.resources.prestige = 75
 	var d1_beat := ObjectivesPanel.compute_beats(d1_gs)
 	check(d1_beat.next_step.find("r.") >= 0, "P1.2 beat D1: 980 → r. text")
+	check(d1_beat.next_step.find("prestíž: 75") >= 0, "P1.2 beat D1: 980 → prestíž: 75 (state-only infer)")
 	check(d1_beat.phase_name.find("Cesta k 1000") >= 0, "P1.2 beat D1: phase_name obsahuje Cesta k 1000")
 
 	# ─── Diplomacy side-goal: test cez compute_beats s factions ───

@@ -109,7 +109,7 @@ func refresh() -> void:
 # Statická compute_beats — testovateľná, bez závislosti na scéne.
 # Volaj z -s skriptov aj UnitTestov: ObjectivesPanel.compute_beats(gs)
 # ─────────────────────────────────────────────────────────────────────
-static func compute_beats(s, gold: int = -1, owned: int = -1, prestige: int = 0) -> Dictionary:
+static func compute_beats(s, gold: int = -1, owned: int = -1, prestige: int = -1) -> Dictionary:
 	var year: int = int(s.year)
 	var month: int = int(s.month)
 	var devine_resolved: bool = s.devine_resolved
@@ -135,7 +135,7 @@ static func compute_beats(s, gold: int = -1, owned: int = -1, prestige: int = 0)
 			"Prežiť ako dynastia do 1000",
 			"Zbieraj zlato a jedlo („Ďalší mesiac“)",
 			"Priprav sa na rok 907",
-		])
+			])
 
 		# A1: tutorial (year==902 && month<=2)
 		if year == 902 and month <= 2:
@@ -153,17 +153,21 @@ static func compute_beats(s, gold: int = -1, owned: int = -1, prestige: int = 0)
 			if hungary_mood >= 0.0 and hungary_mood < 30.0:
 				goals.append("Pozor: Maďari sa hnevajú — zváž dar v Diplomacii.")
 
-		# A4: approach 907 (year>=906 && !devine_resolved)
-		elif not devine_resolved:
+		# A4: approach 907 — explicit mesačný gate (year>=906 && month>=1 && !devine_resolved),
+		# aby neplatný stav 906/00 nezobrazoval „Blíži sa 907“.
+		elif year >= 906 and month >= 1 and not devine_resolved:
 			next_step = "Blíži sa 907 — priprav armádu k Devínu (pozri notifikáciu)."
 			# A4 diplomatická väzba: ak byzantium.mood<40 → varovanie
 			var byzantium_mood := _get_faction_mood(s, "byzantium")
 			if byzantium_mood >= 0.0 and byzantium_mood < 40.0:
 				goals.append("Byzancia je chladná — sobáš môžete ohroziť.")
 
-		# A4 resolved: devine_resolved už je true (rok 906 s resolved)
+		# A4 resolved / neplatná 906/00: ešte sa nepribližuj k 907
 		else:
-			next_step = "Pokračuj „Ďalší mesiac“ — Devín je vyriešený."
+			if devine_resolved:
+				next_step = "Pokračuj „Ďalší mesiac“ — Devín je vyriešený."
+			else:
+				next_step = "Pokračuj „Ďalší mesiac“."
 
 	# ─── Fáza II — Kríza (907) ───
 	elif year == 907:
