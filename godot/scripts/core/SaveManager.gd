@@ -37,13 +37,15 @@ func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
 		push_error("Failed to open save file: " + path)
 		return false
 
+	var state_dict: Dictionary = state.to_dict()
 	var save_data: Dictionary = {
 		"version": SAVE_VERSION,
 		"seed": rng.seed,
-		"state": state.to_dict(),
+		"state": state_dict,
 		"rng_state": rng.state,
-		"event_rng_seed": event_rng.seed,
-		"event_rng_state": event_rng.state,
+		# Event RNG data comes from GameState (written by EventManager._sync_rng_state)
+		"event_rng_seed": state_dict.get("event_rng_seed", 42),
+		"event_rng_state": state_dict.get("event_rng_state", 0),
 	}
 	file.store_string(JSON.stringify(save_data))
 	file.close()

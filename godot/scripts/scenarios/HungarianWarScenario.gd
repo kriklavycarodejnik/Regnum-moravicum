@@ -75,6 +75,9 @@ func create_initial_armies() -> Dictionary:
 
 
 func resolve_devine_battle() -> Dictionary:
+	# Defense-in-depth: guard against Nil game_state (uninitialised scenario)
+	if game_state == null:
+		return {"ok": false, "error": "no_state", "chronicle": "Chyba: herný stav nie je inicializovaný."}
 	# P-1.1 guard — Devín max 1× za run. Guard sa kontroluje v samotnom scenári,
 	# lebo každý call site (WarManager.process_wars, WarManager.resolve_devine_battle,
 	# manuálne tlačidlo) nakoniec volá túto metódu.

@@ -148,12 +148,11 @@ func _init():
 	print("Chronicle: exactly 1 Devín entry")
 
 	# 4c. Save/load round-trip preserves devine_resolved AND event RNG seed/state
+	# Production path: SaveManager reads event_rng_seed/state directly from GameState.to_dict()
 	var save = SaveManager.new()
 	save._init(99)
 	save.rng = w.rng
-	# Copy event RNG state from game_state to SaveManager
-	save.event_rng.seed = gs.event_rng_seed
-	save.event_rng.state = gs.event_rng_state
+	# Smoke test does NOT manually copy event_rng — SaveManager.save_game() reads from game_state
 	var save_ok = save.save_game(gs)
 	check(save_ok, "save_game ok")
 	var loaded = GameState.new()
@@ -168,6 +167,25 @@ func _init():
 		var loaded_em = EventManager.new()
 		loaded_em._init(loaded)
 		check(loaded_em.event_rng.state == loaded.event_rng_state, "EventManager restores event_rng state from loaded GameState")
+		# Verify production-path round trip: save then load a fresh GameState
+		var fresh_gs = GameState.new()
+		fresh_gs.event_rng_seed = 12345
+		fresh_gs.event_rng_state = 67890
+		var fresh_save = SaveManager.new()
+		fresh_save._init(42)
+		fresh_save.rng = fresh_save.get_rng()
+		var fresh_ok = fresh_save.save_game(fresh_gs)
+		check(fresh_ok, "production save_game ok")
+		var fresh_loaded = fresh_save.load_game()
+		check(fresh_loaded != null, "production load_game returns state")
+		if fresh_loaded != null:
+			check(int(fresh_loaded.event_rng_seed) == 12345, "production event_rng_seed round-trip")
+			check(int(fresh_loaded.event_rng_state) == 67890, "production event_rng_state round-trip")
+			var fresh_em = EventManager.new()
+			fresh_em._init(fresh_loaded)
+			check(fresh_em.event_rng.seed == 12345, "EventManager seed from loaded GameState")
+			check(fresh_em.event_rng.state == 67890, "EventManager state from loaded GameState")
+		print("Production path event RNG round-trip verified")
 	print("Save/load: devine_resolved + event RNG seed/state preserved")
 
 	print("P-1.1 Devín guard + consequences + save/load OK")
@@ -191,16 +209,19 @@ func _init():
 	army_auto.game_state = gs_auto
 	army_auto.rng = rng_auto
 	army_auto._init_armies()
+	# Initialise WarManager through _init() so hungarian_war_scenario is properly constructed
 	var war_auto = WarManager.new()
-	war_auto.game_state = gs_auto
-	war_auto.rng = rng_auto
+	war_auto._init(gs_auto, rng_auto)
 
 	var auto_report = war_auto.process_wars()
+	check(bool(auto_report.get("type", "") != ""), "auto war report returns non-empty type")
 	check(auto_report.get("type", "") == "war", "auto war report type")
 	var battles: Array = auto_report.get("battles", [])
+	check(typeof(battles) == TYPE_ARRAY, "auto battles is Array")
 	check(battles.size() == 1, "auto 907 produces 1 battle")
 	if battles.size() > 0:
 		var b = battles[0]
+		check(typeof(b) == TYPE_DICTIONARY, "auto battle entry is Dictionary")
 		check(b.get("winner", "") == "attacker", "auto 907 winner == attacker")
 	check(gs_auto.devine_resolved == true, "auto 907 sets devine_resolved")
 	print("Auto 907 flow via process_wars OK (winner=attacker, devine_resolved=true)")

@@ -540,18 +540,33 @@ func _show_battle(title: String, outcome: Dictionary, art_id: String = "") -> vo
 
 func _log_battle_phases(outcome: Dictionary) -> void:
 	var logs: Array = outcome.get("phase_logs", [])
+	var phase_label: String = ""
 	for log in logs:
 		if typeof(log) != TYPE_DICTIONARY:
 			continue
 		var phase: String = str(log.get("phase", "?"))
+		# Preklady fáz pre hráča
+		if phase == "attack":
+			phase_label = "útok"
+		elif phase == "counterattack":
+			phase_label = "protiútok"
+		elif phase == "decision":
+			phase_label = "rozhodnutie"
+		else:
+			phase_label = phase
 		if phase in ["attack", "counterattack"]:
-			_append_chronicle("  · %s: A-%d D-%d" % [
-				phase,
+			_append_chronicle("  · %s: A-%d O-%d" % [
+				phase_label,
 				int(log.get("attacker_losses", 0)),
 				int(log.get("defender_losses", 0)),
 			])
 		elif phase == "decision":
-			_append_chronicle("  · výsledok: %s" % str(log.get("winner", "?")))
+			var winner_sk: String = str(log.get("winner", "?"))
+			if winner_sk == "attacker":
+				winner_sk = "útočník"
+			elif winner_sk == "defender":
+				winner_sk = "obranca"
+			_append_chronicle("  · výsledok: %s" % winner_sk)
 
 
 func _on_province_selected(province_id: String) -> void:
