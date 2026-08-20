@@ -54,10 +54,12 @@ func _ready() -> void:
 	# Phase 2: Tick WITHOUT event (deterministic suppression)
 	# ──────────────────────────────────────────────────────────────────
 	# Before tick: suppress ALL event generation deterministically:
+	#   - Mark catalog as loaded so _load_catalog() skips
 	#   - Empty the event catalog (no historical or random events)
 	#   - Set last_event_id = "council" so the council fallback skips
 	#     its 8% chance (no-immediate-repeat guard fires)
 	GameManager.game_state.pending_event = null
+	GameManager.event_manager._loaded = true
 	GameManager.event_manager._catalog = []
 	GameManager.game_state.last_event_id = "council"
 	print("--- Phase 2: Tick without event (deterministic) ---")
