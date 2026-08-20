@@ -18,6 +18,36 @@ func check(cond: bool, label: String) -> void:
 		quit(1)
 
 
+# Helper: run a multi-month event sequence on a fresh GameState + EventManager.
+# Starts at 903/1 and advances `num_months` months sequentially.
+# Returns array of event ID strings, one per month.
+# If battle_draws > 0, consumes that many battle RNG values before each event tick
+# to verify that battle draws do not perturb the event RNG stream.
+func _run_event_sequence(seed_val: int, num_months: int, battle_draws: int) -> Array:
+	var gs_ev = GameState.new()
+	gs_ev.ensure_resources()
+	gs_ev.year = 903
+	gs_ev.month = 1
+	var sm_ev = SaveManager.new()
+	sm_ev._init(seed_val)
+	var em_ev = EventManager.new()
+	em_ev._init(gs_ev, sm_ev.get_rng())
+	em_ev.set_save_seed(sm_ev.get_save_seed())
+	em_ev._load_catalog()
+	var ids: Array = []
+	for _m in range(num_months):
+		for _b in range(battle_draws):
+			sm_ev.get_rng().randi_range(1, 100)
+		gs_ev.month += 1
+		if gs_ev.month > 12:
+			gs_ev.month = 1
+			gs_ev.year += 1
+		gs_ev.pending_event = null
+		var rep: Dictionary = em_ev.process_events()
+		ids.append(str(rep.get("id", "")))
+	return ids
+
+
 func _init() -> void:
 	print("=== Regnum Moravicum smoke M6 ===")
 
@@ -98,66 +128,36 @@ func _init() -> void:
 	#    Acceptancia: dva runy s rovnakým save_seed dajú rovnakú postupnosť eventov;
 	#    zmena battle RNG neovplyvní postupnosť eventov.
 	#
-	# Helper: run N months of process_events() on a fresh GameState + EventManager
-	# and return the Array of event IDs ("" when no event fired).
-	var _run_event_sequence = func(seed_val: int, num_months: int, battle_draws: int) -> Array:
-		var gs_ev = GameState.new()
-		gs_ev.ensure_resources()
-		gs_ev.year = 903
-		gs_ev.month = 1
-		var sm_ev = SaveManager.new()
-		sm_ev._init(seed_val)
-		var em_ev = EventManager.new()
-		em_ev._init(gs_ev, sm_ev.get_rng())
-		em_ev.set_save_seed(sm_ev.get_save_seed())
-		# Load the event catalog
-		em_ev._load_catalog()
-		var ids: Array = []
-		for _m in range(num_months):
-			# Simulate battle RNG draws before event processing (if requested)
-			for _b in range(battle_draws):
-				sm_ev.get_rng().randi_range(1, 100)
-			# Advance month
-			gs_ev.month += 1
-			if gs_ev.month > 12:
-				gs_ev.month = 1
-				gs_ev.year += 1
-			# Clear pending event so process_events() runs fresh each month
-			gs_ev.pending_event = null
-			var rep: Dictionary = em_ev.process_events()
-			ids.append(str(rep.get("id", "")))
-		return ids
-
-	# Determinism: two runs with the same save_seed → identical event ID sequence
-	var seq_a: Array = _run_event_sequence.call(42, 24, 0)
-	var seq_b: Array = _run_event_sequence.call(42, 24, 0)
-	check(seq_a == seq_b, "event RNG determinism: same save_seed → same event sequence")
+	# 7a) Determinizmus: dva čerstvé runy s rovnakým save_seed → rovnaká postupnosť event ID
+	var seq_a: Array = _run_event_sequence(42, 24, 0)
+	var seq_b: Array = _run_event_sequence(42, 24, 0)
+	check(seq_a == seq_b, "event RNG determinism: same save_seed → same event ID sequence")
 	print("Event RNG determinism: seq_a=", seq_a)
 	print("Event RNG determinism: seq_b=", seq_b)
 
-	# Different save_seed → different sequence (at least one position differs)
-	var seq_c: Array = _run_event_sequence.call(999, 24, 0)
-	check(seq_a != seq_c, "event RNG isolation: different save_seed → different event sequence")
+	# 7b) Izolácia: rôzny save_seed → rôzna postupnosť (aspoň jedna pozícia sa líši)
+	var seq_c: Array = _run_event_sequence(999, 24, 0)
+	check(seq_a != seq_c, "event RNG isolation: different save_seed → different event ID sequence")
 	print("Event RNG isolation: seq_c=", seq_c)
 
-	# At least one non-empty event ID in the sequence (not all empty fallbacks)
+	# 7c) Aspoň jeden reálny event (nie iba prázdne fallback reporty)
 	var has_real_event: bool = false
 	for _id in seq_a:
-		if _id != "":
+		if str(_id) != "":
 			has_real_event = true
 			break
 	check(has_real_event, "event RNG: at least one real event selected in 24 months")
-	print("Event RNG: real events present in sequence")
+	print("Event RNG: real events present in sequence (count of non-empty IDs)")
 
-	# Battle isolation: same save_seed, but with battle RNG draws before events
-	# → identical event ID sequence (battle draws do not perturb event stream)
-	var seq_d: Array = _run_event_sequence.call(42, 24, 0)
-	var seq_e: Array = _run_event_sequence.call(42, 24, 5)
-	check(seq_d == seq_e, "event RNG battle isolation: battle draws do not perturb event sequence")
+	# 8) Battle RNG izolácia: rovnaký save_seed, ale s battle RNG drawmi pred eventami
+	#    → identická postupnosť event ID (battle draws neovplyvní event stream)
+	var seq_d: Array = _run_event_sequence(42, 24, 0)
+	var seq_e: Array = _run_event_sequence(42, 24, 5)
+	check(seq_d == seq_e, "event RNG battle isolation: battle draws do not perturb event ID sequence")
 	print("Event RNG battle isolation: seq_d=", seq_d)
 	print("Event RNG battle isolation: seq_e=", seq_e)
 
-	# Seed-level assertions (kept from prior version)
+	# 9) Seed-level assertions (zachované z predchádzajúcej verzie)
 	var ev_seed_a: int = 0
 	var ev_seed_b: int = 0
 	var gs_ss = GameState.new()
