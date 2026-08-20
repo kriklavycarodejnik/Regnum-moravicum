@@ -10,6 +10,7 @@
       "yearMin": 0
     },
     "once": true,
+    "chainOnly": false,
     "choices": [
       {
         "id": "grand",
@@ -47,6 +48,7 @@
       "yearMin": 0
     },
     "once": true,
+    "chainOnly": false,
     "choices": [
       {
         "id": "scouts",
