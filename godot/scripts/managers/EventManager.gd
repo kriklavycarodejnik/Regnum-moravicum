@@ -86,6 +86,7 @@ func process_events() -> Dictionary:
 		_record_last_event(ce)
 		return {
 			"type": "event",
+			"id": str(ce.get("id", "")),
 			"title": ce.get("title", "Rada županov"),
 			"text": ce.get("text", ""),
 			"body": ce.get("text", ""),
@@ -96,9 +97,10 @@ func process_events() -> Dictionary:
 	return {"type": "event", "id": "", "title": "", "text": "", "body": "", "art_id": "", "choices": []}
 
 
-# P0.7a no-immediate-repeat poistka: zaznamená id naposledy vybraného eventu.
+# No-immediate-repeat guard: zaznamená id naposledy vybraného eventu.
 # Volá sa len pri výbere NOVÉHO eventu (chain/historical/random/council),
 # nie pri opätovnom vrátení už čakajúceho pending_event.
+# P1 kontrakt §1.6 — guard je záväzný, pozri _try_random_event().
 func _record_last_event(report: Dictionary) -> void:
 	var eid: String = str(report.get("id", ""))
 	if eid != "":
@@ -172,15 +174,30 @@ func _try_random_event() -> Dictionary:
 		var ymin: int = int(conds.get("yearMin", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
 		if ymin > 0 and game_state.year < ymin:
 			continue
+		# P1 kontrakt §1.2: ak je zadaný presný rok (year > 0), musí sedieť.
+		# Bez tohto checku byz_bride_proposal_906 (year=906, once=true) prelieza
+		# do random poolu už v roku 903. Random pool = len 4 rand_* eventy (§1.3).
+		var req_year: int = int(conds.get("year", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
+		if req_year > 0 and game_state.year != req_year:
+			continue
+		# P1 kontrakt §1.8: once:true event, ktorý sa už odohral, sa nesmie
+		# vytiahnuť znova. historical scan to kontroluje (riadok 145), random nie.
+		if bool(cat.get("once", false)) and game_state.triggered_events.has(eid):
+			continue
 		var cooldown: int = int(cat.get("cooldownTicks", 0))
 		if cooldown > 0:
 			var cooldowns: Dictionary = game_state.event_cooldowns
 			var last: int = int(cooldowns.get(eid, 0))
 			if game_state.year * 12 + game_state.month < last + cooldown:
 				continue
-		# P0.7a no-immediate-repeat poistka: naposledy odohraný event
-		# sa nesmie vytiahnuť hneď nasledujúci ťah. Dočasná poistka kým
-		# v P1 nepríde plný pool 14 eventov s 6-mesačným cooldownom.
+		# No-immediate-repeat guard (P1 kontrakt §1.6 — záväzný, nie dočasný):
+		# naposledy odohraný event sa nesmie vytiahnuť hneď nasledujúci ťah.
+		# Cooldown (event_cooldowns, 24/15/20/20 tickov) sa zapisuje až
+		# v resolve_choice() — čiže pokrýva len už *vyriešené* eventy.
+		# Tento guard pokrýva okno medzi *výberom* a *vyriešením*: ak hráč
+		# event rozlíši odmietne / zatvorí bez voľby, pending_event sa
+		# neresetuje na cooldown, no last_event_id áno. Bez tohto guardu
+		# by sa ten istý event mohol vytiahnuť dva ťahy po sebe. Ostáva.
 		if eid == game_state.last_event_id and eid != "":
 			continue
 		var w: int = int(cat.get("weight", 1))
