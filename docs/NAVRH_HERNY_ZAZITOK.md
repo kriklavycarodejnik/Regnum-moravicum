@@ -122,14 +122,14 @@ Menu → krátky briefing → MAPA + coach 1–2–3
 
 ## 6. DoD balíka „P-1.1 + P0 (+ P0.7)“
 
-- [ ] Devín nejde 2×; manuál pred 907 buď blocked alebo bez odmeny-exploit
-- [ ] Auto 907 rešpektuje flag
-- [ ] Coach 3 kroky raz za run (skip)
-- [ ] Každý ťah má TurnReport s Δ
-- [ ] Threat clock viditeľný pred 907
-- [ ] Devín modal/kapitola 1×
-- [ ] ≥ niekoľko rôznych eventov z portu (cieľ: katalóg 14, MVP subset OK ak je v PR plný port)
-- [ ] SMOKE_PASS, SMOKE_M6_PASS, Devín attacker
+- [x] Devín nejde 2×; manuál pred 907 buď blocked alebo bez odmeny-exploit
+- [x] Auto 907 rešpektuje flag
+- [x] Coach 3 kroky raz za run (skip)
+- [x] Každý ťah má TurnReport s Δ
+- [x] Threat clock viditeľný pred 907
+- [x] Devín modal/kapitola 1×
+- [x] ≥ niekoľko rôznych eventov z portu (cieľ: katalóg 14, MVP subset OK ak je v PR plný port)
+- [x] SMOKE_PASS, SMOKE_M6_PASS, Devín attacker
 
 ---
 
