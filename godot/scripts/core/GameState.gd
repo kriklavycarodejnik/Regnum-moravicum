@@ -37,6 +37,7 @@ var event_rng_state: int = 0
 var last_event_id: String = ""
 var tutorial_step: int = 0
 var tutorial_done: bool = false
+var army_wizard_done: bool = false
 
 
 func to_dict() -> Dictionary:
@@ -61,6 +62,7 @@ func to_dict() -> Dictionary:
 		"last_event_id": last_event_id,
 		"tutorial_step": tutorial_step,
 		"tutorial_done": tutorial_done,
+		"army_wizard_done": army_wizard_done,
 	}
 
 
@@ -110,6 +112,7 @@ func from_dict(data: Dictionary) -> void:
 	last_event_id = str(data.get("last_event_id", ""))
 	tutorial_step = int(data.get("tutorial_step", 0))
 	tutorial_done = bool(data.get("tutorial_done", false))
+	army_wizard_done = bool(data.get("army_wizard_done", false))
 
 
 func _merge_resources(loaded) -> Dictionary:
