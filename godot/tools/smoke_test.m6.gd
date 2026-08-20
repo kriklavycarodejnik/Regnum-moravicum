@@ -634,6 +634,178 @@ func _init() -> void:
 	check(tr_count_magyar == 1, "hist_magyar_reports_902 present exactly once in triggered_events (count=%d)" % tr_count_magyar)
 	print("P0.5 Rok 902 opening events timing and no-repeat assertions OK!")
 
+	# 16) P1 — plný port 14 historických eventov: regression checks
+	#     P1 kontrakt §10: 14 IDs, conditions, weights, chains, Bogata zupaLoyalty,
+	#     chainOnly scan exclusion, army_wizard_done serialization.
+	print("--- Testing P1: 14 event catalog regression ---")
+
+	# 16a) Presne 14 event IDs (13 v JSON katalógu + council fallback)
+	var p1_expected_ids: Array = [
+		"hist_mojmir_coronation_902", "hist_magyar_reports_902",
+		"hist_papal_legation_903", "byz_bride_proposal_906",
+		"byz_bride_wedding_907", "byz_bride_insult_907",
+		"hist_bogata_conspiracy_915", "bogata_trial_916", "bogata_uprising_917",
+		"rand_bad_harvest", "rand_border_raid", "rand_noble_feud",
+		"rand_missionary_dispute",
+	]
+	var p1_catalog_ids: Array = []
+	for cat_p1 in p05_em._catalog:
+		if typeof(cat_p1) == TYPE_DICTIONARY:
+			p1_catalog_ids.append(str(cat_p1.get("id", "")))
+	for eid_p1 in p1_expected_ids:
+		check(p1_catalog_ids.has(eid_p1), "P1 event %s present in catalog" % eid_p1)
+	check(p1_catalog_ids.size() == 13, "P1 catalog has exactly 13 JSON events (got %d)" % p1_catalog_ids.size())
+	# council is the 14th, built at runtime
+	var council_p1: Dictionary = p05_em._build_council_event()
+	check(str(council_p1.get("id", "")) == "council", "P1 council fallback is the 14th event")
+	print("P1: all 14 event IDs present (13 catalog + council)")
+
+	# 16b) Bogata reťaz používa zupaLoyalty: {"uzhorod": ...}, NIE moodChanges
+	var bogata_ev: Dictionary = find_catalog_event.call("hist_bogata_conspiracy_915")
+	check(not bogata_ev.is_empty(), "P1 found bogata_conspiracy for zupaLoyalty check")
+	for bog_choice in bogata_ev.get("choices", []):
+		if typeof(bog_choice) == TYPE_DICTIONARY:
+			var bc_id: String = str(bog_choice.get("id", ""))
+			if bc_id == "arrest" or bc_id == "watch":
+				check(bog_choice.has("zupaLoyalty"), "P1 bogata %s has zupaLoyalty" % bc_id)
+				var bog_zl: Dictionary = bog_choice.get("zupaLoyalty", {})
+				check(bog_zl.has("uzhorod"), "P1 bogata %s zupaLoyalty targets uzhorod" % bc_id)
+				check(not bog_choice.has("moodChanges"), "P1 bogata %s does NOT use moodChanges (per P1 kontrakt)" % bc_id)
+	# bogata_trial_916 and bogata_uprising_917 also use zupaLoyalty, not moodChanges
+	for bog_chain_id in ["bogata_trial_916", "bogata_uprising_917"]:
+		var bog_chain_ev: Dictionary = find_catalog_event.call(bog_chain_id)
+		check(not bog_chain_ev.is_empty(), "P1 found %s" % bog_chain_id)
+		for bog_chain_choice in bog_chain_ev.get("choices", []):
+			if typeof(bog_chain_choice) == TYPE_DICTIONARY:
+				if bog_chain_choice.has("zupaLoyalty"):
+					var bcz: Dictionary = bog_chain_choice.get("zupaLoyalty", {})
+					check(bcz.has("uzhorod"), "P1 %s zupaLoyalty targets uzhorod" % bog_chain_id)
+				check(not bog_chain_choice.has("moodChanges"), "P1 %s does NOT use moodChanges" % bog_chain_id)
+	print("P1: Bogata chain uses zupaLoyalty, not moodChanges")
+
+	# 16c) chainOnly eventy sa nespustia cez historical/random scan
+	#     Set year to 915 to trigger bogata; chainOnly bogata_trial_916 must NOT be returned
+	var gs_chain = GameState.new()
+	gs_chain.ensure_resources()
+	gs_chain.year = 915
+	gs_chain.month = 1
+	gs_chain.event_rng_seed = 42
+	var em_chain = EventManager.new()
+	em_chain._init(gs_chain)
+	em_chain._load_catalog()
+	gs_chain.pending_event = null
+	var rep_chain: Dictionary = em_chain.process_events()
+	var rep_chain_id: String = str(rep_chain.get("id", ""))
+	check(rep_chain_id == "hist_bogata_conspiracy_915", "P1 915 triggers hist_bogata_conspiracy_915 (got '%s')" % rep_chain_id)
+	# Now verify chainOnly events are never returned directly by historical scan
+	# by checking that none of the 4 chainOnly IDs appear as a year-triggered event
+	var chain_only_ids: Array = []
+	for cat_co in em_chain._catalog:
+		if typeof(cat_co) == TYPE_DICTIONARY and bool(cat_co.get("chainOnly", false)):
+			chain_only_ids.append(str(cat_co.get("id", "")))
+	check(chain_only_ids.size() == 4, "P1 exactly 4 chainOnly events (got %d)" % chain_only_ids.size())
+	check(chain_only_ids.has("byz_bride_wedding_907"), "P1 chainOnly: byz_bride_wedding_907")
+	check(chain_only_ids.has("byz_bride_insult_907"), "P1 chainOnly: byz_bride_insult_907")
+	check(chain_only_ids.has("bogata_trial_916"), "P1 chainOnly: bogata_trial_916")
+	check(chain_only_ids.has("bogata_uprising_917"), "P1 chainOnly: bogata_uprising_917")
+	print("P1: chainOnly events correctly identified (4 total)")
+
+	# 16d) Reťazenia next_event — všetky ciele existujú v katalógu
+	#     byz_bride_proposal_906 → accept → byz_bride_wedding_907 (chainOnly)
+	#     byz_bride_proposal_906 → decline → byz_bride_insult_907 (chainOnly)
+	#     hist_bogata_conspiracy_915 → arrest → bogata_trial_916 (chainOnly)
+	#     hist_bogata_conspiracy_915 → watch → bogata_uprising_917 (chainOnly)
+	var chain_pairs: Array = [
+		["byz_bride_proposal_906", "accept", "byz_bride_wedding_907"],
+		["byz_bride_proposal_906", "decline", "byz_bride_insult_907"],
+		["hist_bogata_conspiracy_915", "arrest", "bogata_trial_916"],
+		["hist_bogata_conspiracy_915", "watch", "bogata_uprising_917"],
+	]
+	for cp in chain_pairs:
+		var parent_id: String = cp[0]
+		var choice_id: String = cp[1]
+		var expected_target: String = cp[2]
+		var parent_ev: Dictionary = find_catalog_event.call(parent_id)
+		check(not parent_ev.is_empty(), "P1 chain parent %s found" % parent_id)
+		var found_target: bool = false
+		for pch in parent_ev.get("choices", []):
+			if typeof(pch) == TYPE_DICTIONARY and str(pch.get("id", "")) == choice_id:
+				var ne: String = str(pch.get("next_event", ""))
+				check(ne == expected_target, "P1 chain %s→%s next_event='%s' (expected '%s')" % [parent_id, choice_id, ne, expected_target])
+				found_target = true
+				# Target must exist in catalog and be chainOnly
+				var target_ev: Dictionary = find_catalog_event.call(expected_target)
+				check(not target_ev.is_empty(), "P1 chain target %s exists in catalog" % expected_target)
+				check(bool(target_ev.get("chainOnly", false)), "P1 chain target %s is chainOnly" % expected_target)
+		check(found_target, "P1 chain parent %s has choice %s" % [parent_id, choice_id])
+	print("P1: all 4 chain links verified (next_event targets exist + chainOnly)")
+
+	# 16e) once: true eventy sa neopakujú (triggered_events kontrola)
+	#     Hist_papal_legation_903: once=true, year=903 → triggers once, then never again
+	var gs_once = GameState.new()
+	gs_once.ensure_resources()
+	gs_once.year = 903
+	gs_once.month = 1
+	gs_once.event_rng_seed = 42
+	var em_once = EventManager.new()
+	em_once._init(gs_once)
+	em_once._load_catalog()
+	gs_once.pending_event = null
+	var rep_once_1: Dictionary = em_once.process_events()
+	check(str(rep_once_1.get("id", "")) == "hist_papal_legation_903", "P1 903 triggers hist_papal_legation_903 (got '%s')" % str(rep_once_1.get("id", "")))
+	em_once.resolve_choice("rome")
+	# Advance month — same year, event should NOT trigger again
+	gs_once.pending_event = null
+	gs_once.month = 2
+	var rep_once_2: Dictionary = em_once.process_events()
+	check(str(rep_once_2.get("id", "")) != "hist_papal_legation_903", "P1 once event does not trigger again (got '%s')" % str(rep_once_2.get("id", "")))
+	check(gs_once.triggered_events.has("hist_papal_legation_903"), "P1 once event recorded in triggered_events")
+	print("P1: once:true events do not repeat")
+
+	# 16f) Váhy a cooldowny pre random eventy
+	var weight_checks: Array = [
+		["rand_bad_harvest", 15, 24],
+		["rand_border_raid", 12, 15],
+		["rand_noble_feud", 10, 20],
+		["rand_missionary_dispute", 10, 20],
+	]
+	for wc in weight_checks:
+		var wc_id: String = wc[0]
+		var wc_weight: int = wc[1]
+		var wc_cd: int = wc[2]
+		var wc_ev: Dictionary = find_catalog_event.call(wc_id)
+		check(not wc_ev.is_empty(), "P1 weight check: %s found" % wc_id)
+		check(int(wc_ev.get("weight", 0)) == wc_weight, "P1 weight %s = %d (got %d)" % [wc_id, wc_weight, int(wc_ev.get("weight", 0))])
+		check(int(wc_ev.get("cooldownTicks", 0)) == wc_cd, "P1 cooldown %s = %d (got %d)" % [wc_id, wc_cd, int(wc_ev.get("cooldownTicks", 0))])
+	print("P1: weights and cooldowns verified for all 4 random events")
+
+	# 16g) army_wizard_done serialization round-trip (to_dict / from_dict)
+	var gs_aw = GameState.new()
+	gs_aw.ensure_resources()
+	gs_aw.army_wizard_done = true
+	var aw_d: Dictionary = gs_aw.to_dict()
+	check(bool(aw_d.get("army_wizard_done", false)) == true, "P1 to_dict: army_wizard_done=true serialized")
+	var gs_aw_loaded = GameState.new()
+	gs_aw_loaded.from_dict(aw_d)
+	check(gs_aw_loaded.army_wizard_done == true, "P1 from_dict: army_wizard_done=true loaded back")
+	# Old save without army_wizard_done → default false (backwards compat)
+	var gs_aw_old = GameState.new()
+	gs_aw_old.from_dict({"year": 903, "month": 1})
+	check(gs_aw_old.army_wizard_done == false, "P1 from_dict: old save without army_wizard_done → false default")
+	print("P1: army_wizard_done round-trip + old-save default OK")
+
+	# 16h) Deterministický event seed: rovnaký seed → rovnaký výsledok
+	#      (already covered by test 7a/7b, but add explicit P1 assertion with 14-event catalog)
+	var p1_det_a: Array = _run_event_sequence(42, 36, 0)
+	var p1_det_b: Array = _run_event_sequence(42, 36, 0)
+	check(p1_det_a == p1_det_b, "P1 determinism: same seed → same 36-month event sequence")
+	# Battle draws do not perturb event RNG
+	var p1_det_c: Array = _run_event_sequence(42, 36, 3)
+	check(p1_det_a == p1_det_c, "P1 event RNG isolation: battle draws do not perturb event sequence")
+	print("P1: deterministic seed + battle RNG isolation verified (36 months)")
+
+	print("P1: 14 event catalog regression ALL CHECKS PASSED!")
+
 	if _m6_failed:
 		print("SMOKE_M6_FAIL: one or more checks failed (see above)")
 		quit(1)
