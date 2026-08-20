@@ -455,7 +455,7 @@ func _draw_faction_mood_markers(w: float, h: float, font: Font) -> void:
 			draw_arc(center, marker_r + 3.0, 0.0, TAU, 32, C.PARCHMENT, 1.5, true)
 
 		# Label: názov frakcie
-		var fname: String = str(f_data.get("name", fid))
+		var fname: String = _Translations.translate_faction(fid)
 		var mood_fs := 9
 		var text_size := font.get_string_size(fname, HORIZONTAL_ALIGNMENT_LEFT, -1, mood_fs)
 		var tp := Vector2(center.x - text_size.x * 0.5, center.y - marker_r - 4)
@@ -521,7 +521,7 @@ func _show_mood_tooltip(faction: String, mouse_pos: Vector2) -> void:
 	if typeof(f_data) != TYPE_DICTIONARY:
 		_tooltip_container.visible = false
 		return
-	var name_sk: String = str(f_data.get("name", faction))
+	var name_sk: String = _Translations.translate_faction(faction)
 	var mood: float = float(f_data.get("mood", 50.0))
 	# P1 kontrakt §4.2 tooltip pre náladu frakcie
 	_tooltip_label.text = "%s: nálada %.0f — hrozba konfliktu" % [name_sk, mood]
