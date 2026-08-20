@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/Main.gd" id="1"]
 [ext_resource type="Script" path="res://ui/StatusBar.gd" id="2"]
@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://ui/ObjectivesPanel.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://ui/TurnReport.tscn" id="10"]
 [ext_resource type="PackedScene" path="res://ui/ThreatClock.tscn" id="11"]
+[ext_resource type="Script" path="res://ui/ThreatClock.gd" id="12"]
+[ext_resource type="Script" path="res://ui/ObjectivesPanel.gd" id="13"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -84,19 +86,9 @@ script = ExtResource("2")
 layout_mode = 2
 script = ExtResource("5")
 
-# ── ThreatClock samostatný riadok ──
-[node name="ThreatClockRow" type="HBoxContainer" parent="UI"]
-layout_mode = 2
+[node name="ThreatClock" parent="UI" instance=ExtResource("11")]
 
-[node name="ThreatClock" parent="UI/ThreatClockRow" instance=ExtResource("11")]
-layout_mode = 2
-size_flags_horizontal = 1
-custom_minimum_size = Vector2(240, 0)
-
-# ── ObjectivesPanel samostatný riadok (direct child of UI, full-width) ──
 [node name="ObjectivesPanel" parent="UI" instance=ExtResource("9")]
-layout_mode = 2
-size_flags_horizontal = 3
 
 [node name="Body" type="HBoxContainer" parent="UI"]
 layout_mode = 2

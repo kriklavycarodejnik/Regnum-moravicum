@@ -27,7 +27,7 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var army_ui: Control = $UI/Body/SidePanel/SideTabs/Armády
 @onready var diplomacy_panel: Control = $"UI/Body/SidePanel/SideTabs/Diplomacia"
 @onready var objectives_panel: Node = $UI/ObjectivesPanel
-@onready var threat_clock: Node = $UI/ThreatClockRow/ThreatClock
+@onready var threat_clock: Node = $UI/ThreatClock
 @onready var event_art: TextureRect = $UI/Body/MainColumn/EventPanel/EventVBox/EventArt
 @onready var hero_art: TextureRect = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroArt
 @onready var hero_caption: Label = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroCaption
@@ -45,6 +45,7 @@ func _ready() -> void:
 	_apply_regnum_theme()
 	_setup_background_art()
 	_setup_default_hero()
+	_setup_ui_panels()
 	next_month_btn.pressed.connect(_on_next_month)
 	skirmish_btn.pressed.connect(_on_skirmish)
 	devine_btn.pressed.connect(_on_devine)
@@ -187,6 +188,12 @@ func _setup_default_hero() -> void:
 		if rt != null:
 			ruler_art.texture = rt
 			ruler_art.visible = true
+
+
+func _setup_ui_panels() -> void:
+	# ThreatClock and ObjectivesPanel are instance nodes in Main.tscn
+	# (direct children of UI, between StatusBarRow and Body)
+	pass
 
 
 func _set_hero_art(art_id: String, caption: String = "") -> void:
