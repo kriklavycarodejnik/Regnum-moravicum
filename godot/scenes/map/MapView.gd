@@ -7,25 +7,24 @@ signal province_selected(province_id: String)
 const C = preload("res://assets/theme/colors.gd")
 const LAYOUT_PATH := "res://data/map_layout.json"
 
-
 # Prahy pre threat markery (P1 kontrakt §4.2)
 const THREAT_LOYALTY_THRESHOLD := 30.0
 const THREAT_MOOD_THRESHOLD := 25.0
 const THREAT_FOOD_THRESHOLD := 100
 
 
-# Scale factor for polygon radius — r*0.60 ensures no overlap even for closest pair (devin-bratislava)
-const POLY_SCALE := 0.60
+# Scale factor for polygon radius — r*0.56 ensures no overlap for closest pair (devin-bratislava)
+const POLY_SCALE := 0.56
 # Jitter level — ±15% for natural shapes without excessive irregularity
 const JITTER_RANGE := 0.15
 
 # Per-province label offset (in multiples of r from center) to prevent name overlapping
 const LABEL_OFFSETS := {
 	"morava":     Vector2(0.0, -1.3),   # above center
-	"bratislava": Vector2(-1.2, 1.0),   # left-down
-	"devin":      Vector2(1.4, 0.6),    # right
+	"bratislava": Vector2(-2.5, 2.0),   # far down-left (away from Devín)
+	"devin":      Vector2(1.0, -1.6),   # up-right (well above Bratislava)
 	"nitra":      Vector2(0.0, -1.4),   # above
-	"trencin":    Vector2(-0.8, 0.8),   # left-down
+	"trencin":    Vector2(-1.5, 0.7),   # left (away from Nitra)
 	"tekov":      Vector2(0.0, 1.2),    # below
 	"hont":       Vector2(0.0, 1.2),    # below
 	"novohrad":   Vector2(1.0, 0.8),    # right-down
@@ -33,6 +32,22 @@ const LABEL_OFFSETS := {
 	"spis":       Vector2(-0.7, 1.1),   # left-below
 	"zemplin":    Vector2(0.6, -1.2),   # up-right
 	"uzhorod":    Vector2(-1.0, 0.9),   # left-down
+}
+
+# Kanonické slovenské názvy žúp
+const PROVINCE_NAMES := {
+	"morava": "Morava",
+	"nitra": "Nitra",
+	"bratislava": "Bratislava",
+	"devin": "Devín",
+	"trencin": "Trenčín",
+	"tekov": "Tekov",
+	"hont": "Hont",
+	"novohrad": "Novohrad",
+	"gemer": "Gemer",
+	"spis": "Spiš",
+	"zemplin": "Zemplín",
+	"uzhorod": "Užhorod"
 }
 
 var _layout: Dictionary = {}
@@ -271,7 +286,7 @@ func _draw() -> void:
 		var center := Vector2(cx, cy)
 		var max_r: float = _poly_max_r(r)
 
-		# Build polygon (now smaller — scale 0.60, no overlap)
+		# Build polygon — scale 0.56 ensures no overlap between any pair at 900x520
 		var poly := _province_polygon(pid, cx, cy, r)
 
 		# Soft shadow under polygon
@@ -360,10 +375,10 @@ func _draw() -> void:
 			draw_arc(center, max_r + 7.0, 0.0, TAU, 40, C.PARCHMENT, 2.0, true)
 
 		# --- Label with per-province offset ---
-		var name_sk: String = str(pdata.get("name", pid))
-		var fs_label := 12 if r >= 32.0 else 10
+		var name_sk: String = PROVINCE_NAMES.get(pid, pid.capitalize())
+		var fs_label := 11
 		var text_size := font.get_string_size(name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_label)
-		var off := LABEL_OFFSETS.get(pid, Vector2(0.0, 0.85))
+		var off: Vector2 = LABEL_OFFSETS.get(pid, Vector2(0.0, 0.85))
 		# Compute label position: center + offset * max_r
 		var tp := Vector2(cx + off.x * max_r, cy + off.y * max_r)
 		# For offset=0,0 default: place below polygon bottom
@@ -385,7 +400,7 @@ func _draw() -> void:
 			var line_start := center + (label_anchor - center).normalized() * max_r
 			draw_line(line_start, label_anchor, Color(C.PARCHMENT.r, C.PARCHMENT.g, C.PARCHMENT.b, 0.25), 0.8, true)
 
-	# Hint strip at bottom
+	# Hint strip at bottom (drawn once, outside the province loop)
 	var hint := "Klikni na župu · zlatý kruh = výber · farba okraja = lojalita"
 
 	# --- Threat markery nálady frakcií (P1 kontrakt §4.2) ---
@@ -395,6 +410,10 @@ func _draw() -> void:
 	var hs := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs)
 	draw_rect(Rect2(8, h - 26, hs.x + 16, 20), Color(0.08, 0.06, 0.04, 0.72), true)
 	draw_string(font, Vector2(16, h - 12), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs, C.TEXT_MUTED)
+
+	# Debug dump when env var is set (for headless verification)
+	if OS.get_environment("REGNUM_DEBUG_MAP") != "":
+		_dump_verification(w, h, layout_p, font)
 
 
 func _draw_faction_mood_markers(w: float, h: float, font: Font) -> void:
@@ -525,6 +544,64 @@ func _province_polygon(pid: String, cx: float, cy: float, r: float) -> PackedVec
 		var rr: float = r * POLY_SCALE * jitter
 		pts.append(Vector2(cx + cos(angle) * rr, cy + sin(angle) * rr))
 	return pts
+
+
+func _dump_verification(w: float, h: float, layout_p: Dictionary, font: Font) -> void:
+	var msg := "\n=== MAP VERIFICATION ===\n"
+	msg += "Layout: %.0fx%.0f, POLY_SCALE: %.2f, JITTER_MAX: %.2f\n" % [w, h, POLY_SCALE, 1.0 + JITTER_RANGE]
+	msg += str("Province count: %d\n" % layout_p.size())
+
+	# Verify all names are fully displayed (using same PROVINCE_NAMES as rendering)
+	for pid in layout_p:
+		var node: Dictionary = layout_p[pid]
+		var cx: float = float(node.get("x", 0.5)) * w
+		var cy: float = float(node.get("y", 0.5)) * h
+		var r: float = float(node.get("r", 30))
+		var name_sk: String = PROVINCE_NAMES.get(pid, pid.capitalize())
+		var fs_label := 11
+		var text_size := font.get_string_size(name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_label)
+		var off: Vector2 = LABEL_OFFSETS.get(pid, Vector2(0.0, 0.85))
+		var max_r: float = _poly_max_r(r)
+		var tp := Vector2(cx + off.x * max_r, cy + off.y * max_r)
+		if off == Vector2():
+			tp = Vector2(cx - text_size.x * 0.5, cy + max_r + 4.0)
+		tp.x = clampf(tp.x, 4.0, w - text_size.x - 4.0)
+		tp.y = clampf(tp.y, 4.0, h - fs_label - 4.0)
+		var clipped: bool = (tp.x <= 4.0 or tp.y <= 4.0 or tp.x + text_size.x >= w - 4.0 or tp.y + fs_label >= h - 4.0)
+		msg += "  %s: name='%s' text_w=%.0f pos=(%.0f,%.0f) clipped=%s\n" % [pid, name_sk, text_size.x, tp.x, tp.y, str(clipped)]
+
+	# Verify polygon non-overlap
+	var prov_ids: Array = layout_p.keys()
+	var min_gap := INF
+	var min_pair := ""
+	var errors := 0
+	for i in range(prov_ids.size()):
+		for j in range(i + 1, prov_ids.size()):
+			var a: String = str(prov_ids[i])
+			var b: String = str(prov_ids[j])
+			var na: Dictionary = layout_p[a]
+			var nb: Dictionary = layout_p[b]
+			var ax: float = float(na.get("x", 0.5)) * w
+			var ay: float = float(na.get("y", 0.5)) * h
+			var bx: float = float(nb.get("x", 0.5)) * w
+			var by: float = float(nb.get("y", 0.5)) * h
+			var dx := bx - ax
+			var dy := by - ay
+			var dist := sqrt(dx * dx + dy * dy)
+			var ra: float = float(na.get("r", 30)) * POLY_SCALE * (1.0 + JITTER_RANGE)
+			var rb: float = float(nb.get("r", 30)) * POLY_SCALE * (1.0 + JITTER_RANGE)
+			var gap: float = dist - (ra + rb)
+			if gap < min_gap:
+				min_gap = gap
+				min_pair = "%s-%s" % [a, b]
+			if gap < 0.0:
+				errors += 1
+				msg += "  OVERLAP: %s (r=%d rmax=%.2f) <-> %s (r=%d rmax=%.2f) dist=%.2f gap=%.2f\n" % [a, int(na.get("r", 0)), ra, b, int(nb.get("r", 0)), rb, dist, gap]
+
+	msg += "Closest pair: %s (gap=%.2f px)\n" % [min_pair, min_gap]
+	msg += "Overlap errors: %d\n" % errors
+	msg += "=== END MAP VERIFICATION ===\n"
+	print(msg)
 
 
 func _gui_input(event: InputEvent) -> void:
