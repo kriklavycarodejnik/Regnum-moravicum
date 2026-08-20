@@ -1258,7 +1258,7 @@ func _init() -> void:
 	var d45_found := false
 	var d45_urgent := false
 	for g in d45_beat.goals:
-		if g.find("má náladu") >= 0 and g.find("Byzancia") >= 0:
+		if g.find("má náladu") >= 0 and g.find("Byzantská ríša") >= 0:
 			d45_found = true
 			if g.find("⚠") >= 0:
 				d45_urgent = true
@@ -1275,11 +1275,11 @@ func _init() -> void:
 	var d25_beat := ObjectivesPanel.compute_beats(d25_gs)
 	var d25_urgent := false
 	for g in d25_beat.goals:
-		if g.find("⚠") >= 0 and g.find("Byzancia") >= 0:
+		if g.find("⚠") >= 0 and g.find("Byzantská ríša") >= 0:
 			d25_urgent = true
 	check(d25_urgent, "P1.2 diplomacy: mood=25 → urgent goal s ⚠")
 	check(d25_beat.next_step.find("⚠") < 0, "P1.2 diplomacy: mood=25 → next_step NEOBSAHUJE ⚠")
-	check(d25_beat.next_step == "Dar frakcii Byzancia v záložke Diplomacia (nálada 25).", "P1.2 diplomacy: mood=25 → next_step je čistý kontrakt text (Dar frakcii)")
+	check(d25_beat.next_step == "Dar frakcii Byzantská ríša v záložke Diplomacia (nálada 25).", "P1.2 diplomacy: mood=25 → next_step je čistý kontrakt text (Dar frakcii)")
 
 	# Diplomacy: hungary je vylúčená (aj keď mood je nízky)
 	var dh_gs := GameState.new()
