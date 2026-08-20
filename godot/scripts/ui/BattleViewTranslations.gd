@@ -96,6 +96,19 @@ const FALLBACK_PROVINCE := "Neznáma župa"
 const FALLBACK_FACTION := "Neznáma frakcia"
 const FALLBACK_ARMY := "Neznámy oddiel"
 const FALLBACK_STATUS := "Neznámy stav"
+const FALLBACK_RELIGION := "Neznáme vyznanie"
+
+const RELIGION_NAMES := {
+	"latin": "Rímsky rítus",
+	"christian": "Kresťanstvo",
+	"catholic": "Rímsky rítus",
+	"rome": "Rímsky rítus",
+	"orthodox": "Byzantský rítus",
+	"byzantine": "Byzantský rítus",
+	"greek": "Byzantský rítus",
+	"pagan": "Pohanstvo",
+	"mixed": "Zmiešané",
+}
 
 
 static func translate_winner(w: String) -> String:
@@ -139,6 +152,23 @@ static func translate_faction(fid: String, fallback_override: String = "") -> St
 
 static func translate_army_status(status: String) -> String:
 	return ARMY_STATUS.get(status, FALLBACK_STATUS)
+
+
+static func translate_religion(raw_rel) -> String:
+	if typeof(raw_rel) == TYPE_INT or typeof(raw_rel) == TYPE_FLOAT:
+		var v: float = float(raw_rel)
+		if v < 40.0:
+			return "Rímsky rítus (%.0f)" % v
+		if v > 60.0:
+			return "Byzantský rítus (%.0f)" % v
+		return "Zmiešané (%.0f)" % v
+	var key := str(raw_rel).strip_edges().to_lower()
+	if RELIGION_NAMES.has(key):
+		return RELIGION_NAMES[key]
+	var cleaned := sanitize_display_name(str(raw_rel), "")
+	if cleaned != "":
+		return cleaned
+	return FALLBACK_RELIGION
 
 
 static func translate_army_name(army: Dictionary, army_id: String = "") -> String:

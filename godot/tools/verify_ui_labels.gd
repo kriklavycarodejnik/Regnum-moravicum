@@ -238,6 +238,12 @@ func _ready() -> void:
 	var raw_tooltip: String = str(map_view._tooltip.text)
 	print("  MapView tooltip s raw prov:\n%s" % raw_tooltip)
 	check_surface.call("MapView tooltip s raw dátami", raw_tooltip)
+	if "pagan" in raw_tooltip.to_lower() or "raw_" in raw_tooltip:
+		print("  [FAIL] MapView tooltip obsahuje surové náboženstvo alebo raw ID!")
+		fails += 1
+	if "Pohanstvo" not in raw_tooltip:
+		print("  [FAIL] MapView tooltip neobsahuje lokalizovaný názov náboženstva 'Pohanstvo'!")
+		fails += 1
 
 	# DiplomacyPanel s raw fac
 	dip_panel.refresh()

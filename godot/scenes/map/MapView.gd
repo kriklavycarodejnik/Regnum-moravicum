@@ -686,12 +686,13 @@ func _update_tooltip(mouse_pos: Vector2) -> void:
 	var prov_name: String = _Translations.translate_province(stored_pname if stored_pname != "" else id)
 	var owner_raw: String = str(p.get("owner_faction", "moravia"))
 	var owner_name: String = _Translations.translate_faction(owner_raw)
+	var religion_text: String = _Translations.translate_religion(p.get("religion", "?"))
 	var tooltip_text: String = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
 		prov_name,
 		owner_name,
 		str(p.get("loyalty", "?")),
 		str(p.get("prosperity", "?")),
-		str(p.get("religion", "?")),
+		religion_text,
 	]
 
 	# Pridať threat marker tooltip pre kriticky nízku lojalitu
