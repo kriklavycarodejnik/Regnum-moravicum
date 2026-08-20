@@ -42,10 +42,11 @@ func save_game(state: RefCounted, path: String = DEFAULT_PATH) -> bool:
 		"version": SAVE_VERSION,
 		"seed": rng.seed,
 		"state": state_dict,
-		"rng_state": rng.state,
+		# Store rng state as string to preserve 64-bit precision through JSON
+		"rng_state": str(rng.state),
 		# Event RNG data comes from GameState (written by EventManager._sync_rng_state)
 		"event_rng_seed": state_dict.get("event_rng_seed", 42),
-		"event_rng_state": state_dict.get("event_rng_state", 0),
+		"event_rng_state": str(state_dict.get("event_rng_state", 0)),
 	}
 	file.store_string(JSON.stringify(save_data))
 	file.close()

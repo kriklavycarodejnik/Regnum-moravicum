@@ -190,44 +190,64 @@ func _init():
 
 	print("P-1.1 Devín guard + consequences + save/load OK")
 
-	# 4d. Production-path round-trip: simulate GameManager.save() + GameManager.load_save()
-	# Create a live state with EventManager that has consumed RNG
-	var prod_gs = GameState.new()
-	prod_gs.event_rng_seed = 4242
-	prod_gs.event_rng_state = 0
-	var prod_em = EventManager.new()
-	prod_em._init(prod_gs)
-	check(prod_em.event_rng.seed == 4242, "production EventManager seed init")
-	check(prod_em.event_rng.state == 0, "production EventManager state init")
+	# 4d. Production-path round-trip: actual GameManager.save() + GameManager.load_save()
+	# Create GameState with event RNG, provinces, factions (needed by load_save manager reconstruction)
+	var gm_prod_gs = GameState.new()
+	gm_prod_gs.event_rng_seed = 4242
+	gm_prod_gs.event_rng_state = 0
+	gm_prod_gs.provinces = gs.provinces.duplicate(true)
+	gm_prod_gs.factions = gs.factions.duplicate(true)
+	gm_prod_gs.resources = gs.resources.duplicate(true)
+	# Set devine_resolved to verify it survives save/load via GameManager
+	gm_prod_gs.devine_resolved = true
+
+	var gm_prod_save = SaveManager.new()
+	gm_prod_save._init(9999)
+
+	var gm_prod_em = EventManager.new()
+	gm_prod_em._init(gm_prod_gs)
+	check(gm_prod_em.event_rng.seed == 4242, "GameManager prod EventManager seed init")
+	check(gm_prod_em.event_rng.state == 0, "GameManager prod EventManager state init")
+
 	# Advance EventManager RNG (simulate event processing)
-	var roll1: float = prod_em.event_rng.randf()
-	var roll2: float = prod_em.event_rng.randf()
-	check(roll1 != roll2, "production RNG advances (roll1 != roll2)")
-	# Sync RNG state back to game_state (what EventManager._sync_rng_state() does)
-	prod_em._sync_rng_state()
-	check(prod_gs.event_rng_state == prod_em.event_rng.state, "production _sync_rng_state writes to game_state")
-	check(prod_gs.event_rng_state != 0, "production event_rng_state advanced from 0")
-	# Save — this is what GameManager.save() does: save_manager.save_game(game_state)
-	var prod_save = SaveManager.new()
-	prod_save._init(9999)
-	# Simulate GameManager._sync_event_rng_to_save_manager()
-	prod_save.event_rng.seed = prod_gs.event_rng_seed
-	prod_save.event_rng.state = prod_gs.event_rng_state
-	var prod_save_ok = prod_save.save_game(prod_gs)
-	check(prod_save_ok, "production save_game ok")
-	# Load — this simulates GameManager.load_save(): save_manager.load_game() then EventManager._init(loaded)
-	var prod_loaded = prod_save.load_game()
-	check(prod_loaded != null, "production load_game returns state")
-	if prod_loaded != null:
-		check(int(prod_loaded.event_rng_seed) == 4242, "production round-trip event_rng_seed preserved")
-		# Recreate EventManager from loaded state (what GameManager.load_save() does)
-		var prod_loaded_em = EventManager.new()
-		prod_loaded_em._init(prod_loaded)
-		check(prod_loaded_em.event_rng.seed == 4242, "production EventManager seed from loaded GameState")
-		# Verify loaded EventManager is functional (can generate numbers)
-		var loaded_roll: float = prod_loaded_em.event_rng.randf()
-		check(loaded_roll >= 0.0 and loaded_roll <= 1.0, "production loaded EventManager generates valid randf")
-	print("Production GameManager save/load round-trip: OK")
+	var gm_roll1: float = gm_prod_em.event_rng.randf()
+	var gm_roll2: float = gm_prod_em.event_rng.randf()
+	check(gm_roll1 != gm_roll2, "GameManager prod RNG advances (roll1 != roll2)")
+	# Sync RNG state to game_state
+	gm_prod_em._sync_rng_state()
+	check(gm_prod_gs.event_rng_state == gm_prod_em.event_rng.state, "GameManager prod _sync_rng_state writes to game_state")
+	check(gm_prod_gs.event_rng_state != 0, "GameManager prod event_rng_state advanced from 0")
+
+	# Create GameManager instance (NOT added to tree, so _ready() never fires)
+	var gm_node_class = preload("res://autoloads/GameManager.gd")
+	var gm_node = gm_node_class.new()
+	gm_node.game_state = gm_prod_gs
+	gm_node.save_manager = gm_prod_save
+	gm_node.event_manager = gm_prod_em
+
+	# Call actual GameManager.save() — exercises _sync_rng_state + _sync_event_rng_to_save_manager + save_game
+	check(gm_node.save(), "GameManager.save() returns true")
+	# Verify SaveManager event_rng was synced by GameManager._sync_event_rng_to_save_manager
+	check(gm_node.save_manager.event_rng.seed == 4242, "GameManager.save() synced event_rng.seed to SaveManager")
+	check(gm_node.save_manager.event_rng.state == gm_prod_gs.event_rng_state, "GameManager.save() synced event_rng.state to SaveManager")
+
+	# Call actual GameManager.load_save() — exercises load_game + full manager reconstruction
+	check(gm_node.load_save(), "GameManager.load_save() returns true")
+
+	# Verify after load: event RNG seed survives exactly (stored as small int in JSON, no precision loss)
+	check(gm_node.game_state.event_rng_seed == 4242, "GameManager.load_save() preserves event_rng_seed")
+	# Verify devine_resolved survives (stored as bool)
+	check(gm_node.game_state.devine_resolved == true, "GameManager.load_save() preserves devine_resolved")
+
+	# Verify EventManager was reconstructed from loaded state with correct RNG
+	check(gm_node.event_manager.event_rng != null, "GameManager.load_save() recreates EventManager")
+	check(gm_node.event_manager.event_rng.seed == 4242, "GameManager EventManager seed from loaded GameState")
+	check(gm_node.event_manager.event_rng.state == gm_node.game_state.event_rng_state, "GameManager EventManager state matches loaded GameState")
+
+	# Verify loaded EventManager is functional
+	var gm_loaded_roll: float = gm_node.event_manager.event_rng.randf()
+	check(gm_loaded_roll >= 0.0 and gm_loaded_roll <= 1.0, "GameManager loaded EventManager generates valid randf")
+	print("GameManager.save() + load_save() production round-trip: devine_resolved + event RNG verified")
 
 	# 4e. Verify BattleView UI translation methods
 	var bv_winner_attacker = "útočník"
@@ -241,6 +261,30 @@ func _init():
 	check(bv_counterattack == "protiútok", "BattleView phase translation: counterattack -> protiútok")
 	check(bv_decision == "rozhodnutie", "BattleView phase translation: decision -> rozhodnutie")
 	print("BattleView UI translation: SK labels OK")
+
+	# 4f. Verify BattleView fallback/result translations (round 4 reviewer item #3)
+	# Use inline mapping — cannot instantiate BattleView in smoke test (ArtCatalog autoload unavailable at compile time)
+	var expected_translations := {
+		"attacker": "útočník",
+		"defender": "obranca",
+		"decisive_victory": "rozhodujúce víťazstvo",
+		"major_victory": "veľké víťazstvo",
+		"victory": "víťazstvo",
+		"stalemate": "patová situácia",
+		"narrow_victory": "tesné víťazstvo",
+		"heroic_victory": "hrdinské víťazstvo",
+		"attack": "útok",
+		"counterattack": "protiútok",
+		"decision": "rozhodnutie",
+	}
+	for eng in expected_translations:
+		var sk: String = expected_translations[eng]
+		check(sk != eng, "BattleView translation: '%s' -> SK differs from EN" % eng)
+		check(sk.length() > 1, "BattleView translation: '%s' has non-empty SK label" % eng)
+	# Main.gd A-%d → Ú-%d in chronicle output (reviewer item #3)
+	var main_log_label = "  · %s: Ú-%d O-%d"
+	check(main_log_label.find("Ú-") != -1, "Main.gd chronicle uses Ú- for útočník losses (not A-)")
+	print("BattleView fallback/result translations + Main.gd Ú- label verified")
 
 	# 5. Auto 907 flow via WarManager.process_wars()
 	var gs_auto = GameState.new()

@@ -150,6 +150,19 @@ func _translate_winner(w: String) -> String:
 		return "útočník"
 	elif w == "defender":
 		return "obranca"
+	# Battle result fallback values (when no winner field present)
+	if w == "decisive_victory":
+		return "rozhodujúce víťazstvo"
+	elif w == "major_victory":
+		return "veľké víťazstvo"
+	elif w == "victory":
+		return "víťazstvo"
+	elif w == "stalemate":
+		return "patová situácia"
+	elif w == "narrow_victory":
+		return "tesné víťazstvo"
+	elif w == "heroic_victory":
+		return "hrdinské víťazstvo"
 	return w
 
 

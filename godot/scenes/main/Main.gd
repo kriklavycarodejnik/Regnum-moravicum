@@ -555,7 +555,7 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 		else:
 			phase_label = phase
 		if phase in ["attack", "counterattack"]:
-			_append_chronicle("  · %s: A-%d O-%d" % [
+			_append_chronicle("  · %s: Ú-%d O-%d" % [
 				phase_label,
 				int(log.get("attacker_losses", 0)),
 				int(log.get("defender_losses", 0)),
