@@ -2,6 +2,8 @@
 extends HBoxContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
+const MapView = preload("res://scenes/map/MapView.gd")  # pre THREAT_FOOD_THRESHOLD
+
 const RESOURCE_ORDER := [
 	{"key": "gold", "icon": "icon_gold_64", "label": "Zlato"},
 	{"key": "food", "icon": "icon_food_64", "label": "Jedlo"},
@@ -14,6 +16,8 @@ const RESOURCE_ORDER := [
 var _year_label: Label
 var _chip_labels: Dictionary = {}
 var _built: bool = false
+var _food_chip: PanelContainer  # referencia na food chip pre threat marker
+var _food_warning: Label  # ⚠ indikátor na food chipe
 
 
 func _ready() -> void:
@@ -28,6 +32,8 @@ func _build() -> void:
 	for c in get_children():
 		c.queue_free()
 	_chip_labels.clear()
+	_food_chip = null
+	_food_warning = null
 	_year_label = Label.new()
 	_year_label.name = "YearLabel"
 	_year_label.text = "Rok 902 · mesiac 1"
@@ -59,6 +65,17 @@ func _build() -> void:
 		chip.add_child(hbox)
 		_chip_labels[str(spec["key"])] = {"label": lbl, "title": str(spec["label"])}
 		add_child(chip)
+		# Uložiť referenciu na food chip pre threat marker
+		if spec["key"] == "food":
+			_food_chip = chip
+			var warn_lbl := Label.new()
+			warn_lbl.name = "FoodWarning"
+			warn_lbl.text = " ⚠"
+			warn_lbl.add_theme_font_size_override("font_size", 16)
+			warn_lbl.add_theme_color_override("font_color", Color("C9902F"))
+			warn_lbl.visible = false
+			_food_warning = warn_lbl
+			hbox.add_child(warn_lbl)
 	_built = true
 
 
@@ -77,3 +94,13 @@ func refresh() -> void:
 		var val: int = int(res.get(key, 0))
 		var lbl2: Label = info["label"]
 		lbl2.text = "%d" % val
+
+	# Threat marker pre nízke jedlo (P1 kontrakt §4.2)
+	# Zobrazí ⚠ na food chip a zmení farbu pozadia ak food < THREAT_FOOD_THRESHOLD
+	var food_val: int = int(res.get("food", 0))
+	if _food_warning != null:
+		_food_warning.visible = food_val < MapView.THREAT_FOOD_THRESHOLD
+		if food_val < MapView.THREAT_FOOD_THRESHOLD:
+			_food_warning.tooltip_text = "Zásoby jedla: %d — hladomor" % food_val
+		else:
+			_food_warning.tooltip_text = ""

@@ -7,11 +7,17 @@ signal province_selected(province_id: String)
 const C = preload("res://assets/theme/colors.gd")
 const LAYOUT_PATH := "res://data/map_layout.json"
 
+# Prahy pre threat markery (P1 kontrakt §4.2)
+const THREAT_LOYALTY_THRESHOLD := 30.0
+const THREAT_MOOD_THRESHOLD := 25.0
+const THREAT_FOOD_THRESHOLD := 100
+
 var _layout: Dictionary = {}
 var _selected_id: String = ""
 var _hover_id: String = ""
 var _tooltip_container: PanelContainer
 var _tooltip_label: Label
+var _mood_hover_faction: String = ""  # faction s náladovým markerom pod kurzorom
 var _bg_tex: Texture2D
 var _marker_tex: Dictionary = {}  # pid -> Texture2D
 var _settlement_small: Texture2D
@@ -19,6 +25,21 @@ var _settlement_medium: Texture2D
 var _settlement_large: Texture2D
 var _fort_tex: Texture2D
 var _army_dot: Texture2D
+
+# Frakcie, ktoré majú mood marker na okraji mapy
+# Formát: kľúč = faction_id, hodnota = {x, y} (relatívne 0..1 na view_size)
+const _FACTION_MARKER_POSITIONS: Dictionary = {
+	"franks": {"x": 0.02, "y": 0.45},
+	"bavaria": {"x": 0.04, "y": 0.80},
+	"poland": {"x": 0.30, "y": 0.04},
+	"bohemia": {"x": 0.12, "y": 0.04},
+	"byzantium": {"x": 0.88, "y": 0.82},
+}
+# Frakcie bez mood markeru (moravia a hungary)
+const _THREAT_IGNORE_FACTIONS: Dictionary = {
+	"moravia": true,
+	"hungary": true,
+}
 
 
 func _ready() -> void:
@@ -77,6 +98,11 @@ func _load_art() -> void:
 
 
 func refresh() -> void:
+	# Ak marker nálady, na ktorom visel kurzor, po zmene stavu prestal byť
+	# aktívny (mood >= prah), vyčisti hover a schovaj tooltip.
+	if _mood_hover_faction != "" and not _mood_faction_active(_mood_hover_faction):
+		_mood_hover_faction = ""
+		_show_mood_tooltip("", Vector2.ZERO)
 	queue_redraw()
 
 
@@ -265,9 +291,10 @@ func _draw() -> void:
 
 		draw_arc(center, r + 5.0, 0.0, TAU, 40, _loyalty_ring(loyalty), 2.5, true)
 
-		# Threat marker for critically low loyalty
-		if loyalty < 30.0:
-			draw_arc(center, r + 9.0, 0.0, TAU, 60, C.WARNING, 3.0, true)
+		# Threat marker pre nízku lojalitu (P1 kontrakt §4.2)
+		# Farba: moravia-crimson #8B1E2D pre low loyalty (nie warning)
+		if loyalty < THREAT_LOYALTY_THRESHOLD:
+			draw_arc(center, r + 9.0, 0.0, TAU, 60, C.MORAVIA_CRIMSON, 3.0, true)
 
 		if pid == _selected_id:
 			draw_arc(center, r + 10.0, 0.0, TAU, 48, C.BYZANTINE_GOLD, 3.0, true)
@@ -282,12 +309,132 @@ func _draw() -> void:
 		draw_string(font, tp + Vector2(1, 1), name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.75))
 		draw_string(font, tp, name_sk, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, C.PARCHMENT)
 
+	# --- Threat markery nálady frakcií (P1 kontrakt §4.2) ---
+	_draw_faction_mood_markers(w, h, font)
+
 	# Hint strip
 	var hint := "Klikni na župu · zlatý kruh = výber · farba okraja = lojalita"
 	var hfs := 11
 	var hs := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs)
 	draw_rect(Rect2(8, h - 26, hs.x + 16, 20), Color(0.08, 0.06, 0.04, 0.72), true)
 	draw_string(font, Vector2(16, h - 12), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs, C.TEXT_MUTED)
+
+
+func _draw_faction_mood_markers(w: float, h: float, font: Font) -> void:
+	# Získať faction dáta
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null or gm.game_state == null:
+		return
+	var factions: Dictionary = gm.game_state.factions
+	if typeof(factions) != TYPE_DICTIONARY:
+		return
+
+	var marker_r: float = 6.0
+	for fid in _FACTION_MARKER_POSITIONS:
+		# Preskočiť moravia a hungary — nemajú mood marker
+		if _THREAT_IGNORE_FACTIONS.has(fid):
+			continue
+		var pos: Dictionary = _FACTION_MARKER_POSITIONS[fid]
+		var center := Vector2(pos["x"] * w, pos["y"] * h)
+
+		# Získať mood hodnotu
+		var f_data = factions.get(fid, {})
+		if typeof(f_data) != TYPE_DICTIONARY:
+			continue
+		var mood: float = float(f_data.get("mood", 50.0))
+
+		# Kresliť len ak mood < prah
+		if mood >= THREAT_MOOD_THRESHOLD:
+			continue
+
+		# Warning ikona na okraji mapy (warning #C9902F)
+		draw_circle(center, marker_r, C.WARNING)
+		draw_circle(center, marker_r - 1.5, C.OAK_DARK)
+		# Warning triangle-like mark
+		draw_circle(center, marker_r * 0.5, C.WARNING)
+
+		# Hover zvýraznenie — signalizuje, že marker má tooltip
+		if fid == _mood_hover_faction:
+			draw_arc(center, marker_r + 3.0, 0.0, TAU, 32, C.PARCHMENT, 1.5, true)
+
+		# Label: názov frakcie
+		var fname: String = str(f_data.get("name", fid))
+		var mood_fs := 9
+		var text_size := font.get_string_size(fname, HORIZONTAL_ALIGNMENT_LEFT, -1, mood_fs)
+		var tp := Vector2(center.x - text_size.x * 0.5, center.y - marker_r - 4)
+		draw_string(font, tp + Vector2(1, 1), fname, HORIZONTAL_ALIGNMENT_LEFT, -1, mood_fs, Color(0, 0, 0, 0.75))
+		draw_string(font, tp, fname, HORIZONTAL_ALIGNMENT_LEFT, -1, mood_fs, C.WARNING)
+
+
+# Vráti faction id náladového markeru pod kurzorom, alebo "" ak žiadny.
+func _mood_marker_hit(pos: Vector2, w: float, h: float) -> String:
+	var hit_r: float = 10.0
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null or gm.game_state == null:
+		return ""
+	var factions: Dictionary = gm.game_state.factions
+	if typeof(factions) != TYPE_DICTIONARY:
+		return ""
+	for fid in _FACTION_MARKER_POSITIONS:
+		if _THREAT_IGNORE_FACTIONS.has(fid):
+			continue
+		var np: Dictionary = _FACTION_MARKER_POSITIONS[fid]
+		var center := Vector2(np["x"] * w, np["y"] * h)
+		var f_data = factions.get(fid, {})
+		if typeof(f_data) != TYPE_DICTIONARY:
+			continue
+		var mood: float = float(f_data.get("mood", 50.0))
+		if mood >= THREAT_MOOD_THRESHOLD:
+			continue
+		if pos.distance_to(center) <= hit_r:
+			return fid
+	return ""
+
+
+# Vráti true ak daná frakcia má aktuálne aktívny mood marker (mood < prah).
+func _mood_faction_active(faction: String) -> bool:
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null or gm.game_state == null:
+		return false
+	var factions: Dictionary = gm.game_state.factions
+	if typeof(factions) != TYPE_DICTIONARY:
+		return false
+	var f_data = factions.get(faction, {})
+	if typeof(f_data) != TYPE_DICTIONARY:
+		return false
+	var mood: float = float(f_data.get("mood", 50.0))
+	if _THREAT_IGNORE_FACTIONS.has(faction):
+		return false
+	return mood < THREAT_MOOD_THRESHOLD
+
+
+# Zobrazí tooltip pre mood marker nálady frakcie (P1 kontrakt §4.2).
+func _show_mood_tooltip(faction: String, mouse_pos: Vector2) -> void:
+	if _tooltip_container == null or _tooltip_label == null:
+		return
+	if faction == "":
+		_tooltip_container.visible = false
+		return
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null or gm.game_state == null:
+		_tooltip_container.visible = false
+		return
+	var factions: Dictionary = gm.game_state.factions
+	var f_data = factions.get(faction, {}) if typeof(factions) == TYPE_DICTIONARY else {}
+	if typeof(f_data) != TYPE_DICTIONARY:
+		_tooltip_container.visible = false
+		return
+	var name_sk: String = str(f_data.get("name", faction))
+	var mood: float = float(f_data.get("mood", 50.0))
+	# P1 kontrakt §4.2 tooltip pre náladu frakcie
+	_tooltip_label.text = "%s: nálada %.0f — hrozba konfliktu" % [name_sk, mood]
+	_tooltip_container.visible = true
+	_tooltip_container.position = mouse_pos + Vector2(14, 14)
+	var br := _tooltip_container.get_minimum_size()
+	if _tooltip_container.position.x + br.x > size.x:
+		_tooltip_container.position.x = size.x - br.x - 4
+	if _tooltip_container.position.y + br.y > size.y:
+		_tooltip_container.position.y = size.y - br.y - 4
 
 
 func _province_polygon(pid: String, cx: float, cy: float, r: float) -> PackedVector2Array:
@@ -305,10 +452,24 @@ func _province_polygon(pid: String, cx: float, cy: float, r: float) -> PackedVec
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		var id := _hit_test(event.position)
+		var pos: Vector2 = event.position
+		var w := size.x
+		var h := size.y
+		# Mood marker hover má prednosť pred výberom župy
+		var mf := _mood_marker_hit(pos, w, h)
+		if mf != _mood_hover_faction:
+			_mood_hover_faction = mf
+			queue_redraw()
+		if mf != "":
+			# Žiadna zmena hover župy — kurzor je na threat markeri nálady
+			if _hover_id != "":
+				_hover_id = ""
+			_show_mood_tooltip(mf, pos)
+			return
+		var id := _hit_test(pos)
 		if id != _hover_id:
 			_hover_id = id
-			_update_tooltip(event.position)
+			_update_tooltip(pos)
 			queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var id2 := _hit_test(event.position)
@@ -349,13 +510,18 @@ func _update_tooltip(mouse_pos: Vector2) -> void:
 	var raw = provs.get(id, {})
 	if typeof(raw) == TYPE_DICTIONARY:
 		p = raw
-	_tooltip_label.text = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
+	var tooltip_text: String = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
 		str(p.get("name", id)),
 		str(p.get("owner_faction", "?")),
 		str(p.get("loyalty", "?")),
 		str(p.get("prosperity", "?")),
 		str(p.get("religion", "?")),
 	]
+	# Pridať threat marker tooltip pre kriticky nízku lojalitu
+	var loyalty: float = float(p.get("loyalty", 50))
+	if loyalty < THREAT_LOYALTY_THRESHOLD:
+		tooltip_text += "\n\n⚠ Lojalita %s: %.0f — hrozba vzbury" % [str(p.get("name", id)), loyalty]
+	_tooltip_label.text = tooltip_text
 	_tooltip_container.visible = true
 	_tooltip_container.position = mouse_pos + Vector2(14, 14)
 	var br := _tooltip_container.get_minimum_size()
