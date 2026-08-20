@@ -53,7 +53,7 @@ func _wizard_try_advance(current_step: int, overlay_active: bool, done: bool, ac
 			else:
 				return [step_out, done_out, "guard: wrong step for commander_confirmed"]
 		"army_moved":
-			if current_step == 3 and target == "devin" and (army_id == selected_army_id or selected_army_id == ""):
+			if current_step == 3 and target == "devin" and army_id == selected_army_id:
 				done_out = true
 				step_out = 0
 			elif current_step != 3:
@@ -1028,6 +1028,14 @@ func _init() -> void:
 	# Guard: army_id mismatch — army_id != selected_army_id → nepostúpi
 	var res_wrong_army = _wizard_try_advance(3, true, false, "army_moved", "devin", "army_1", "army_2")
 	check(res_wrong_army[0] == 3 and res_wrong_army[1] == false, "P1.2 flow: army_id mismatch — army_id!=selected_army_id nepostúpi (guard: '%s')" % str(res_wrong_army[2]))
+
+	# Guard: prázdne army_id — nepostúpi (prísna zhoda; žiadny bypass)
+	var res_empty_army = _wizard_try_advance(3, true, false, "army_moved", "devin", "", "army_1")
+	check(res_empty_army[0] == 3 and res_empty_army[1] == false, "P1.2 flow: prázdne army_id — nepostúpi (guard: '%s')" % str(res_empty_army[2]))
+
+	# Guard: prázdne selected_army_id nesmie byť bypass — army_id != "" → nepostúpi
+	var res_empty_selected = _wizard_try_advance(3, true, false, "army_moved", "devin", "army_1", "")
+	check(res_empty_selected[0] == 3 and res_empty_selected[1] == false, "P1.2 flow: prázdne selected_army_id nie je bypass — army_id!=selected nepostúpi (guard: '%s')" % str(res_empty_selected[2]))
 
 	# Guard: overlay inactive → nič sa nedeje
 	var res_no_overlay = _wizard_try_advance(0, false, false, "army_selected")

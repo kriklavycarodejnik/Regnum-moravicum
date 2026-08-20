@@ -490,11 +490,13 @@ func _on_action_notification_clicked(action_id: String) -> void:
 	if action_id == "army_wizard":
 		# Prepnúť na záložku Armády a spustiť wizard
 		if side_tabs:
-			# Hľadať index záložky Armády
-			for i in range(side_tabs.tab_count):
+			# Hľadať index záložky Armády (Godot 4: get_tab_count() je metóda)
+			for i in range(side_tabs.get_tab_count()):
 				if side_tabs.get_tab_title(i) == "Armády":
 					side_tabs.current_tab = i
 					break
+		# _try_show_army_wizard je idempotentná cez _army_wizard_overlay_active
+		# a done guard — otvorí najviac jeden wizard aj pri synchronom tab_changed.
 		_try_show_army_wizard()
 
 
