@@ -21,6 +21,52 @@ func check(cond: bool, label: String) -> void:
 		_m6_failed = true
 
 
+# Replikuje Main.gd wizard guard logiku pre testovanie prechodov W1→W4.
+# Vracia Array [step_out: int, done_out: bool, reason: String].
+func _wizard_try_advance(current_step: int, overlay_active: bool, done: bool, action: String, target: String = "", army_id: String = "", selected_army_id: String = "") -> Array:
+	"""Simuluje Main.gd wizard guard podmienky pre postup krokom.
+	Guardy replikujú Main.gd:
+	  - _on_army_wizard_army_selected (step==0)
+	  - _on_army_wizard_move_dialog_opened (step==1)
+	  - _on_army_wizard_commander_confirmed (step==2)
+	  - _on_army_wizard_army_moved (step==3, target==devin, army_id==selected_army_id)"""
+	var step_out: int = current_step
+	var done_out: bool = done
+	if not overlay_active:
+		return [step_out, done_out, "guard: overlay inactive"]
+	if done:
+		return [step_out, done_out, "guard: done"]
+	match action:
+		"army_selected":
+			if current_step == 0:
+				step_out = 1
+			else:
+				return [step_out, done_out, "guard: wrong step for army_selected"]
+		"move_dialog_opened":
+			if current_step == 1:
+				step_out = 2
+			else:
+				return [step_out, done_out, "guard: wrong step for move_dialog_opened"]
+		"commander_confirmed":
+			if current_step == 2:
+				step_out = 3
+			else:
+				return [step_out, done_out, "guard: wrong step for commander_confirmed"]
+		"army_moved":
+			if current_step == 3 and target == "devin" and (army_id == selected_army_id or selected_army_id == ""):
+				done_out = true
+				step_out = 0
+			elif current_step != 3:
+				return [step_out, done_out, "guard: wrong step for army_moved"]
+			elif target != "devin":
+				return [step_out, done_out, "guard: wrong target for army_moved"]
+			elif army_id != selected_army_id:
+				return [step_out, done_out, "guard: army_id mismatch"]
+		_:
+			return [step_out, done_out, "unknown action: " + action]
+	return [step_out, done_out, "advance_ok"]
+
+
 # Helper: run a multi-month event sequence on a fresh GameState + EventManager.
 # Starts at 903/1 and advances `num_months` months sequentially.
 # Returns array of event ID strings, one per month.
@@ -947,35 +993,51 @@ func _init() -> void:
 	check(awf_cmd_skill >= 1 and awf_cmd_skill <= 10, "P1.2 flow: veliteľ má skill v rozsahu 1-10 (hodnota %d)" % awf_cmd_skill)
 	print("P1.2 flow: commander test — name='%s', skill=%d" % [str(awf_c3_cmd.get("name", "?")), awf_cmd_skill])
 
-	# 16j-i) Simulácia W1→W2→W3→W4 advancement guardov cez Main.gd logiku
-	#        (bez inštancie Main — replikujeme guard podmienky z Main.gd)
-	#        W1→W2: army_selected iba ak step==0 a overlay active
-	var sim_overlay_active: bool = true
-	var sim_done: bool = false
-	var sim_step: int = 0
-	# step=0, overlay active, !done → army_selected by postúpil
-	var sim_w1_w2: bool = sim_overlay_active and not sim_done and sim_step == 0
-	check(sim_w1_w2 == true, "P1.2 flow: W1→W2 (step=0, overlay active) → army_selected postúpi")
-	sim_step = 1
-	# step=1, overlay active, !done → move_dialog_opened by postúpil
-	var sim_w2_w3: bool = sim_overlay_active and not sim_done and sim_step == 1
-	check(sim_w2_w3 == true, "P1.2 flow: W2→W3 (step=1, overlay active) → move_dialog_opened postúpi")
-	sim_step = 2
-	# step=2 → commander button (W3→W4 cez valid commander)
-	var sim_w3_cmd: bool = sim_overlay_active and not sim_done and sim_step == 2
-	check(sim_w3_cmd == true, "P1.2 flow: W3 (step=2, overlay active) → commander button sa zobrazí")
-	sim_step = 3
-	# step=3, target=devin → W4 DONE
-	var sim_w4_done: bool = sim_overlay_active and not sim_done and sim_step == 3 and ("devin" == "devin")
-	check(sim_w4_done == true, "P1.2 flow: W4 (step=3, devin target) → wizard by nastavil army_wizard_done=true")
-	# Wrong step guard: step=0, move_dialog_opened by nemal postúpiť
-	sim_step = 0
-	var sim_wrong_w2: bool = sim_step == 1  # false — step=0, move_dialog_opened guard zablokuje
-	check(sim_wrong_w2 == false, "P1.2 flow: wrong step guard — move_dialog_opened pri step=0 nepostúpi")
-	sim_step = 2
-	var sim_wrong_w4: bool = sim_step == 3  # false — step=2, army_moved guard zablokuje
-	check(sim_wrong_w4 == false, "P1.2 flow: wrong step guard — army_moved pri step=2 nepostúpi")
-	print("P1.2 flow: step advancement guard simulation OK")
+	# 16j-i) Funkčný test W1→W2→W3→W4 advancement guardov
+	#        Používa _wizard_try_advance() ktorá replikuje Main.gd wizard logiku.
+	print("--- Testing P1.2 wizard step advancement (function-based guards) ---")
+
+	# W1→W2: army_selected z kroku 0 → step=1
+	var res_w1 = _wizard_try_advance(0, true, false, "army_selected")
+	check(res_w1[0] == 1 and res_w1[1] == false, "P1.2 flow: W1→W2 — army_selected z step=0 → step=1 (guard: '%s')" % str(res_w1[2]))
+
+	# W2→W3: move_dialog_opened z kroku 1 → step=2
+	var res_w2 = _wizard_try_advance(1, true, false, "move_dialog_opened")
+	check(res_w2[0] == 2 and res_w2[1] == false, "P1.2 flow: W2→W3 — move_dialog_opened z step=1 → step=2 (guard: '%s')" % str(res_w2[2]))
+
+	# W3→W4: commander_confirmed z kroku 2 → step=3
+	var res_w3 = _wizard_try_advance(2, true, false, "commander_confirmed")
+	check(res_w3[0] == 3 and res_w3[1] == false, "P1.2 flow: W3→W4 — commander_confirmed z step=2 → step=3 (guard: '%s')" % str(res_w3[2]))
+
+	# W4→DONE: army_moved na devin, správna armáda → done
+	var res_w4 = _wizard_try_advance(3, true, false, "army_moved", "devin", "army_1", "army_1")
+	check(res_w4[1] == true, "P1.2 flow: W4→DONE — army_moved s target=devin, army_id=selected → done=true (guard: '%s')" % str(res_w4[2]))
+
+	# Guard: nesprávny cieľ (nitra) pri step=3 → nepostúpi
+	var res_wrong_target = _wizard_try_advance(3, true, false, "army_moved", "nitra", "army_1", "army_1")
+	check(res_wrong_target[0] == 3 and res_wrong_target[1] == false, "P1.2 flow: wrong target nitra → step sa nemení (guard: '%s')" % str(res_wrong_target[2]))
+
+	# Guard: nesprávny krok — move_dialog_opened pri step=0 → nepostúpi
+	var res_wrong_step = _wizard_try_advance(0, true, false, "move_dialog_opened")
+	check(res_wrong_step[0] == 0 and res_wrong_step[1] == false, "P1.2 flow: wrong step — move_dialog_opened pri step=0 nepostúpi (guard: '%s')" % str(res_wrong_step[2]))
+
+	# Guard: army_moved pri step=2 → nepostúpi
+	var res_wrong_step2 = _wizard_try_advance(2, true, false, "army_moved", "devin", "army_1", "army_1")
+	check(res_wrong_step2[0] == 2 and res_wrong_step2[1] == false, "P1.2 flow: wrong step — army_moved pri step=2 nepostúpi (guard: '%s')" % str(res_wrong_step2[2]))
+
+	# Guard: army_id mismatch — army_id != selected_army_id → nepostúpi
+	var res_wrong_army = _wizard_try_advance(3, true, false, "army_moved", "devin", "army_1", "army_2")
+	check(res_wrong_army[0] == 3 and res_wrong_army[1] == false, "P1.2 flow: army_id mismatch — army_id!=selected_army_id nepostúpi (guard: '%s')" % str(res_wrong_army[2]))
+
+	# Guard: overlay inactive → nič sa nedeje
+	var res_no_overlay = _wizard_try_advance(0, false, false, "army_selected")
+	check(res_no_overlay[0] == 0 and res_no_overlay[1] == false, "P1.2 flow: overlay inactive → žiadny postup (guard: '%s')" % str(res_no_overlay[2]))
+
+	# Guard: done=true → nič sa nedeje
+	var res_done_guard = _wizard_try_advance(0, true, true, "army_selected")
+	check(res_done_guard[0] == 0 and res_done_guard[1] == true, "P1.2 flow: done=true → žiadny postup (guard: '%s')" % str(res_done_guard[2]))
+
+	print("P1.2 flow: function-based wizard step advancement ALL GUARDS VERIFIED")
 
 	print("P1.2: army wizard flow guards ALL CHECKS PASSED!")
 
