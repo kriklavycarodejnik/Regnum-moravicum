@@ -14,6 +14,8 @@ const Formulas = preload("res://scripts/battle/BattleFormulas.gd")
 const C = preload("res://scripts/battle/BattleConfig.gd")
 const EventManager = preload("res://scripts/managers/EventManager.gd")
 
+var ok = true
+
 
 func _make_world(seed: int):
 	var gs = GameState.new()
@@ -47,7 +49,7 @@ func _make_world(seed: int):
 
 
 func _init():
-	var ok = true
+	ok = true
 	print("=== Regnum Moravicum smoke M5 ===")
 
 	# 1. World bootstrap
@@ -148,7 +150,8 @@ func _init():
 	print("Chronicle: exactly 1 Devín entry")
 
 	# 4c. Save/load round-trip preserves devine_resolved AND event RNG seed/state
-	# Production path: SaveManager reads event_rng_seed/state directly from GameState.to_dict()
+	# Sync event RNG state before save so the test exercises a realistic production path
+	event_mgr._sync_rng_state()
 	var save = SaveManager.new()
 	save._init(99)
 	save.rng = w.rng
@@ -207,7 +210,7 @@ func _init():
 	var gm_prod_em = EventManager.new()
 	gm_prod_em._init(gm_prod_gs)
 	check(gm_prod_em.event_rng.seed == 4242, "GameManager prod EventManager seed init")
-	check(gm_prod_em.event_rng.state == 0, "GameManager prod EventManager state init")
+	check(gm_prod_em.event_rng.state != 0, "GameManager prod EventManager state init (non-zero seed-derived)")
 
 	# Advance EventManager RNG (simulate event processing)
 	var gm_roll1: float = gm_prod_em.event_rng.randf()
@@ -373,4 +376,4 @@ func _init():
 func check(cond, msg):
 	if not cond:
 		print("FAIL: " + msg)
-		quit(1)
+		ok = false

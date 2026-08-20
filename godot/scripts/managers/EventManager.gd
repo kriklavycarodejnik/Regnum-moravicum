@@ -15,7 +15,9 @@ func _init(state: RefCounted = null) -> void:
 		game_state = state
 		event_rng = RandomNumberGenerator.new()
 		event_rng.seed = game_state.event_rng_seed
-		event_rng.state = game_state.event_rng_state
+		# Only restore explicit state on reload (0 = fresh, let seed determine state)
+		if game_state.event_rng_state != 0:
+			event_rng.state = game_state.event_rng_state
 
 
 # Save event RNG state back to game_state after operations
@@ -72,6 +74,7 @@ func process_events() -> Dictionary:
 	# 3. Random weighted event
 	var rand_out: Dictionary = _try_random_event()
 	if not rand_out.is_empty():
+		_record_last_event(rand_out)
 		_sync_rng_state()
 		return rand_out
 
@@ -80,6 +83,7 @@ func process_events() -> Dictionary:
 		var ce: Dictionary = _build_council_event()
 		game_state.pending_event = ce
 		_sync_rng_state()
+		_record_last_event(ce)
 		return {
 			"type": "event",
 			"title": ce.get("title", "Rada županov"),

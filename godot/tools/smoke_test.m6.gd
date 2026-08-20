@@ -11,11 +11,13 @@ const SaveManager = preload("res://scripts/core/SaveManager.gd")
 const EventManager = preload("res://scripts/managers/EventManager.gd")
 
 
+var _m6_failed: bool = false
+
 func check(cond: bool, label: String) -> void:
 	if not cond:
 		push_error("SMOKE_M6_FAIL: " + label)
 		print("SMOKE_M6_FAIL: ", label)
-		quit(1)
+		_m6_failed = true
 
 
 # Helper: run a multi-month event sequence on a fresh GameState + EventManager.
@@ -28,6 +30,7 @@ func _run_event_sequence(seed_val: int, num_months: int, battle_draws: int) -> A
 	gs_ev.ensure_resources()
 	gs_ev.year = 903
 	gs_ev.month = 1
+	gs_ev.event_rng_seed = seed_val
 	var sm_ev = SaveManager.new()
 	sm_ev._init(seed_val)
 	var em_ev = EventManager.new()
@@ -445,6 +448,10 @@ func _init() -> void:
 	check(FileAccess.file_exists("res://ui/TurnReport.tscn"), "TurnReport scene exists")
 	check(FileAccess.file_exists("res://ui/TurnReport.gd"), "TurnReport script file exists")
 	print("TurnReport OK")
+
+	if _m6_failed:
+		print("SMOKE_M6_FAIL: one or more checks failed (see above)")
+		quit(1)
 
 	print("SMOKE_M6_PASS")
 	quit(0)

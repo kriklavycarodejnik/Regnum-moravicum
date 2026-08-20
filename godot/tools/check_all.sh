@@ -23,8 +23,13 @@ check() {
     exit_status=$?
     set -e
 
+    # Fail on any FAIL marker (M5 or M6) — must be before success markers
+    if echo "$output" | grep -qE "(FAIL:|SMOKE_FAIL|SMOKE_M5_FAIL|SMOKE_M6_FAIL)"; then
+        echo -e "${RED}FAIL${NC} (FAIL marker detected)"
+        echo "$output" | grep -E "(FAIL:|SMOKE_FAIL|SMOKE_M5_FAIL|SMOKE_M6_FAIL)"
+        failures=$((failures + 1))
     # Fail on any SCRIPT ERROR or Parse Error (runtime errors in Godot)
-    if echo "$output" | grep -qE "(SCRIPT ERROR|Parse Error)"; then
+    elif echo "$output" | grep -qE "(SCRIPT ERROR|Parse Error)"; then
         echo -e "${RED}FAIL${NC} (SCRIPT ERROR detected)"
         echo "$output" | grep -E "(SCRIPT ERROR|Parse Error)"
         failures=$((failures + 1))
