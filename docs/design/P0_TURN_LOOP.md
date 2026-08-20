@@ -136,13 +136,24 @@ Odpočet k 907 je viditeľný **od začiatku hry** (902), nie iba tesne pred kr�
 hráč nemá byť nikdy prekvapený. Text a farba sa menia podľa počtu mesiacov,
 zdroj dát je existujúci výpočet v `_update_story_line()`:
 
-| Mesiacov do 907 | Farba | Text |
+| Mesiacov do 907 (`months_left`) | Farba | Text |
 |---|---|---|
-| > 36 (902–903) | `TEXT_SECONDARY` | „Do Maďarov: {N} mesiacov“ |
-| 13–36 (904–905) | `WARNING` (`#C9902F`) | „Do Maďarov: {N} mesiacov“ |
-| 1–12 (906–907, nevyriešené) | `MORAVIA_CRIMSON`, bold | „Do Maďarov: {N} mesiacov“ |
+| > 36 | `TEXT_SECONDARY` | „Do Maďarov: {N} mesiacov“ |
+| 13–36 | `WARNING` (`#C9902F`) | „Do Maďarov: {N} mesiacov“ |
+| 1–12 | `MORAVIA_CRIMSON`, bold | „Do Maďarov: {N} mesiacov“ |
 | Devín vyriešený, rok < 907 (skip-exploit prípad) | `BYZANTINE_GOLD` | „Devín už rozhodol — Maďari zvíťazili. Morava ide ďalej.“ |
 | Po 907 (bežný priebeh) | `TEXT_SECONDARY`/`WARNING` podľa existujúcej threat-strip logiky | „Po Devíne · zostáva ~{roky} r. do 1000“ |
+
+`months_left` sa počíta presne ako v `_update_story_line()`:
+`(907 - year) * 12 + (7 - month)`. Hranice pásiem sú viazané na túto hodnotu,
+nie na rok — kalendárny rozsah sa nesmie v kóde ani v UI aproximovať rokom.
+Príklad prechodov (na overenie hranice v teste):
+
+- `902/01` → 66 mes. (pásmo „> 36“)
+- `904/06` → 37 mes. (posledný mesiac pásma „> 36“)
+- `904/07` → 36 mes. (prvý mesiac pásma „13–36“, farba sa práve zmenila na `WARNING`)
+- `906/06` → 13 mes. (posledný mesiac pásma „13–36“)
+- `906/07` → 12 mes. (prvý mesiac pásma „1–12“, farba sa práve zmenila na `MORAVIA_CRIMSON`)
 
 Existujúce modály pri 906/01 („Blíži sa invázia“) a 907/01 („Devín volá“) sa
 nemenia — sú súčasťou tejto eskalácie, nie duplicitné.
@@ -211,7 +222,7 @@ a v TurnReporte (§1.1 bod 5), oba čítajú z rovnakej metódy.
 | **2. Cena** | Blok 4 (§1.1) ukazuje menovitý dôsledok (lojalita/nálada), nie len plus-zlato | Krok 3 core-loop (Ďalší mesiac) je *skutočná* herná akcia s reálnymi následkami tiku, nie coach-simulácia | Odpočet nie je zadarmo — každý mesiac bez prípravy (armáda, diplomacia) je mesiac bližšie ku kríze | CTA niekedy hovorí „diplomacia, nie Ďalší mesiac“ (§ dip side-goal v `ObjectivesPanel`) — sync nezjednodušuje hru na jedno tlačidlo |
 | **3. Predvídateľnosť** | Δ a dôsledok sa objavia hneď po ťahu, nie neskôr skryté v kronike | Coach nikdy nezablokuje hráča navždy — 3 kroky, skip vždy dostupný | Farebná eskalácia 36/12 mesiacov = hráč vidí krízu prichádzať zavčasu, žiadny „RNG bez varovania“ | Rovnaká veta na dvoch miestach = žiadny rozpor, ktorý by pôsobil ako nespravodlivosť |
 | **4. Špecifickosť** | Fallback text menuje „úrodu“ a „župany“, nie univerzálne „nič sa nestalo“ | Texty menujú Nitru, Mojmírovcov, rok 907, Maďarov — nie generické „Vitaj v hre“ | Text menuje „Maďarov“, nie „nepriateľa“; menuje rok 907 explicitne | CTA text je vždy fázovo-špecifický (`ObjectivesPanel.refresh()` už generuje kontextové vety, len sa teraz nezduplikuje) |
-| **5. Tempo** | Ťah 3 (902/03): fallback narácia, žiadny dôsledok blok. Ťah 8 (902/08–903): pravdepodobnejší event, threat clock už beží | Coach dobehne v ťahu 1 — ťah 3 aj 8 ho už nevidia (`tutorial_done`) | Ťah 3: farba neutrálna (>36 mes.). Ťah 8: farba sa môže posunúť k WARNING podľa roku — vizuálne odlišné tempo | Ťah 3 CTA: „Klikni župu / stlač Ďalší mesiac“ (Fáza I intro). Ťah 8 CTA: môže byť diplomatický side-goal, ak nálada klesla — odlišný text, nie rovnaká veta dokola |
+| **5. Tempo** | Ťah 3 (`902/03`): fallback narácia, žiadny dôsledok blok. Ťah 8 (`902/08`): pravdepodobnejší event, threat clock už beží | Coach dobehne v ťahu 1 — ťah 3 aj 8 ho už nevidia (`tutorial_done`) | Ťah 3 (`902/03`, 64 mes. do 907): farba neutrálna (>36 mes.). Ťah 8 (`902/08`, 59 mes. do 907): farba stále neutrálna, ale odpočet je nižší a hráč to vidí — vizuálne odlišné tempo bez zmeny pásma | Ťah 3 CTA: „Klikni župu / stlač Ďalší mesiac“ (Fáza I intro). Ťah 8 CTA: môže byť diplomatický side-goal, ak nálada klesla — odlišný text, nie rovnaká veta dokola |
 
 ---
 
