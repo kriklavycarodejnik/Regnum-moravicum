@@ -86,7 +86,10 @@ script = ExtResource("2")
 layout_mode = 2
 script = ExtResource("5")
 
-[node name="ThreatClock" parent="UI" instance=ExtResource("11")]
+[node name="ThreatClockRow" type="HBoxContainer" parent="UI"]
+layout_mode = 2
+
+[node name="ThreatClock" parent="UI/ThreatClockRow" instance=ExtResource("11")]
 
 [node name="ObjectivesPanel" parent="UI" instance=ExtResource("9")]
 
