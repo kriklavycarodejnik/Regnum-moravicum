@@ -127,6 +127,7 @@ func _try_chain_event() -> Dictionary:
 
 func _try_historical_event() -> Dictionary:
 	var y: int = game_state.year
+	var m: int = game_state.month
 	for cat in _catalog:
 		if typeof(cat) != TYPE_DICTIONARY:
 			continue
@@ -136,6 +137,10 @@ func _try_historical_event() -> Dictionary:
 		if req_year == 0:
 			continue
 		if y != req_year:
+			continue
+		# Month check: if month is specified (> 0), it must match the current month
+		var req_month: int = int(conds.get("month", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
+		if req_month > 0 and m != req_month:
 			continue
 		if bool(cat.get("once", false)) and game_state.triggered_events.has(eid):
 			continue

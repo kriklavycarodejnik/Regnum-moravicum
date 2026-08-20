@@ -2,11 +2,12 @@
   {
     "id": "hist_mojmir_coronation_902",
     "type": "historical",
-    "title": "Korunovačka Mojmíra II.",
+    "title": "Korunovácia Mojmíra II.",
     "body": "Po smrti Svätopluka zasadol na kniežací stolec Mojmír II. V Nitre sa schádzajú veľmoži zo všetkých hradísk na slávnostnú korunováciu. Kniežací dvor očakáva jasné gesto nového panovníka. Veľkolepá hostina ukáže silu ríše susedom, no skromný obrad ušetrí dôležité prostriedky na hroziace nebezpečenstvo.",
     "art_id": "moravian_court_interior",
     "conditions": {
       "year": 902,
+      "month": 2,
       "yearMin": 0
     },
     "once": true,
@@ -45,6 +46,7 @@
     "art_id": "event_border_raid",
     "conditions": {
       "year": 902,
+      "month": 6,
       "yearMin": 0
     },
     "once": true,
