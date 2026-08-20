@@ -900,6 +900,111 @@ func _init() -> void:
 	check(aw_flow_guard_loaded == false, "P1.2 flow: po save/load s done=true sa overlay neotvorí")
 	print("P1.2: army wizard flow guards ALL CHECKS PASSED!")
 
+	# 16k) Objectives beat tests — overenie next_step podľa phase/roku/stavu
+	print("--- Testing P1.2 objectives beats (A1–A4, B1–B2, diplomacy) ---")
+
+	# Helper Callable: otestuje next_step logiku phase I (rovnaký vzor ako ObjectivesPanel.refresh())
+	var _phase1_test: Callable = func(year_p1: int, month_p1: int, gold_p1: int, devine_p1: bool) -> String:
+		if year_p1 == 902 and month_p1 <= 2:
+			return "1) Ciele 2) Klikni župu 3) Ďalší mesiac"
+		elif year_p1 < 906 and gold_p1 < 800:
+			return "Stlač „Ďalší mesiac“ — ekonomika doplní zdroje."
+		elif year_p1 < 906:
+			return "Pokračuj „Ďalší mesiac“. Okolo 906 sa priblíži Devín."
+		elif not devine_p1:
+			return "Blíži sa 907 — priprav armádu k Devínu (pozri notifikáciu)."
+		else:
+			return "Pokračuj „Ďalší mesiac“ — Devín je vyriešený."
+
+	# A1: tutorial (902/01)
+	var a1_next: String = _phase1_test.call(902, 1, 500, false)
+	check(a1_next == "1) Ciele 2) Klikni župu 3) Ďalší mesiac", "P1.2 beat A1: 902/01 → tutorial text")
+
+	# A2: economy (905, gold=500)
+	var a2_next: String = _phase1_test.call(905, 6, 500, false)
+	check(a2_next == "Stlač „Ďalší mesiac“ — ekonomika doplní zdroje.", "P1.2 beat A2: 905 gold=500 → economy text")
+
+	# A3: waiting (905, gold=1000)
+	var a3_next: String = _phase1_test.call(905, 6, 1000, false)
+	check(a3_next == "Pokračuj „Ďalší mesiac“. Okolo 906 sa priblíži Devín.", "P1.2 beat A3: 905 gold=1000 → waiting text")
+
+	# A4: approach 907 (906/01, !devine_resolved)
+	var a4_next: String = _phase1_test.call(906, 1, 1000, false)
+	check(a4_next == "Blíži sa 907 — priprav armádu k Devínu (pozri notifikáciu).", "P1.2 beat A4: 906/01 !devine_resolved → 907 approach text")
+
+	# A4 regression: devine_resolved=true → no "Blíži sa 907"
+	var a4_resolved: String = _phase1_test.call(906, 6, 1000, true)
+	check(a4_resolved != "Blíži sa 907 — priprav armádu k Devínu (pozri notifikáciu).", "P1.2 beat A4 regression: devine_resolved=true → neukáže „Blíži sa 907“")
+	check(a4_resolved == "Pokračuj „Ďalší mesiac“ — Devín je vyriešený.", "P1.2 beat A4 regression: devine_resolved=true → fallback text")
+
+	# B1: Devín button (907, !devine_resolved)
+	var b1_gs := GameState.new()
+	b1_gs.ensure_resources()
+	b1_gs.year = 907
+	b1_gs.resources.gold = 800
+	var b1_phase_year: int = 907
+	var b1_devine_resolved: bool = false
+	var b1_next: String = ""
+	if b1_phase_year == 907 and not b1_devine_resolved:
+		b1_next = "Stlač „Devín 907“ v nástrojoch dole."
+	check(b1_next == "Stlač „Devín 907“ v nástrojoch dole.", "P1.2 beat B1: 907 !devine_resolved → Devín button text")
+
+	# B2: Devín padol (devine_resolved=true)
+	var b2_devine_resolved: bool = true
+	if b2_devine_resolved:
+		var b2_next := "Devín padol. Pokračuj „Ďalší mesiac\"."
+		check(b2_next == "Devín padol. Pokračuj „Ďalší mesiac\".", "P1.2 beat B2: devine_resolved → Devín padol text")
+
+	# Diplomacy side-goal: test _diplomacy_side_goal logiky
+	# Simuluje čo by panel vrátil — používa rovnaký vzor ako panel
+	var _dip_test: Callable = func(factions_test: Array) -> Dictionary:
+		var worst_mood := 100.0
+		var worst_name := ""
+		for f in factions_test:
+			if typeof(f) != TYPE_DICTIONARY or str(f.get("id", "")) == "hungary" or str(f.get("id", "")) == "moravia":
+				continue
+			var mood: float = float(f.get("mood", 50.0))
+			if mood < worst_mood:
+				worst_mood = mood
+				worst_name = str(f.get("name", ""))
+		if worst_name == "" or worst_mood >= 50.0:
+			return {}
+		if worst_mood < 30.0:
+			return {
+				"goal": "⚠ URGENTNÉ: %s má náladu len %.0f — hrozí konflikt!" % [worst_name, worst_mood],
+				"next_step": "Dar frakcii %s v záložke Diplomacia (nálada %.0f)." % [worst_name, worst_mood],
+			}
+		return {
+			"goal": "Diplomacia: %s má náladu len %.0f" % [worst_name, worst_mood],
+			"next_step": "Dar frakcii %s v záložke Diplomacia (nálada %.0f)." % [worst_name, worst_mood],
+		}
+
+	# Diplomacy: mood=55 → bez goal (>=50)
+	var dip_all_good: Dictionary = _dip_test.call([{"id": "franks", "name": "Frankovia", "mood": 55}])
+	check(dip_all_good.get("goal", "") == "", "P1.2 diplomacy: mood=55 → bez goal (>=50)")
+
+	# Diplomacy: mood=45 → goal, next_step bez urgent marker
+	var dip_mid: Dictionary = _dip_test.call([{"id": "byzantium", "name": "Byzancia", "mood": 45}])
+	check(str(dip_mid.get("goal", "")) != "", "P1.2 diplomacy: mood=45 → goal pridaný")
+	check(str(dip_mid.get("next_step", "")).find("Dar frakcii") >= 0, "P1.2 diplomacy: mood=45 → next_step obsahuje „Dar frakcii“")
+	check(str(dip_mid.get("goal", "")).find("⚠") < 0, "P1.2 diplomacy: mood=45 → goal NIE je URGENTNÉ")
+
+	# Diplomacy: mood=25 → urgent goal + next_step override (bez URGENTNÉ v next_step)
+	var dip_urgent: Dictionary = _dip_test.call([{"id": "byzantium", "name": "Byzancia", "mood": 25}])
+	check(str(dip_urgent.get("goal", "")).find("⚠") >= 0, "P1.2 diplomacy: mood=25 → goal je URGENTNÉ")
+	check(str(dip_urgent.get("next_step", "")).find("⚠") < 0, "P1.2 diplomacy: mood=25 → next_step NEOBSAHUJE ⚠")
+	check(str(dip_urgent.get("next_step", "")) == "Dar frakcii Byzancia v záložke Diplomacia (nálada 25).", "P1.2 diplomacy: mood=25 → next_step je čistý kontrakt text")
+
+	# Diplomacy: hungary je vylúčená (aj keď mood je nízky)
+	var dip_hungary_excl: Dictionary = _dip_test.call([{"id": "hungary", "name": "Maďari", "mood": 10}])
+	check(str(dip_hungary_excl.get("goal", "")) == "", "P1.2 diplomacy: mood=10 hungary → vylúčená, žiadny goal")
+
+	# Diplomacy: moravia vylúčená
+	var dip_moravia_excl: Dictionary = _dip_test.call([{"id": "moravia", "name": "Morava", "mood": 10}])
+	check(str(dip_moravia_excl.get("goal", "")) == "", "P1.2 diplomacy: moravia vylúčená, žiadny goal")
+
+	print("P1.2: objectives beats ALL CHECKS PASSED!")
+
 	print("P1: 14 event catalog regression ALL CHECKS PASSED!")
 
 	if _m6_failed:

@@ -111,10 +111,14 @@ func refresh() -> void:
 		])
 		if year == 902 and month <= 2:
 			next_step = "1) Ciele 2) Klikni župu 3) Ďalší mesiac"
-		elif gold < 800:
+		elif year < 906 and gold < 800:
 			next_step = "Stlač „Ďalší mesiac“ — ekonomika doplní zdroje."
+		elif year < 906:
+			next_step = "Pokračuj „Ďalší mesiac“. Okolo 906 sa priblíži Devín."
+		elif not s.get("devine_resolved", false):
+			next_step = "Blíži sa 907 — priprav armádu k Devínu (pozri notifikáciu)."
 		else:
-			next_step = "Pokračuj „Ďalší mesiac“. Okolo 907 spusti Devín."
+			next_step = "Pokračuj „Ďalší mesiac“ — Devín je vyriešený."
 	elif year == 907:
 		phase_name = "Fáza II — Kríza (907)"
 		phase_hint = "Bitka pri Devíne rozhoduje o prestíži."
@@ -172,6 +176,12 @@ func _diplomacy_side_goal(gm) -> Dictionary:
 			worst_name = str(f.get("name", ""))
 	if worst_name == "" or worst_mood >= 50.0:
 		return {}
+	if worst_mood < 30.0:
+		return {
+			"goal": "⚠ URGENTNÉ: %s má náladu len %.0f — hrozí konflikt!" % [worst_name, worst_mood],
+			"mood": worst_mood,
+			"next_step": "Dar frakcii %s v záložke Diplomacia (nálada %.0f)." % [worst_name, worst_mood],
+		}
 	return {
 		"goal": "Diplomacia: %s má náladu len %.0f" % [worst_name, worst_mood],
 		"mood": worst_mood,
