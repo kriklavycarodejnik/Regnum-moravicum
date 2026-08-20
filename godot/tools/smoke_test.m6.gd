@@ -9,6 +9,7 @@ const VictoryManager = preload("res://scripts/managers/VictoryManager.gd")
 const MapManager = preload("res://scripts/managers/MapManager.gd")
 const SaveManager = preload("res://scripts/core/SaveManager.gd")
 const EventManager = preload("res://scripts/managers/EventManager.gd")
+const ObjectivesPanel = preload("res://ui/ObjectivesPanel.gd")
 
 
 var _m6_failed: bool = false
@@ -415,7 +416,7 @@ func _init() -> void:
 				if in_sentence:
 					count += 1
 					in_sentence = false
-			elif c != " " and c != "	" and c != "\n":
+			elif c != " " and c != "\t" and c != "\n":
 				in_sentence = true
 		if in_sentence:
 			count += 1
@@ -445,7 +446,7 @@ func _init() -> void:
 	for i in range(seq_rep.size() - 1):
 		var a: String = str(seq_rep[i])
 		var b: String = str(seq_rep[i + 1])
-		# Prázdne id (fallback „žiadny event") sa nepovažuje za opakovanie —
+		# Prázdne id (fallback "žiadny event") sa nepovažuje za opakovanie —
 		# poistka platí len pre reálne eventy s neprázdnym id.
 		if a != "" and a == b:
 			repeat_found = true
@@ -899,6 +900,294 @@ func _init() -> void:
 	var aw_flow_guard_loaded: bool = not aw_flow_loaded.army_wizard_done and aw_flow_loaded.year >= 906
 	check(aw_flow_guard_loaded == false, "P1.2 flow: po save/load s done=true sa overlay neotvorí")
 	print("P1.2: army wizard flow guards ALL CHECKS PASSED!")
+
+	# 16k) Objectives beat tests — overenie next_step + goals podľa compute_beats()
+	print("--- Testing P1.2 objectives beats (A1–A4, B1–B2, C1–C3, D1, diplomacy) ---")
+
+	# ─── A1: tutorial (902/01) ───
+	var a1_gs := GameState.new()
+	a1_gs.ensure_resources()
+	a1_gs.year = 902
+	a1_gs.month = 1
+	a1_gs.devine_resolved = false
+	a1_gs.resources.gold = 500
+	var a1_beat := ObjectivesPanel.compute_beats(a1_gs)
+	check(a1_beat.next_step == "1) Ciele 2) Klikni župu 3) Ďalší mesiac", "P1.2 beat A1: 902/01 → tutorial text")
+	check(a1_beat.phase_name.find("Konsolidácia") >= 0, "P1.2 beat A1: phase_name obsahuje Konsolidácia")
+
+	# ─── A2: economy (905, gold=500) ───
+	var a2_gs := GameState.new()
+	a2_gs.ensure_resources()
+	a2_gs.year = 905
+	a2_gs.month = 6
+	a2_gs.devine_resolved = false
+	a2_gs.resources.gold = 500
+	var a2_beat := ObjectivesPanel.compute_beats(a2_gs)
+	check(a2_beat.next_step == "Stlač „Ďalší mesiac“ — ekonomika doplní zdroje.", "P1.2 beat A2: 905 gold=500 → economy text")
+
+	# ─── A3: waiting (905, gold=1000, bez hungary mood) ───
+	var a3_gs := GameState.new()
+	a3_gs.ensure_resources()
+	a3_gs.year = 905
+	a3_gs.month = 6
+	a3_gs.devine_resolved = false
+	a3_gs.resources.gold = 1000
+	var a3_beat := ObjectivesPanel.compute_beats(a3_gs)
+	check(a3_beat.next_step == "Pokračuj „Ďalší mesiac“. Okolo 906 sa priblíži Devín.", "P1.2 beat A3: 905 gold=1000 → waiting text")
+
+	# ─── A3 diplomacy: hungary.mood<30 → pridať varovanie ───
+	var a3d_gs := GameState.new()
+	a3d_gs.ensure_resources()
+	a3d_gs.year = 905
+	a3d_gs.month = 6
+	a3d_gs.devine_resolved = false
+	a3d_gs.resources.gold = 1000
+	a3d_gs.factions = {"hungary": {"id": "hungary", "name": "Maďari", "mood": 25}}
+	var a3d_beat := ObjectivesPanel.compute_beats(a3d_gs)
+	var a3d_found := false
+	for g in a3d_beat.goals:
+		if g.find("Maďari sa hnevajú") >= 0:
+			a3d_found = true
+	check(a3d_found, "P1.2 beat A3: hungary.mood=25 → Maďari sa hnevajú goal")
+
+	# ─── A4 regression: 906/00 (neplatný, month=0) → nesmie dostať „Blíži sa 907“ ───
+	var a4_00_gs := GameState.new()
+	a4_00_gs.ensure_resources()
+	a4_00_gs.year = 906
+	a4_00_gs.month = 0
+	a4_00_gs.devine_resolved = false
+	a4_00_gs.resources.gold = 1000
+	var a4_00_beat := ObjectivesPanel.compute_beats(a4_00_gs)
+	check(a4_00_beat.next_step.find("Blíži sa 907") < 0, "P1.2 beat A4 regression: 906/00 !devine_resolved → neukáže „Blíži sa 907“")
+	check(a4_00_beat.next_step.find("Pokračuj") >= 0, "P1.2 beat A4 regression: 906/00 → zobrazí wait text")
+
+	# ─── A4: approach 907 (906/01, !devine_resolved, gold=1000) ───
+	var a4_gs := GameState.new()
+	a4_gs.ensure_resources()
+	a4_gs.year = 906
+	a4_gs.month = 1
+	a4_gs.devine_resolved = false
+	a4_gs.resources.gold = 1000
+	var a4_beat := ObjectivesPanel.compute_beats(a4_gs)
+	check(a4_beat.next_step == "Blíži sa 907 — priprav armádu k Devínu (pozri notifikáciu).", "P1.2 beat A4: 906/01 !devine_resolved → 907 approach text")
+
+	# ─── A4 regression: devine_resolved=true → bez "Blíži sa 907" ───
+	var a4r_gs := GameState.new()
+	a4r_gs.ensure_resources()
+	a4r_gs.year = 906
+	a4r_gs.month = 6
+	a4r_gs.devine_resolved = true
+	a4r_gs.resources.gold = 1000
+	var a4r_beat := ObjectivesPanel.compute_beats(a4r_gs)
+	check(a4r_beat.next_step.find("Blíži sa 907") < 0, "P1.2 beat A4 regression: devine_resolved=true → neukáže „Blíži sa 907“")
+	check(a4r_beat.next_step.find("Devín je vyriešený") >= 0, "P1.2 beat A4 regression: devine_resolved=true → „Devín je vyriešený“")
+
+	# ─── A4 diplomacy: byzantium.mood<40 → pridať varovanie ───
+	var a4w_gs := GameState.new()
+	a4w_gs.ensure_resources()
+	a4w_gs.year = 906
+	a4w_gs.month = 1
+	a4w_gs.devine_resolved = false
+	a4w_gs.resources.gold = 1000
+	a4w_gs.factions = {"byzantium": {"id": "byzantium", "name": "Byzancia", "mood": 35}}
+	var a4w_beat := ObjectivesPanel.compute_beats(a4w_gs)
+	var a4w_found := false
+	for g in a4w_beat.goals:
+		if g.find("Byzancia je chladná") >= 0:
+			a4w_found = true
+	check(a4w_found, "P1.2 beat A4 byzantium: mood=35 → Byzancia je chladná goal")
+
+	# ─── B1: Devín button (907, !devine_resolved) ───
+	var b1_gs := GameState.new()
+	b1_gs.ensure_resources()
+	b1_gs.year = 907
+	b1_gs.month = 7
+	b1_gs.devine_resolved = false
+	b1_gs.resources.gold = 800
+	var b1_beat := ObjectivesPanel.compute_beats(b1_gs)
+	check(b1_beat.next_step == "Stlač „Devín 907“ v nástrojoch dole.", "P1.2 beat B1: 907 !devine_resolved → Devín button text")
+
+	# ─── B2: Devín padol (907, devine_resolved=true) ───
+	var b2_gs := GameState.new()
+	b2_gs.ensure_resources()
+	b2_gs.year = 907
+	b2_gs.month = 8
+	b2_gs.devine_resolved = true
+	b2_gs.resources.gold = 800
+	var b2_beat := ObjectivesPanel.compute_beats(b2_gs)
+	check(b2_beat.next_step == "Devín padol. Pokračuj „Ďalší mesiac“.", "P1.2 beat B2: devine_resolved=true → Devín padol text")
+	var b2_found_hungary := false
+	for g in b2_beat.goals:
+		if g.find("Maďarská nálada") >= 0:
+			b2_found_hungary = true
+	check(b2_found_hungary, "P1.2 beat B2: goals obsahuje Maďarská nálada +30")
+
+	# ─── C1: obnova (910) ───
+	var c1_gs := GameState.new()
+	c1_gs.ensure_resources()
+	c1_gs.year = 910
+	c1_gs.month = 1
+	c1_gs.devine_resolved = true
+	var c1_beat := ObjectivesPanel.compute_beats(c1_gs)
+	check(c1_beat.next_step.find("ekonomika a diplomacia") >= 0, "P1.2 beat C1: 910 → ekonomika a diplomacia text")
+	check(c1_beat.phase_name.find("Prežitie") >= 0, "P1.2 beat C1: phase_name obsahuje Prežitie")
+
+	# ─── C2: Bogata conspiracy window (915, uzhorod.loyalty<40) ───
+	var c2_gs := GameState.new()
+	c2_gs.ensure_resources()
+	c2_gs.year = 915
+	c2_gs.month = 1
+	c2_gs.devine_resolved = true
+	c2_gs.provinces = {"uzhorod": {"id": "uzhorod", "loyalty": 30, "owner_faction": "moravia"}}
+	var c2_beat := ObjectivesPanel.compute_beats(c2_gs)
+	check(c2_beat.next_step.find("Sprisahanie Bogata") >= 0, "P1.2 beat C2: 915 → Sprisahanie Bogata text")
+	var c2_found := false
+	for g in c2_beat.goals:
+		if g.find("Užhorod") >= 0 and g.find("sprisahanie") >= 0:
+			c2_found = true
+	check(c2_found, "P1.2 beat C2: uzhorod.loyalty=30 → „Užhorod je nestabilný“ goal")
+
+	# ─── C2: no conspiracy when uzhorod.loyalty>=40 ───
+	var c2n_gs := GameState.new()
+	c2n_gs.ensure_resources()
+	c2n_gs.year = 915
+	c2n_gs.month = 1
+	c2n_gs.devine_resolved = true
+	c2n_gs.provinces = {"uzhorod": {"id": "uzhorod", "loyalty": 60, "owner_faction": "moravia"}}
+	var c2n_beat := ObjectivesPanel.compute_beats(c2n_gs)
+	var c2n_found := false
+	for g in c2n_beat.goals:
+		if g.find("Užhorod") >= 0 and g.find("sprisahanie") >= 0:
+			c2n_found = true
+	check(not c2n_found, "P1.2 beat C2: uzhorod.loyalty=60 → žiadny conspiracy goal")
+
+	# ─── C3: late prežitie (930) ───
+	var c3_gs := GameState.new()
+	c3_gs.ensure_resources()
+	c3_gs.year = 930
+	c3_gs.month = 1
+	c3_gs.devine_resolved = true
+	var c3_beat := ObjectivesPanel.compute_beats(c3_gs)
+	check(c3_beat.next_step.find("Diplomacia a armády") >= 0, "P1.2 beat C3: 930 → Diplomacia a armády text")
+
+	# ─── D1: legitimita (980) ───
+	var d1_gs := GameState.new()
+	d1_gs.ensure_resources()
+	d1_gs.year = 980
+	d1_gs.month = 1
+	d1_gs.devine_resolved = true
+	d1_gs.resources.prestige = 75
+	var d1_beat := ObjectivesPanel.compute_beats(d1_gs)
+	check(d1_beat.next_step.find("r.") >= 0, "P1.2 beat D1: 980 → r. text")
+	check(d1_beat.next_step.find("prestíž: 75") >= 0, "P1.2 beat D1: 980 → prestíž: 75 (state-only infer)")
+	check(d1_beat.phase_name.find("Cesta k 1000") >= 0, "P1.2 beat D1: phase_name obsahuje Cesta k 1000")
+
+	# ─── Diplomacy side-goal: test cez compute_beats s factions ───
+
+	# Diplomacy: mood=55 → bez goal (>=50)
+	var d55_gs := GameState.new()
+	d55_gs.ensure_resources()
+	d55_gs.year = 910
+	d55_gs.month = 1
+	d55_gs.devine_resolved = true
+	d55_gs.factions = {"franks": {"id": "franks", "name": "Frankovia", "mood": 55}}
+	var d55_beat := ObjectivesPanel.compute_beats(d55_gs)
+	var d55_found := false
+	for g in d55_beat.goals:
+		if g.find("má náladu") >= 0:
+			d55_found = true
+	check(not d55_found, "P1.2 diplomacy: mood=55 → bez goal (>=50)")
+
+	# Diplomacy: mood=45 → goal pridaný, nie urgent
+	var d45_gs := GameState.new()
+	d45_gs.ensure_resources()
+	d45_gs.year = 910
+	d45_gs.month = 1
+	d45_gs.devine_resolved = true
+	d45_gs.factions = {"byzantium": {"id": "byzantium", "name": "Byzancia", "mood": 45}}
+	var d45_beat := ObjectivesPanel.compute_beats(d45_gs)
+	var d45_found := false
+	var d45_urgent := false
+	for g in d45_beat.goals:
+		if g.find("má náladu") >= 0 and g.find("Byzancia") >= 0:
+			d45_found = true
+			if g.find("⚠") >= 0:
+				d45_urgent = true
+	check(d45_found, "P1.2 diplomacy: mood=45 → goal pridaný")
+	check(not d45_urgent, "P1.2 diplomacy: mood=45 → goal NIE je URGENTNÉ")
+
+	# Diplomacy: mood=25 → urgent goal + next_step override (bez ⚠ v next_step)
+	var d25_gs := GameState.new()
+	d25_gs.ensure_resources()
+	d25_gs.year = 910
+	d25_gs.month = 1
+	d25_gs.devine_resolved = true
+	d25_gs.factions = {"byzantium": {"id": "byzantium", "name": "Byzancia", "mood": 25}}
+	var d25_beat := ObjectivesPanel.compute_beats(d25_gs)
+	var d25_urgent := false
+	for g in d25_beat.goals:
+		if g.find("⚠") >= 0 and g.find("Byzancia") >= 0:
+			d25_urgent = true
+	check(d25_urgent, "P1.2 diplomacy: mood=25 → urgent goal s ⚠")
+	check(d25_beat.next_step.find("⚠") < 0, "P1.2 diplomacy: mood=25 → next_step NEOBSAHUJE ⚠")
+	check(d25_beat.next_step == "Dar frakcii Byzancia v záložke Diplomacia (nálada 25).", "P1.2 diplomacy: mood=25 → next_step je čistý kontrakt text (Dar frakcii)")
+
+	# Diplomacy: hungary je vylúčená (aj keď mood je nízky)
+	var dh_gs := GameState.new()
+	dh_gs.ensure_resources()
+	dh_gs.year = 910
+	dh_gs.month = 1
+	dh_gs.devine_resolved = true
+	dh_gs.factions = {"hungary": {"id": "hungary", "name": "Maďari", "mood": 10}}
+	var dh_beat := ObjectivesPanel.compute_beats(dh_gs)
+	var dh_found := false
+	for g in dh_beat.goals:
+		if g.find("má náladu") >= 0:
+			dh_found = true
+	check(not dh_found, "P1.2 diplomacy: mood=10 hungary → vylúčená, žiadny goal")
+
+	# Diplomacy: moravia vylúčená (aj keď mood je nízky)
+	var dm_gs := GameState.new()
+	dm_gs.ensure_resources()
+	dm_gs.year = 910
+	dm_gs.month = 1
+	dm_gs.devine_resolved = true
+	dm_gs.factions = {"moravia": {"id": "moravia", "name": "Morava", "mood": 10}}
+	var dm_beat := ObjectivesPanel.compute_beats(dm_gs)
+	var dm_found := false
+	for g in dm_beat.goals:
+		if g.find("má náladu") >= 0:
+			dm_found = true
+	check(not dm_found, "P1.2 diplomacy: moravia vylúčená, žiadny goal")
+
+	# 907 — next_step sa NEPREPÍŠE urgentom (B1/B2 majú prioritu)
+	var d907_gs := GameState.new()
+	d907_gs.ensure_resources()
+	d907_gs.year = 907
+	d907_gs.month = 7
+	d907_gs.devine_resolved = false
+	d907_gs.factions = {"byzantium": {"id": "byzantium", "name": "Byzancia", "mood": 25}}
+	var d907_beat := ObjectivesPanel.compute_beats(d907_gs)
+	check(d907_beat.next_step.find("Devín 907") >= 0, "P1.2 diplomacy: 907 s mood=25 → next_step je stále B1")
+
+	# ─── Save/load round-trip: compute_beats dá rovnaký výstup po from_dict ───
+	var sl_gs := GameState.new()
+	sl_gs.ensure_resources()
+	sl_gs.year = 906
+	sl_gs.month = 6
+	sl_gs.devine_resolved = false
+	sl_gs.resources.gold = 1000
+	sl_gs.factions = {"byzantium": {"id": "byzantium", "name": "Byzancia", "mood": 35}}
+	var sl_before := ObjectivesPanel.compute_beats(sl_gs)
+	var sl_d: Dictionary = sl_gs.to_dict()
+	var sl_loaded := GameState.new()
+	sl_loaded.from_dict(sl_d)
+	var sl_after := ObjectivesPanel.compute_beats(sl_loaded)
+	check(sl_before.next_step == sl_after.next_step, "P1.2 save/load: next_step identický")
+	check(sl_before.phase_name == sl_after.phase_name, "P1.2 save/load: phase_name identický")
+	check(sl_before.phase_hint == sl_after.phase_hint, "P1.2 save/load: phase_hint identický")
+
+	print("P1.2: objectives beats ALL CHECKS PASSED!")
 
 	print("P1: 14 event catalog regression ALL CHECKS PASSED!")
 
