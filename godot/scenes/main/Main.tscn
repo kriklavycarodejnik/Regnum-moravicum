@@ -84,18 +84,17 @@ script = ExtResource("2")
 layout_mode = 2
 script = ExtResource("5")
 
-# ── P0.3 TopBar — ThreatClock + ObjectivesPanel NAD mapou ──
-[node name="TopBar" type="HBoxContainer" parent="UI"]
+# ── ThreatClock samostatný riadok ──
+[node name="ThreatClockRow" type="HBoxContainer" parent="UI"]
 layout_mode = 2
-theme_override_constants/separation = 8
-custom_minimum_size = Vector2(0, 0)
 
-[node name="ThreatClock" parent="UI/TopBar" instance=ExtResource("11")]
+[node name="ThreatClock" parent="UI/ThreatClockRow" instance=ExtResource("11")]
 layout_mode = 2
 size_flags_horizontal = 1
 custom_minimum_size = Vector2(240, 0)
 
-[node name="ObjectivesPanel" parent="UI/TopBar" instance=ExtResource("9")]
+# ── ObjectivesPanel samostatný riadok (direct child of UI, full-width) ──
+[node name="ObjectivesPanel" parent="UI" instance=ExtResource("9")]
 layout_mode = 2
 size_flags_horizontal = 3
 

@@ -2,6 +2,15 @@
 # Mesačný report po ťahu — Δ zdroje + narácia + CTA.
 extends PanelContainer
 
+const _RESOURCE_SK: Dictionary = {
+	"gold": "Zlato",
+	"food": "Jedlo",
+	"wood": "Drevo",
+	"stone": "Kameň",
+	"iron": "Železo",
+	"prestige": "Prestíž",
+}
+
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 const C = preload("res://assets/theme/colors.gd")
 
@@ -63,7 +72,7 @@ func show_report(report: Dictionary) -> void:
 	for k in ["gold", "food", "wood", "stone", "iron", "prestige"]:
 		var d = res.get(k, 0)
 		if d != 0:
-			delta_text += "[color=#C9A227]%s %+d[/color]  " % [k.capitalize(), d]
+			delta_text += "[color=#C9A227]%s %+d[/color]  " % [_RESOURCE_SK.get(k, k.capitalize()), d]
 	_delta.text = delta_text.strip_edges()
 	_narration.text = str(report.get("narration", "Mesiac uplynul v tichu dvorov a polí."))
 	show()
