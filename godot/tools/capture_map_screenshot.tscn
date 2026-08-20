@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://d0v3s0f6d7x0q"]
+
+[ext_resource type="Script" path="res://tools/capture_map_screenshot_wrapper.gd" id="1_xxm8i"]
+
+[node name="CaptureRoot" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_xxm8i")
