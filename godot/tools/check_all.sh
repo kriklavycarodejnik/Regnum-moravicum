@@ -39,7 +39,7 @@ check() {
         echo "$output" | tail -5
         failures=$((failures + 1))
     # Pass on recognised success marker
-    elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|Tests [0-9]+ passed)"; then
+    elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|TURNREPORT_RUNTIME_PASS|Tests [0-9]+ passed)"; then
         echo -e "${GREEN}PASS${NC}"
     else
         echo -e "${RED}FAIL${NC} (no success marker)"
