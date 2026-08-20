@@ -9,9 +9,13 @@ const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 @onready var battle_button: Button = $Actions/BattleButton
 @onready var siege_button: Button = $Actions/SiegeButton
 
+signal army_selected(army_id: String)
+signal army_moved(army_id: String, target_province: String)
+
 var army_manager
 var map_manager
 var selected_army_id: String = ""
+var wizard_active: bool = false
 
 
 func _ready() -> void:
@@ -86,6 +90,7 @@ func _update_army_list() -> void:
 
 func _on_army_selected(army_id: String) -> void:
 	selected_army_id = army_id
+	army_selected.emit(army_id)
 	if army_manager == null or army_info == null:
 		return
 	var army = army_manager.get_army(army_id)
@@ -128,6 +133,7 @@ func _on_move_button_pressed() -> void:
 
 
 func _on_target_province_selected(army_id: String, target_province_id: String) -> void:
+	army_moved.emit(army_id, target_province_id)
 	if army_manager == null:
 		return
 	var result = army_manager.move_army(army_id, target_province_id)

@@ -36,11 +36,14 @@ const _Colors = preload("res://assets/theme/colors.gd")
 @onready var notification_feed: Node = $UI/Body/MainColumn/NotificationFeed
 @onready var battle_view: Node = $UI/Body/MainColumn/BattleView
 @onready var turn_report: PanelContainer = $TurnReport
+@onready var side_tabs: TabContainer = $UI/Body/SidePanel/SideTabs
 
 var selection_art_id: String = "mojmir_ii_master_portrait"
 var _months_played: int = 0
 var _active_battle: Dictionary = {}
 var _battle_round: int = 0
+var _army_wizard_step: int = 0
+var _army_wizard_overlay_active: bool = false
 
 
 func _ready() -> void:
@@ -60,6 +63,10 @@ func _ready() -> void:
 		map_view.province_selected.connect(_on_province_selected)
 	if diplomacy_panel and diplomacy_panel.has_signal("action_done"):
 		diplomacy_panel.action_done.connect(_on_diplomacy_action)
+	if army_ui and army_ui.has_signal("army_selected"):
+		army_ui.army_selected.connect(_on_army_wizard_army_selected)
+	if army_ui and army_ui.has_signal("army_moved"):
+		army_ui.army_moved.connect(_on_army_wizard_army_moved)
 	if battle_view and battle_view.has_signal("action_chosen"):
 		battle_view.action_chosen.connect(_on_battle_action)
 	if turn_report and turn_report.continue_pressed:
@@ -249,6 +256,187 @@ func _coach_style() -> StyleBoxFlat:
 	return s
 
 
+# ─── Army wizard ───
+
+func _try_show_army_wizard() -> void:
+	"""Zobraz army wizard overlay, ak je prístupný a nie je dokončený."""
+	if GameManager == null or GameManager.game_state == null:
+		return
+	var gs = GameManager.game_state
+	if gs.army_wizard_done:
+		return
+	var year: int = int(gs.year)
+	if year < 906:
+		return
+	# Wizard je aktívny — resetni krok a zobraz overlay
+	_army_wizard_step = 0
+	_army_wizard_overlay_active = false
+	_army_wizard_cleanup()
+	_show_army_wizard()
+
+
+func _show_army_wizard() -> void:
+	"""Zobraz wizard overlay s aktuálnym krokom (W1–W4)."""
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	_army_wizard_overlay_active = true
+
+	var overlay := PanelContainer.new()
+	overlay.name = "ArmyWizardOverlay"
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_theme_stylebox_override("panel", _coach_style())
+
+	# Dim background
+	var dim := ColorRect.new()
+	dim.name = "ArmyWizardDim"
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.0, 0.0, 0.0, 0.55)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(dim)
+
+	# Content vbox
+	var vbox := VBoxContainer.new()
+	vbox.name = "ArmyWizardContent"
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_theme_constant_override("separation", 10)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.anchors_preset = Control.PRESET_CENTER_TOP
+	vbox.offset_top = 60
+	vbox.set_h_size_flags(Control.SIZE_EXPAND_FILL)
+
+	# Title
+	var title_lbl := Label.new()
+	title_lbl.theme_type_variation = &"TitleLabel"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	match _army_wizard_step:
+		0:
+			title_lbl.text = "Armáda k Devínu — Krok 1/4"
+		1:
+			title_lbl.text = "Armáda k Devínu — Krok 2/4"
+		2:
+			title_lbl.text = "Armáda k Devínu — Krok 3/4"
+		3:
+			title_lbl.text = "Armáda k Devínu — Krok 4/4"
+	vbox.add_child(title_lbl)
+
+	# Body
+	var body_lbl := Label.new()
+	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body_lbl.add_theme_font_size_override("font_size", 16)
+	match _army_wizard_step:
+		0:
+			body_lbl.text = "Klikni na armádu v paneli vpravo (napr. moravia_levy_1 alebo moravia_feudal_1)."
+			body_lbl.text += "\nPotom uvidíš jej detaily a budeš ju môcť presunúť."
+		1:
+			body_lbl.text = "Klikni na tlačidlo „Presunúť“ — otvorí sa zoznam susedných žúp."
+		2:
+			body_lbl.text = "Klikni na „devin“ v zozname — armáda vyrazí na pochod k Devínu."
+		3:
+			body_lbl.text = "Výborne! Armáda je na ceste k Devínu."
+			body_lbl.text += "\nMaďari sa zhromažďujú za hranicami — tvoja armáda je pripravená."
+	vbox.add_child(body_lbl)
+
+	overlay.add_child(vbox)
+
+	# Button row (STOP mouse filter — clickable)
+	var btn_row := HBoxContainer.new()
+	btn_row.name = "ArmyWizardButtons"
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 12)
+	btn_row.anchors_preset = Control.PRESET_CENTER_TOP
+	btn_row.offset_top = 180
+	btn_row.set_h_size_flags(Control.SIZE_EXPAND_FILL)
+
+	# Dismiss button
+	var close_btn := Button.new()
+	close_btn.custom_minimum_size = Vector2(0, 48)
+	if _army_wizard_step < 3:
+		close_btn.text = "Zavrieť (vrátim sa neskôr)"
+		close_btn.pressed.connect(func():
+			_army_wizard_overlay_active = false
+			_army_wizard_cleanup()
+			_notify("Armádny wizard pozastavený. Otvor panel Armády, keď budeš pripravený.")
+		)
+	else:
+		close_btn.text = "Dokončiť"
+		close_btn.pressed.connect(func():
+			gs.army_wizard_done = true
+			_army_wizard_step = 0
+			_army_wizard_overlay_active = false
+			_army_wizard_cleanup()
+			_notify("Wizard dokončený. Armáda je na ceste k Devínu — sleduj ďalšie mesiace.")
+		)
+	btn_row.add_child(close_btn)
+
+	add_child(overlay)
+	add_child(btn_row)
+
+
+func _on_army_wizard_army_selected(army_id: String) -> void:
+	"""Postup W1: hráč vybral armádu → Krok 2."""
+	if not _army_wizard_overlay_active:
+		return
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	if _army_wizard_step != 0:
+		return
+	_army_wizard_step = 1
+	_army_wizard_cleanup()
+	call_deferred("_show_army_wizard")
+
+
+func _on_army_wizard_army_moved(army_id: String, target_province: String) -> void:
+	"""Postup W2-W4: hráč presunul armádu → over cieľ."""
+	if not _army_wizard_overlay_active:
+		return
+	var gs = GameManager.game_state
+	if gs == null or gs.army_wizard_done:
+		return
+	if _army_wizard_step == 1:
+		# W2 → W3: hráč stlačil Presunúť
+		_army_wizard_step = 2
+		_army_wizard_cleanup()
+		call_deferred("_show_army_wizard")
+	elif _army_wizard_step == 2:
+		# W3 → W4: cieľ vybraný, over či je to Devín
+		if target_province == "devin":
+			_army_wizard_step = 3
+			_army_wizard_cleanup()
+			call_deferred("_show_army_wizard")
+
+
+func _army_wizard_cleanup() -> void:
+	var overlay := get_node_or_null("ArmyWizardOverlay")
+	if overlay != null:
+		overlay.queue_free()
+	var buttons := get_node_or_null("ArmyWizardButtons")
+	if buttons != null:
+		buttons.queue_free()
+
+
+func _check_army_wizard_dismiss_on_map_click() -> void:
+	"""Ak hráč klikol na mapu počas wizardu, nie je to chyba — len nevyžadujeme reakciu."""
+	pass
+
+
+func _on_side_tab_changed(tab_index: int) -> void:
+	"""Keď hráč prepne na tab Armády, skús znova zobraziť wizard, ak nie je dokončený."""
+	if side_tabs == null:
+		return
+	var tab_title: String = side_tabs.get_tab_title(tab_index)
+	if tab_title == "Armády":
+		var gs = GameManager.game_state if GameManager != null else null
+		if gs != null and not gs.army_wizard_done and int(gs.year) >= 906:
+			if not _army_wizard_overlay_active and _army_wizard_step < 3:
+				_show_army_wizard()
+
+
 func _apply_regnum_theme() -> void:
 	var built: Theme = _ThemeFactory.build()
 	theme = built
@@ -308,6 +496,8 @@ func _setup_default_hero() -> void:
 func _setup_ui_panels() -> void:
 	# ThreatClock and ObjectivesPanel are instance nodes in Main.tscn
 	# (direct children of UI, between StatusBarRow and Body)
+	if side_tabs and side_tabs.has_signal("tab_changed"):
+		side_tabs.tab_changed.connect(_on_side_tab_changed)
 	pass
 
 
@@ -450,8 +640,10 @@ func _on_next_month() -> void:
 		_notify("Udalosť! Vyber jednu z dvoch volieb.")
 	elif gs.year == 906 and gs.month == 1:
 		_show_devin_modal("warning")
-	elif gs.year == 906 and gs.month >= 6:
-		_notify("Rok 906: pošli armádu k Devínu (Armády → Presun → devin).")
+	elif gs.year >= 906 and gs.month >= 6 and not gs.army_wizard_done:
+		_notify("Pošli armádu k Devínu — Maďari sa zhromažďujú. Otvor panel Armády vpravo.")
+		if not _army_wizard_overlay_active and _army_wizard_step == 0 and gs.year == 906 and gs.month == 6:
+			_try_show_army_wizard()
 	elif gs.year == 907 and gs.month == 1:
 		_show_devin_modal("prepare")
 	# Show turn report card
