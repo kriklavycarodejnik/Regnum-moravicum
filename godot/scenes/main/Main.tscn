@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/Main.gd" id="1"]
 [ext_resource type="Script" path="res://ui/StatusBar.gd" id="2"]
@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://ui/NotificationFeed.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/battle/BattleView.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://ui/ObjectivesPanel.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://ui/TurnReport.tscn" id="10"]
+[ext_resource type="PackedScene" path="res://ui/ThreatClock.tscn" id="11"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -75,11 +77,27 @@ theme_override_constants/separation = 10
 [node name="StatusBar" type="HBoxContainer" parent="UI/StatusBarRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 10
 script = ExtResource("2")
 
 [node name="ReligionAxis" type="HBoxContainer" parent="UI/StatusBarRow"]
 layout_mode = 2
 script = ExtResource("5")
+
+# ── P0.3 TopBar — ThreatClock + ObjectivesPanel NAD mapou ──
+[node name="TopBar" type="HBoxContainer" parent="UI"]
+layout_mode = 2
+theme_override_constants/separation = 8
+custom_minimum_size = Vector2(0, 0)
+
+[node name="ThreatClock" parent="UI/TopBar" instance=ExtResource("11")]
+layout_mode = 2
+size_flags_horizontal = 1
+custom_minimum_size = Vector2(240, 0)
+
+[node name="ObjectivesPanel" parent="UI/TopBar" instance=ExtResource("9")]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Body" type="HBoxContainer" parent="UI"]
 layout_mode = 2
@@ -105,7 +123,7 @@ custom_minimum_size = Vector2(0, 280)
 [node name="SelectionLabel" type="Label" parent="UI/Body/MainColumn"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Zatiaľ nič nevybrané — klikni napr. Nitra alebo Devín."
+text = "Klikni na župu na mape — vpravo sa ukáže ilustrácia."
 
 [node name="BattleView" parent="UI/Body/MainColumn" instance=ExtResource("8")]
 visible = false
@@ -169,14 +187,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Voľba C"
 
+[node name="TurnReport" parent="UI/Body/MainColumn" instance=ExtResource("10")]
+visible = false
+layout_mode = 2
+
 [node name="SidePanel" type="VBoxContainer" parent="UI/Body"]
-custom_minimum_size = Vector2(360, 0)
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 6
-
-[node name="ObjectivesPanel" parent="UI/Body/SidePanel" instance=ExtResource("9")]
-layout_mode = 2
 
 [node name="RulerRow" type="HBoxContainer" parent="UI/Body/SidePanel"]
 layout_mode = 2

@@ -1,14 +1,14 @@
 # ui/ObjectivesPanel.gd
-# Dynamické ciele + „čo robiť teraz“ podľa roku a stavu.
+# Dynamické ciele + "čo robiť teraz" — horizontálny kompaktný panel NAD mapou.
 extends PanelContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 const C = preload("res://assets/theme/colors.gd")
 
-var _title: Label
-var _body: RichTextLabel
-var _next: Label
-var _phase: Label
+var _phase_label: Label
+var _goals_label: Label
+var _next_label: Label
+var _state_label: Label
 
 
 func _ready() -> void:
@@ -24,44 +24,63 @@ func _build() -> void:
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	add_child(margin)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 6)
-	margin.add_child(v)
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 14)
+	margin.add_child(h)
 
-	_title = Label.new()
-	_title.theme_type_variation = &"SubtitleLabel"
-	_title.text = "Tvoje poslanie"
-	v.add_child(_title)
+	# ─── Left column — Tvoje poslanie ───
+	var left_v := VBoxContainer.new()
+	left_v.add_theme_constant_override("separation", 3)
+	left_v.size_flags_horizontal = 3
+	h.add_child(left_v)
 
-	_phase = Label.new()
-	_phase.theme_type_variation = &"MutedLabel"
-	_phase.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	v.add_child(_phase)
+	var title := Label.new()
+	title.theme_type_variation = &"SubtitleLabel"
+	title.add_theme_font_size_override("font_size", 15)
+	title.text = "Tvoje poslanie"
+	left_v.add_child(title)
 
-	_body = RichTextLabel.new()
-	_body.bbcode_enabled = true
-	_body.fit_content = true
-	_body.scroll_active = false
-	_body.custom_minimum_size = Vector2(0, 72)
-	v.add_child(_body)
+	_phase_label = Label.new()
+	_phase_label.theme_type_variation = &"MutedLabel"
+	_phase_label.add_theme_font_size_override("font_size", 11)
+	_phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	left_v.add_child(_phase_label)
+
+	_goals_label = Label.new()
+	_goals_label.add_theme_font_size_override("font_size", 12)
+	_goals_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	left_v.add_child(_goals_label)
+
+	# ─── Right column — Teraz urob ───
+	var right_v := VBoxContainer.new()
+	right_v.add_theme_constant_override("separation", 3)
+	right_v.size_flags_horizontal = 2
+	h.add_child(right_v)
 
 	var next_title := Label.new()
-	next_title.text = "Teraz urob"
 	next_title.theme_type_variation = &"SubtitleLabel"
-	v.add_child(next_title)
+	next_title.add_theme_font_size_override("font_size", 15)
+	next_title.text = "Teraz urob"
+	right_v.add_child(next_title)
 
-	_next = Label.new()
-	_next.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_next.add_theme_color_override("font_color", C.BYZANTINE_GOLD)
-	_next.add_theme_font_size_override("font_size", 15)
-	v.add_child(_next)
+	_next_label = Label.new()
+	_next_label.add_theme_font_size_override("font_size", 12)
+	_next_label.add_theme_color_override("font_color", C.BYZANTINE_GOLD)
+	_next_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right_v.add_child(_next_label)
+
+	_state_label = Label.new()
+	_state_label.theme_type_variation = &"MutedLabel"
+	_state_label.add_theme_font_size_override("font_size", 11)
+	_state_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right_v.add_child(_state_label)
 
 
 func refresh() -> void:
-	if _body == null:
+	if _phase_label == null:
 		return
 	var gm = get_node_or_null("/root/GameManager")
 	if gm == null or gm.game_state == null:
@@ -76,69 +95,63 @@ func refresh() -> void:
 
 	var phase_name: String
 	var phase_hint: String
-	var goals: PackedStringArray = []
+	var goal_lines: PackedStringArray = []
 	var next_step: String
 
 	if year < 907:
 		phase_name = "Fáza I — Konsolidácia (902–906)"
 		phase_hint = "Posilni ríšu pred príchodom Maďarov."
-		goals = PackedStringArray([
-			"• Drž aspoň 1 župu a živú dynastiu",
-			"• Zbieraj zlato a jedlo (ekonomika beží každý mesiac)",
-			"• Spoznaj mapu — klikni Nitra, Devín, Bratislava",
-			"• Priprav sa na krízu roku 907",
+		goal_lines = PackedStringArray([
+			"Prežiť ako dynastia do 1000",
+			"Zbieraj zlato a jedlo („Ďalší mesiac“)",
+			"Priprav sa na rok 907",
 		])
 		if year == 902 and month <= 2:
-			next_step = "1) Prečítaj ciele  2) Klikni župu na mape  3) Stlač „Ďalší mesiac“"
+			next_step = "1) Ciele 2) Klikni župu 3) Ďalší mesiac"
 		elif gold < 800:
-			next_step = "Stlač „Ďalší mesiac“ — ekonomika doplní zdroje. Sleduj zlato a jedlo hore."
+			next_step = "Stlač „Ďalší mesiac“ — ekonomika doplní zdroje."
 		else:
-			next_step = "Pokračuj „Ďalší mesiac“. Okolo 907 spusti scenár Devín (tlačidlo dole)."
+			next_step = "Pokračuj „Ďalší mesiac“. Okolo 907 spusti Devín."
 	elif year == 907:
-		phase_name = "Fáza II — Kríza Maďarov (907)"
-		phase_hint = "Bitka pri Devíne rozhoduje o prestíži a osude západu ríše."
-		goals = PackedStringArray([
-			"• Spusti scenár „Devín 907“ (historická bitka)",
-			"• Prečítaj výsledok v kronike a battle paneli",
-			"• Potom pokračuj mesačnými ťahmi",
+		phase_name = "Fáza II — Kríza (907)"
+		phase_hint = "Bitka pri Devíne rozhoduje o prestíži."
+		goal_lines = PackedStringArray([
+			"Spusti scenár „Devín 907“",
+			"Potom pokračuj mesačnými ťahmi",
 		])
-		next_step = "Stlač „Devín 907“ — odohraj historickú bitku, potom „Ďalší mesiac“."
+		next_step = "Stlač „Devín 907“ v nástrojoch dole."
 	elif year < 960:
 		phase_name = "Fáza III — Prežitie (908–959)"
 		phase_hint = "Obnov ríšu, diplomaciu a armády."
-		goals = PackedStringArray([
-			"• Udrž lojalitu žúp a jedlo pre armády",
-			"• Diplomacia: dary / zmluvy so susedmi",
-			"• Reaguj na udalosti rady (2 voľby)",
+		goal_lines = PackedStringArray([
+			"Udrž lojalitu a jedlo pre armády",
+			"Diplomacia: dary / zmluvy so susedmi",
+			"Reaguj na udalosti rady",
 		])
-		next_step = "Striedaj „Ďalší mesiac“ a záložku Diplomacia. Pri udalosti vždy vyber voľbu."
+		next_step = "„Ďalší mesiac“ + záložka Diplomacia."
 	else:
-		phase_name = "Fáza IV — Cesta k roku 1000"
+		phase_name = "Fáza IV — Cesta k 1000"
 		phase_hint = "Legitimita, prestíž a prežitie dynastie."
-		goals = PackedStringArray([
-			"• Prežiť do roku 1000 s ≥1 župou",
-			"• Prestíž a viera posilňujú legitimitu",
-			"• Nenechaj vymrieť Mojmírovcov",
+		goal_lines = PackedStringArray([
+			"Prežiť do roku 1000 s ≥1 župou",
+			"Nenechaj vymrieť Mojmírovcov",
 		])
 		var left: int = 1000 - year
-		next_step = "Zostáva ~%d rokov. Primárne: „Ďalší mesiac“. Župy: %d · prestíž: %d" % [left, owned, prestige]
+		next_step = "~%d r. · župy: %d · prestíž: %d" % [left, owned, prestige]
 
-	_phase.text = "%s\n%s" % [phase_name, phase_hint]
-	# P1.3: Diplomacy side-goal — najhoršia nálada (okrem Hungary)
+	_phase_label.text = "%s · %s" % [phase_name, phase_hint]
+	_goals_label.text = " • " + "\n • ".join(goal_lines)
+
+	# Diplomacy side-goal
 	if year != 907:
 		var dip_goal: Dictionary = _diplomacy_side_goal(gm)
 		if str(dip_goal.get("goal", "")) != "":
-			goals.append(str(dip_goal["goal"]))
+			_goals_label.text += "\n • %s" % str(dip_goal.get("goal", ""))
 			if float(dip_goal.get("mood", 100.0)) < 30.0:
-				next_step = str(dip_goal["next_step"])
-	_body.clear()
-	_body.append_text("[b]Hlavný cieľ:[/b] Prežiť ako Mojmír II. / dynastia do roku [color=#C9A227]1000[/color].\n\n")
-	for g in goals:
-		_body.append_text(g + "\n")
-	_body.append_text("\n[color=#7A6B55]Stav: %d/%02d · župy Moravy: %d · zlato %d · jedlo %d[/color]" % [
-		year, month, owned, gold, food
-	])
-	_next.text = next_step
+				next_step = str(dip_goal.get("next_step", next_step))
+
+	_next_label.text = next_step
+	_state_label.text = "%d/%02d · Morava: %d žúp · zlato %d · jedlo %d" % [year, month, owned, gold, food]
 
 
 func _diplomacy_side_goal(gm) -> Dictionary:
@@ -157,9 +170,9 @@ func _diplomacy_side_goal(gm) -> Dictionary:
 	if worst_name == "" or worst_mood >= 50.0:
 		return {}
 	return {
-		"goal": "• Diplomacia: %s má náladu len %.0f — dar alebo zmluva v záložke Diplomacia" % [worst_name, worst_mood],
+		"goal": "Diplomacia: %s má náladu len %.0f" % [worst_name, worst_mood],
 		"mood": worst_mood,
-		"next_step": "Otvor záložku Diplomacia a pošli dar frakcii %s (nálada %.0f — riziko rozkolu)." % [worst_name, worst_mood],
+		"next_step": "Dar frakcii %s v záložke Diplomacia (nálada %.0f)." % [worst_name, worst_mood],
 	}
 
 
