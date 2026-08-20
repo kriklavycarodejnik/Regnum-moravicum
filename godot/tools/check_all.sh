@@ -16,10 +16,19 @@ check() {
     local name="$1"
     shift
     echo -n "  $name ... "
-    if "$@" 2>&1 | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|SMOKE_MAIN_PASS|TURNREPORT_RUNTIME_PASS|Tests [0-9]+ passed)"; then
+    local output
+    output=$("$@" 2>&1) || true
+    local rc=$?
+    # Fail if any SCRIPT ERROR or Parse Error appears
+    if echo "$output" | grep -qE "(SCRIPT ERROR|Parse Error)"; then
+        echo -e "${RED}FAIL${NC} (SCRIPT ERROR detected)"
+        echo "$output" | grep -E "(SCRIPT ERROR|Parse Error)"
+        failures=$((failures + 1))
+    elif echo "$output" | grep -qE "(SMOKE_PASS|SMOKE_M6_PASS|Tests [0-9]+ passed)"; then
         echo -e "${GREEN}PASS${NC}"
     else
         echo -e "${RED}FAIL${NC}"
+        echo "$output" | tail -5
         failures=$((failures + 1))
     fi
 }

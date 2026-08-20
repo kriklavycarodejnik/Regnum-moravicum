@@ -120,20 +120,20 @@ func resolve_devine_battle() -> Dictionary:
 # prestíž -30, lojalita Devína -20, mood frakcie Maďarov +30, kronika kapitola.
 func _apply_devine_consequences() -> void:
 	var resources: Dictionary = game_state.resources
-	resources["prestige"] = maxi(0, int(resources.get("prestige", 0)) - 30)
+	resources["prestige"] = int(resources.get("prestige", 0)) - 30
 	game_state.resources = resources
 
 	var provinces: Dictionary = game_state.provinces
 	if provinces.has(PROVINCE_DEVIN):
 		var province: Dictionary = provinces[PROVINCE_DEVIN]
-		province["loyalty"] = clampf(float(province.get("loyalty", 50)) - 20.0, 0.0, 100.0)
+		province["loyalty"] = float(province.get("loyalty", 50)) - 20.0
 		provinces[PROVINCE_DEVIN] = province
 	game_state.provinces = provinces
 
 	var factions: Dictionary = game_state.factions
 	if factions.has("hungary"):
 		var hungary: Dictionary = factions["hungary"]
-		hungary["mood"] = clampf(float(hungary.get("mood", 20.0)) + 30.0, 0.0, 100.0)
+		hungary["mood"] = float(hungary.get("mood", 20.0)) + 30.0
 		factions["hungary"] = hungary
 	game_state.factions = factions
 

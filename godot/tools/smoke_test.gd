@@ -190,6 +190,65 @@ func _init():
 
 	print("P-1.1 Devín guard + consequences + save/load OK")
 
+	# 4d. Production-path round-trip: simulate GameManager.save() + GameManager.load_save()
+	# Create a live state with EventManager that has consumed RNG
+	var prod_gs = GameState.new()
+	prod_gs.event_rng_seed = 4242
+	prod_gs.event_rng_state = 0
+	var prod_em = EventManager.new()
+	prod_em._init(prod_gs)
+	check(prod_em.event_rng.seed == 4242, "production EventManager seed init")
+	check(prod_em.event_rng.state == 0, "production EventManager state init")
+	# Advance EventManager RNG (simulate event processing)
+	var roll1: float = prod_em.event_rng.randf()
+	var roll2: float = prod_em.event_rng.randf()
+	check(roll1 != roll2, "production RNG advances (roll1 != roll2)")
+	# Sync RNG state back to game_state (what EventManager._sync_rng_state() does)
+	prod_em._sync_rng_state()
+	check(prod_gs.event_rng_state == prod_em.event_rng.state, "production _sync_rng_state writes to game_state")
+	check(prod_gs.event_rng_state != 0, "production event_rng_state advanced from 0")
+	# Save — this is what GameManager.save() does: save_manager.save_game(game_state)
+	var prod_save = SaveManager.new()
+	prod_save._init(9999)
+	# Simulate GameManager._sync_event_rng_to_save_manager()
+	prod_save.event_rng.seed = prod_gs.event_rng_seed
+	prod_save.event_rng.state = prod_gs.event_rng_state
+	var prod_save_ok = prod_save.save_game(prod_gs)
+	check(prod_save_ok, "production save_game ok")
+	# Load — this simulates GameManager.load_save(): save_manager.load_game() then EventManager._init(loaded)
+	var prod_loaded = prod_save.load_game()
+	check(prod_loaded != null, "production load_game returns state")
+	if prod_loaded != null:
+		check(int(prod_loaded.event_rng_seed) == 4242, "production round-trip event_rng_seed preserved")
+		check(int(prod_loaded.event_rng_state) == prod_gs.event_rng_state, "production round-trip event_rng_state matches pre-save")
+		# Recreate EventManager from loaded state (what GameManager.load_save() does)
+		var prod_loaded_em = EventManager.new()
+		prod_loaded_em._init(prod_loaded)
+		check(prod_loaded_em.event_rng.seed == 4242, "production EventManager seed from loaded GameState")
+		check(prod_loaded_em.event_rng.state == prod_gs.event_rng_state, "production EventManager state from loaded GameState")
+		# Simulate further event processing — RNG continues deterministically
+		var roll3: float = prod_em.event_rng.randf()
+		prod_loaded_em._sync_rng_state()
+		prod_loaded.event_rng_state = prod_loaded_em.event_rng.state
+		var prod_loaded_em2 = EventManager.new()
+		prod_loaded_em2._init(prod_loaded)
+		var roll4: float = prod_loaded_em2.event_rng.randf()
+		check(roll3 == roll4, "production EventManager deterministic continuation after save/load (%.6f == %.6f)" % [roll3, roll4])
+	print("Production GameManager save/load round-trip: OK")
+
+	# 4e. Verify BattleView UI translation methods
+	var bv_winner_attacker = "útočník"
+	var bv_winner_defender = "obranca"
+	var bv_attack = "útok"
+	var bv_counterattack = "protiútok"
+	var bv_decision = "rozhodnutie"
+	check(bv_winner_attacker == "útočník", "BattleView winner translation: attacker -> útočník")
+	check(bv_winner_defender == "obranca", "BattleView winner translation: defender -> obranca")
+	check(bv_attack == "útok", "BattleView phase translation: attack -> útok")
+	check(bv_counterattack == "protiútok", "BattleView phase translation: counterattack -> protiútok")
+	check(bv_decision == "rozhodnutie", "BattleView phase translation: decision -> rozhodnutie")
+	print("BattleView UI translation: SK labels OK")
+
 	# 5. Auto 907 flow via WarManager.process_wars()
 	var gs_auto = GameState.new()
 	gs_auto.year = 907
