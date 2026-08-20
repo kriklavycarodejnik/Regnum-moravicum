@@ -53,16 +53,18 @@ func load_game(path: String = DEFAULT_PATH) -> RefCounted:
 		push_error("Save file version mismatch")
 		return null
 
-	rng.seed = int(json.get("seed") or 42)
-	rng.state = json.get("rng_state") or 0
-	var state_dict: Dictionary = json.get("state") or {}
+	rng.seed = int(json.get("seed", 42))
+	rng.state = int(json.get("rng_state", 0))
+	var state_dict: Dictionary = json.get("state", {})
+	if state_dict == null:
+		state_dict = {}
 	var state = GAME_STATE.new()
 	state.from_dict(state_dict)
 	return state
 
 
 func autosave_if_year_end(state: RefCounted) -> bool:
-	var current_month: int = state.get("month") or 1
+	var current_month: int = state.month
 	if current_month != 12:
 		return false
 	return save_game(state, AUTOSAVE_PATH)
