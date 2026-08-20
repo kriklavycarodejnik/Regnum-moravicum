@@ -19,17 +19,36 @@
 |---|---|---|
 | **Zlato / jedlo** | `resources.gold`, `resources.food` (`effect`) | okamžitá, viditeľná v TurnReport Δ |
 | **Prestíž** | `resources.prestige` | medzinárodná/dynastická vážnosť |
-| **Lojalita župy** | `zupaLoyalty` → `game_state.provinces[id].loyalty` | **bare province id** (`nitra`, `trencin`, `morava`, `gemer`, `zemplin`, `devin`, ...) — **nie** `zupa_nitra` |
+| **Lojalita župy** | `zupaLoyalty` → `game_state.provinces[id].loyalty` | **bare province id**, vždy explicitný dict `{"province_id": delta}` — kánonický zoznam 12 id je v §0.1. **Nie** `zupa_nitra`, nikdy skratka "všetky" |
 | **Vzťah s frakciou** | `moodChanges` → `game_state.factions[id].mood` | **iba** týchto 7 id existuje: `moravia, franks, bavaria, hungary, poland, bohemia, byzantium`. Nikdy nepíš `moodChanges` na meno, ktoré nie je táto sedmička. |
 | **Náboženská os** | `religionChange` | Rím ↔ Konštantínopol, jediný kanál pre "cyrilometodský" konflikt (žiadna taká frakcia neexistuje) |
-| **Čas / budúca možnosť** | `next_event` (snake_case!) | odklad ceny, nie jej zrušenie — pozri §1.4 |
+| **Čas / budúca možnosť** | `next_event` (snake_case!) | odklad ceny, nie jej zrušenie — pozri §3.1 |
 
-### 0.1 Dve chyby v existujúcom katalógu, ktoré táto špecifikácia opravuje
+### 0.1 Kánonický zoznam všetkých žúp (province id)
+
+**Presne týchto 12 id** (zdroj: `godot/data/provinces/*.json`, potvrdené v `smoke_test.m6.gd`
+riadkom `layout 12 provinces`):
+
+```
+bratislava, devin, gemer, hont, morava, nitra, novohrad, spis, tekov, trencin, uzhorod, zemplin
+```
+
+`EventManager._resolve...`/`resolve_choice()` (riadky 215–224 v `EventManager.gd`) číta
+`zupaLoyalty` iba ako explicitný dict `{"province_id": delta}` — **nepodporuje** žiadne
+kľúčové slovo "všetky" ani wildcard. Kdekoľvek nižšie táto špecifikácia hovorí "všetky župy",
+znamená to, že implementácia musí literálne vypísať všetkých 12 kľúčov v dict-e.
+
+**Devín je zahrnutý** v každom "všetky župy" efekte — je to bežná provincia z pohľadu
+recurring eventov ako rada županov. Bitka pri Devíne 907 je samostatný scenár
+(`HungarianWarScenario.resolve_devine_battle()`), nie event z `events_catalog.json` —
+tieto dva systémy sa nekrížia a nekolidujú.
+
+### 0.2 Dve chyby v existujúcom katalógu, ktoré táto špecifikácia opravuje
 
 1. **Bogata reťaz používa `hungary` mood namiesto lojality Užskej župy.** Bogatovci sú
    moravský rod z **Užskej župy** (`uzhorod`), nie Maďari. Pôvodný TS mal vlastnú fiktívnu
    frakciu `Bogatovci`, ktorá sa v Godote nedá resolvovať — namiesto dopĺňania ďalšej
-   neexistujúcej frakcie použi `zupaLoyalty: {"uzhorod": ...}`. Detail v §4.
+   neexistujúcej frakcie použi `zupaLoyalty: {"uzhorod": ...}`. Detail v §3.
 2. **`next_event` musí byť `next_event` (snake_case), nie `nextEvent`.** `EventManager.gd`
    číta len `next_event` (riadky 87, 234). V `events_catalog.json` je to už takto opravené —
    ak dopisuješ nové reťaze, použi rovnaký kľúč, inak je pokračovanie mŕtvy kód.
@@ -48,7 +67,7 @@ vzťah so susedmi, nie cez fiktívnu domácu frakciu.
 | Voľba | Cena | Dôsledok | Pre koho je táto voľba správna |
 |---|---|---|---|
 | **Prijať posolstvo, priblížiť sa Rímu** | `religionChange: -15` (k Rímu), `franks.mood +5` | `prestige +3` | Hráč, ktorý chce rýchlu medzinárodnú legitimitu a franské/bavorské susedstvo za priateľa skôr než prídu Maďari |
-| **Zdvorilo odmietnuť, zachovať cyrilometodské dedičstvo** | `religionChange: +5` (k Bl<br>zancii/tradícii), `franks.mood -5` | žiadny prestíž | Hráč, ktorý stavia na byzantskom spojenectve (pozri event 2) a je ochotný platiť franskou nevôľou už teraz |
+| **Zdvorilo odmietnuť, zachovať cyrilometodské dedičstvo** | `religionChange: +5` (k Byzancii/tradícii), `franks.mood -5` | žiadna prestíž | Hráč, ktorý stavia na byzantskom spojenectve (pozri event 2) a je ochotný platiť franskou nevôľou už teraz |
 
 **Prečo nie je jedna zjavne lepšia:** Rím dáva okamžitý prestíž, ale otvára franské
 priateľstvo za cenu vzťahu s Byzanciou, ktorá o 3 roky ponúkne sobáš (event 2) — hráč,
@@ -76,7 +95,7 @@ príbeh, nie dve oddelené správy.
 | Voľba | Cena | Dôsledok |
 |---|---|---|
 | **Osláviť veľkolepou hostinou** | `gold -60` | `prestige +8`, `byzantium.mood loyalty +10`, `moravia.mood trust +5` |
-| **Usporiadať skromný obrad** | žiadny gold | `prestige +3`, `byzantium.mood trust +5` |
+| **Usporiadať skromný obrad** | žiadne zlato | `prestige +3`, `byzantium.mood trust +5` |
 
 **Cena, ktorú text musí vysloviť nahlas:** rok 907 je rok, keď Maďari útočia na Devín.
 Každé zlato padnuté do svadobnej hostiny **chýba vo vojnovej pokladnici v tom istom roku**.
@@ -109,7 +128,7 @@ Maďari s touto vnútornou vzburou nemajú nič spoločné.
 | Voľba | Cena | Dôsledok |
 |---|---|---|
 | **Preventívne zatknúť vodcov** | `zupaLoyalty: {"uzhorod": -15}` | `prestige +5`; `next_event: bogata_trial_916` |
-| **Sledovať a zhromažďovať dôkazy** | `zupaLoyalty: {"uzhorod": -5}` | žiadny prestíž teraz; `next_event: bogata_uprising_917` — **cena odložená, nie zrušená** |
+| **Sledovať a zhromažďovať dôkazy** | `zupaLoyalty: {"uzhorod": -5}` | žiadna prestíž teraz; `next_event: bogata_uprising_917` — **cena odložená, nie zrušená** |
 
 ### 3.2 Ak zatkol → Súd (916)
 
@@ -124,7 +143,7 @@ Maďari s touto vnútornou vzburou nemajú nič spoločné.
 | Voľba | Cena | Dôsledok |
 |---|---|---|
 | **Poslať kráľovské vojsko potlačiť vzburu** | `gold -40`, `zupaLoyalty: {"uzhorod": -30}` | `prestige +4` |
-| **Rokovať o kapitulácii výmenou za amnestiu** | `prestige -2` | `zupaLoyalty: {"uzhorod": +10}`, žiadny gold |
+| **Rokovať o kapitulácii výmenou za amnestiu** | `prestige -2` | `zupaLoyalty: {"uzhorod": +10}`, žiadne zlato |
 
 **Prečo nie je jedna zjavne lepšia:** Zatknutie teraz bolí lojalitu hneď, ale rozhodne rýchlo.
 Sledovanie neplatí nič teraz, ale o 2 roky príde plná vzbura — drahšia v zlate aj lojalite
@@ -182,17 +201,27 @@ prestíž teraz stojí za skoré napnutie vzťahu s víťazom 907.
 
 **Beat A→C — najčastejší recurring event, ide cez celú hru.** Aktuálne má 2 voľby, obe
 platia iba zlatom za rôzne množstvo prestíže (lineárne, nezaujímavé — porušuje test #2
-aj #4). Nahraď 3 voľbami, každá iná mena, každá iný typ hráča.
+aj #4). Nahraď 3 voľbami — **primárna mena každej voľby je iná** (zlato / prestíž / lojalita
+župy), nie len iná suma tej istej meny.
 
-| Voľba | Cena | Dôsledok | Typ hráča |
-|---|---|---|---|
-| **Odmeniť verných županov darmi** | `gold -400` | `prestige +8`, `zupaLoyalty` **všetky** župy `+5` | Staviteľ konsenzu — plytké, ale široké |
-| **Investovať do opevnení pohraničných žúp** (Gemer, Novohrad, Užhorod, Zemplín) | `gold -250` | `prestige +2`, `zupaLoyalty: {"gemer": +10, "novohrad": +10, "uzhorod": +10, "zemplin": +10}` | Hráč, ktorý si pripravuje obranu pred rokom 907 alebo po ňom |
-| **Odmietnuť žiadosti, zvýšiť dane** | `prestige -5`, `zupaLoyalty` **všetky** župy `-15` | `gold +200` | Autokrat, ktorý ťaží ekonomiku na úkor dôvery |
+| Voľba | Primárna cena | Vedľajšia cena | Dôsledok | Typ hráča |
+|---|---|---|---|---|
+| **Odmeniť verných županov darmi** — `choice_result: gifts` | `gold -400` | — | `prestige +8`, `zupaLoyalty: {"bratislava": 5, "devin": 5, "gemer": 5, "hont": 5, "morava": 5, "nitra": 5, "novohrad": 5, "spis": 5, "tekov": 5, "trencin": 5, "uzhorod": 5, "zemplin": 5}` | Staviteľ konsenzu — plytké, ale široké |
+| **Investovať do opevnení pohraničných žúp** (Gemer, Novohrad, Užhorod, Zemplín) — `choice_result: fortify` | `prestige -4` (dvor vyzerá slabý, keď míňa na hradby namiesto veľkoleposti) | `gold -100` | `zupaLoyalty: {"gemer": 10, "novohrad": 10, "uzhorod": 10, "zemplin": 10}` | Hráč, ktorý si pripravuje obranu pred rokom 907 alebo po ňom |
+| **Odmietnuť žiadosti, zvýšiť dane** — `choice_result: taxes` | `zupaLoyalty: {"bratislava": -15, "devin": -15, "gemer": -15, "hont": -15, "morava": -15, "nitra": -15, "novohrad": -15, "spis": -15, "tekov": -15, "trencin": -15, "uzhorod": -15, "zemplin": -15}` | — | `gold +200` | Autokrat, ktorý ťaží ekonomiku na úkor dôvery |
 
-**Prečo nie je jedna zjavne lepšia:** dary sú drahé a plytké, opevnenia sú lacnejšie ale
-úzko cielené, dane sú jediná voľba, ktorá *získava* zlato — ale za cenu širokej nedôvery.
-Žiadna voľba nemá najlepší pomer vo všetkých menách naraz.
+**Presný strojový zápis (pre `rm-content`, nedohadúvať):** `zupaLoyalty` je vždy explicitný
+dict `{"province_id": delta}` s **presne týmito 12 kľúčmi** z §0.1, nikdy skratka typu
+"všetky" — `EventManager.resolve_choice()` iteruje iba cez klúče, ktoré sú v dict-e prítomné
+(`godot/scripts/managers/EventManager.gd:219-224`). Devín je v zozname zahrnutý — je to
+bežná provincia z hľadiska rady županov, nezávisle od scenára Devín 907.
+
+**Prečo nie je jedna zjavne lepšia:** dary sú drahé v zlate a plytké v efekte; opevnenia
+platia prestížou (dvor vyzerá slabo, že rieši hranice namiesto dvorskej veľkoleposti) a
+menším zlatom, ale sú úzko cielené; dane sú jediná voľba, ktorá *získava* zlato — za cenu
+širokej nedôvery v každej jednej župe. Tri odlišné primárne meny znamenajú, že žiadny typ
+hráča nemá univerzálne najlepšiu voľbu — staviteľ konsenzu, obranca hraníc a autokrat si
+vyberajú inak.
 
 **Textová požiadavka:** nesmie znieť ako "kráľovská rada zasadá". Použi meno konkrétneho
 županstva relevantného k danej voľbe (napr. "županka spiš namieta, že dary idú len Nitre").
@@ -208,9 +237,9 @@ pravdivý, nie vymyslený.
 
 | Voľba | Cena | Dôsledok |
 |---|---|---|
-| **Rozsúdiť v prospech Nitry (staršie právo)** | `zupaLoyalty: {"trencin": -10}` | `prestige +1`, `zupaLoyalty: {"nitra": +10}` |
-| **Rozsúdiť v prospech Trenčína (novšie osídlenie)** | `zupaLoyalty: {"nitra": -10}` | `prestige +1`, `zupaLoyalty: {"trencin": +10}` |
-| **Nechať spor bez rozsudku** | `prestige -2`, `zupaLoyalty: {"nitra": -5, "trencin": -5}` | žiadny gold — král sa nezaviaže nikomu |
+| **Rozsúdiť v prospech Nitry (staršie právo)** — `choice_result: nitra_side` | `zupaLoyalty: {"trencin": -10}` | `prestige +1`, `zupaLoyalty: {"nitra": +10}` |
+| **Rozsúdiť v prospech Trenčína (novšie osídlenie)** — `choice_result: trencin_side` | `zupaLoyalty: {"nitra": -10}` | `prestige +1`, `zupaLoyalty: {"trencin": +10}` |
+| **Nechať spor bez rozsudku** — `choice_result: no_ruling` | `prestige -2`, `zupaLoyalty: {"nitra": -5, "trencin": -5}` | žiadne zlato — kráľ sa nezaviaže nikomu |
 
 **Prečo nie je jedna zjavne lepšia:** prvé dve sú zrkadlové — zisk jednej župy je presne
 strata druhej, takže voľba závisí od toho, ktorú župu hráč strategicky potrebuje (Nitra
@@ -230,9 +259,9 @@ z Bavorska. Neexistuje frakcia "kňazi" — cena ide cez `religionChange` a loja
 
 | Voľba | Cena | Dôsledok |
 |---|---|---|
-| **Podporiť latinský obrad** | `zupaLoyalty: {"morava": -6}` | `religionChange -8` (k Rímu), `franks.mood trust +8` |
-| **Podporiť slovanský (byzantský) obrad** | `franks.mood trust -5` | `religionChange +8` (k Byzancii/tradícii), `byzantium.mood trust +8`, `zupaLoyalty: {"morava": +6}` |
-| **Zakázať verejné spory oboch strán** | `zupaLoyalty: {"morava": -3}` (obe strany sa cítia nevypočuté) | `prestige +1`, žiadny posun náboženskej osi |
+| **Podporiť latinský obrad** — `choice_result: latin` | `zupaLoyalty: {"morava": -6}` | `religionChange -8` (k Rímu), `franks.mood trust +8` |
+| **Podporiť slovanský (byzantský) obrad** — `choice_result: byzantine` | `franks.mood trust -5` | `religionChange +8` (k Byzancii/tradícii), `byzantium.mood trust +8`, `zupaLoyalty: {"morava": +6}` |
+| **Zakázať verejné spory oboch strán** — `choice_result: ban` | `zupaLoyalty: {"morava": -3}` (obe strany sa cítia nevypočuté) | `prestige +1`, žiadny posun náboženskej osi |
 
 **Prečo nie je jedna zjavne lepšia:** prvé dve sú opäť zrkadlové (Rím vs. Byzancia, franská
 vs. byzantská priazeň, morava loyalty hore/dole), tretia je "bezpečná" v tom, že nikoho
@@ -256,6 +285,56 @@ vstupné podmienky ďalších eventov — to je rozdiel v tempe, nie kozmetika.
 
 ---
 
+## 9.5 Narration hook — presný strojový kontrakt
+
+**Prečo je to potrebné:** `EventManager.resolve_choice()` (`godot/scripts/managers/EventManager.gd:178`)
+dnes vracia iba `{"ok", "effect", "chronicle"}` — chýbajú `event_id` a `context`, ktoré
+kronika (`NarrationManager`) a smoke test potrebujú, aby vedeli, **ktorý** event a **ktorá**
+voľba sa stali, nielen aké číslo padlo. Toto je zadanie pre implementáciu (`rm-core`/`rm-content`),
+nie pre `rm-design` — nasledujúca tabuľka je špecifikácia, podľa čoho sa dá overiť test.
+
+**Kontrakt (platí pre všetkých 8 eventov nižšie, žiadna výnimka):**
+
+`resolve_choice(choice_id)` musí vrátiť navyše:
+- `event_id: String` — `pending.get("id", "")` eventu, ktorý bol práve vyriešený (dostupné
+  už v metóde ako `eid`, len sa nevracia).
+- `choice_result: String` — presne ten `choice_id`, ktorý bol argumentom volania (žiadna
+  transformácia, žiadny preklad na text).
+- `context: Dictionary` s vždy prítomnými kľúčmi:
+  - `"year": int` — `game_state.year` v momente rozhodnutia,
+  - `"province_ids": Array` — kľúče `zupaLoyalty` z vybranej voľby (`[]`, ak voľba žiadnu neriešila),
+  - `"faction_ids": Array` — kľúče `moodChanges` z vybranej voľby, **rezolvované cez
+    `_resolve_faction_id()`** (`[]`, ak voľba žiadnu neriešila),
+  - `"next_event": String` — hodnota `choice_dict.get("next_event", "")` (prázdny string, ak voľba nereťazí).
+
+**Overenie v `smoke_test.m6.gd`:** pre každý z 8 event_id nižšie test zavolá
+`resolve_choice()` s každým platným `choice_id` a assertuje: `result.event_id == <očakávaný>`,
+`result.choice_result == <zvolené choice_id>`, `result.context.has("province_ids")`,
+`result.context.has("faction_ids")`, a pri reťazových eventoch `result.context.next_event == <next_event id>`.
+
+| # | `event_id` | Platné `choice_result` hodnoty | `context.province_ids` (neprázdne pre) | `context.faction_ids` (neprázdne pre) | `context.next_event` (neprázdne pre) |
+|---|---|---|---|---|---|
+| 1 | `hist_papal_legation_903` | `rome`, `decline` | — | `rome` → `["franks"]`; `decline` → `["franks"]` | — |
+| 2.1 | `byz_bride_proposal_906` | `accept`, `decline` | — | oba → `["byzantium"]` | `accept` → `byz_bride_wedding_907`; `decline` → `byz_bride_insult_907` |
+| 2.2 | `byz_bride_wedding_907` | `grand`, `modest` | — | oba → `["byzantium"]` (+ `moravia` pri `grand`) | — |
+| 2.3 | `byz_bride_insult_907` | `apologize`, `stand` | — | oba → `["byzantium"]` | — |
+| 3.1 | `hist_bogata_conspiracy_915` | `arrest`, `watch` | oba → `["uzhorod"]` | — | `arrest` → `bogata_trial_916`; `watch` → `bogata_uprising_917` |
+| 3.2 | `bogata_trial_916` | `exile`, `death`, `pardon` | všetky tri → `["uzhorod"]` | — | — |
+| 3.3 | `bogata_uprising_917` | `crush`, `negotiate` | oba → `["uzhorod"]` | — | — |
+| 4 | `rand_bad_harvest` | `open`, `ignore` | oba → `["zemplin"]` | — | — |
+| 5 | `rand_border_raid` | `chase`, `fortify` | oba → `["gemer"]` | `chase` → `["hungary"]` | — |
+| 6 | `council` | `gifts`, `fortify`, `taxes` | všetky tri → 12 kľúčov z §0.1 | — | — |
+| 7 | `rand_noble_feud` | `nitra_side`, `trencin_side`, `no_ruling` | všetky tri → `["nitra", "trencin"]` (podmnožina podľa voľby) | — | — |
+| 8 | `rand_missionary_dispute` | `latin`, `byzantine`, `ban` | všetky tri → `["morava"]` | `latin` → `["franks"]`; `byzantine` → `["byzantium"]` | — |
+
+**Poznámka k voľbám #6 a #7:** existujúci `_build_council_event()` má dnes `choice_result`
+id `gifts`/`fortify` — tabuľka vyžaduje pridať tretiu voľbu s id `taxes` (§6 vyššie).
+`rand_noble_feud` v katalógu má dnes id `law`/`ignore` — nahraď ich `nitra_side`/`trencin_side`/`no_ruling`,
+aby zodpovedali 3 voľbám z §7 (súčasný katalóg má len 2, čo je tiež nesúlad, ktorý táto
+špecifikácia opravuje).
+
+---
+
 ## 10. Akceptačné kritériá pre `rm-content`
 
 - [ ] 8 event-rodín presne podľa ID vyššie, žiadny deviaty.
@@ -264,10 +343,15 @@ vstupné podmienky ďalších eventov — to je rozdiel v tempe, nie kozmetika.
 - [ ] Všetky `next_event` odkazy použijú kľúč `next_event` (snake_case), nikdy `nextEvent`.
 - [ ] Border raid (5) má cenu v dvoch rôznych menách pre obe voľby — žiadna voľba nesmie
       byť lacnejšia AJ výnosnejšia súčasne ako druhá.
-- [ ] Rada županov (6) má 3 voľby, každá inú menu ako primárnu cenu.
+- [ ] Rada županov (6) má 3 voľby (`gifts`, `fortify`, `taxes`), každá inú menu ako primárnu
+      cenu; `zupaLoyalty` v každej voľbe vypisuje všetkých 12 kľúčov z §0.1 explicitne
+      (žiadne "všetky", žiadny wildcard — `EventManager` ho nepodporuje).
+- [ ] Spor o pasienky (7) má 3 voľby s `choice_result` `nitra_side`/`trencin_side`/`no_ruling`
+      (nie pôvodné `law`/`ignore` z katalógu).
 - [ ] Neúroda (4) a Border raid (5) menujú konkrétnu župu v texte (Zemplín, Gemer) —
       žiadne "jedna zo žúp".
-- [ ] Každý event emituje narration hook (`event_id, context, choice_result`) overený
-      v `smoke_test.m6.gd`.
+- [ ] Každý z 8 eventov (vrátane všetkých vetiev/reťazí) emituje presne `event_id`,
+      `choice_result`, `context` podľa kontraktu §9.5 — overené v `smoke_test.m6.gd`
+      podľa tabuľky §9.5, nie voľnou checkbox vetou.
 - [ ] Žiadna zmena Devín 907 invariantov (§15.6 `NAVRH_HERNY_ZAZITOK.md`), žiadna zmena
       RNG mechaniky (to je `t_7a0d3266`, samostatná karta pre `rm-core`).
