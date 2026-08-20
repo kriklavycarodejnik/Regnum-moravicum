@@ -85,10 +85,11 @@ func _show_coach_overlay() -> void:
 		return
 	var step: int = gs.tutorial_step  # 0, 1, or 2
 
+	# Dim overlay — IGNORE so clicks pass through to underlying MapView / NextMonthButton
 	var overlay := PanelContainer.new()
 	overlay.name = "CoachOverlay"
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_PASS
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_theme_stylebox_override("panel", _coach_style())
 
 	# Dim background — fully passive, clicks pass through
@@ -99,10 +100,10 @@ func _show_coach_overlay() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(dim)
 
-	# Content vbox — also passive (text only, no click-catch)
+	# Content vbox — IGNORE (text only, no click-catch)
 	var vbox := VBoxContainer.new()
 	vbox.name = "CoachContent"
-	vbox.mouse_filter = Control.MOUSE_FILTER_PASS
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_theme_constant_override("separation", 10)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.anchors_preset = Control.PRESET_CENTER_TOP
@@ -158,11 +159,15 @@ func _show_coach_overlay() -> void:
 
 	overlay.add_child(vbox)
 
-	# Button row — these DO catch clicks (STOP)
+	# Button row — added as DIRECT child of Main (not inside IGNORE overlay)
+	# so buttons can catch clicks (STOP) while overlay stays IGNORE
 	var btn_row := HBoxContainer.new()
+	btn_row.name = "CoachButtons"
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	btn_row.add_theme_constant_override("separation", 12)
-	btn_row.mouse_filter = Control.MOUSE_FILTER_PASS
+	btn_row.anchors_preset = Control.PRESET_CENTER_TOP
+	btn_row.offset_top = 180
+	btn_row.set_h_size_flags(Control.SIZE_EXPAND_FILL)
 
 	# Skip button (always visible)
 	var skip_btn := Button.new()
@@ -188,9 +193,8 @@ func _show_coach_overlay() -> void:
 		)
 		btn_row.add_child(ack_btn)
 
-	vbox.add_child(btn_row)
-
 	add_child(overlay)
+	add_child(btn_row)
 
 
 func _call_deferred_arrow_pos(arrow: Label, target: Control, overlay_parent: Control, is_above: bool) -> void:
@@ -217,6 +221,9 @@ func _coach_cleanup() -> void:
 	var overlay := get_node_or_null("CoachOverlay")
 	if overlay != null:
 		overlay.queue_free()
+	var buttons := get_node_or_null("CoachButtons")
+	if buttons != null:
+		buttons.queue_free()
 
 
 func _coach_on_province_selected(province_id: String) -> void:
