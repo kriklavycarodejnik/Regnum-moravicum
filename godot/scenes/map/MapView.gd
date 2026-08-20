@@ -510,7 +510,7 @@ func _update_tooltip(mouse_pos: Vector2) -> void:
 	var raw = provs.get(id, {})
 	if typeof(raw) == TYPE_DICTIONARY:
 		p = raw
-\tvar tooltip_text: String = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
+	var tooltip_text: String = "%s\nVlastník: %s\nLojalita: %s · Prosperita: %s\nNáboženstvo: %s" % [
 		str(p.get("name", id)),
 		str(p.get("owner_faction", "?")),
 		str(p.get("loyalty", "?")),

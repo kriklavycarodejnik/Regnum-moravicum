@@ -2,7 +2,7 @@
 extends HBoxContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
-const THREAT_FOOD_THRESHOLD := 100  # P1 kontrakt §4.2
+const MapView = preload("res://scenes/map/MapView.gd")  # pre THREAT_FOOD_THRESHOLD
 
 const RESOURCE_ORDER := [
 	{"key": "gold", "icon": "icon_gold_64", "label": "Zlato"},
@@ -99,8 +99,8 @@ func refresh() -> void:
 	# Zobrazí ⚠ na food chip a zmení farbu pozadia ak food < THREAT_FOOD_THRESHOLD
 	var food_val: int = int(res.get("food", 0))
 	if _food_warning != null:
-		_food_warning.visible = food_val < THREAT_FOOD_THRESHOLD
-		if food_val < THREAT_FOOD_THRESHOLD:
+		_food_warning.visible = food_val < MapView.THREAT_FOOD_THRESHOLD
+		if food_val < MapView.THREAT_FOOD_THRESHOLD:
 			_food_warning.tooltip_text = "Zásoby jedla: %d — hladomor" % food_val
 		else:
 			_food_warning.tooltip_text = ""
