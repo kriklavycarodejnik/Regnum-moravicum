@@ -24,6 +24,7 @@ func _ready() -> void:
 	if GameManager != null and GameManager.game_state != null:
 		GameManager.game_state.tutorial_done = true
 		GameManager.game_state.pending_event = null
+		GameManager.game_state.last_event_id = ""
 	else:
 		push_error("GameManager autoload not available")
 		print("FAIL: GameManager autoload not available")
@@ -52,23 +53,22 @@ func _ready() -> void:
 	# ──────────────────────────────────────────────────────────────────
 	# Phase 2: Tick WITHOUT event (deterministic suppression)
 	# ──────────────────────────────────────────────────────────────────
-	# Ensure no pending event before tick
+	# Before tick: suppress ALL event generation deterministically:
+	#   - Empty the event catalog (no historical or random events)
+	#   - Set last_event_id = "council" so the council fallback skips
+	#     its 8% chance (no-immediate-repeat guard fires)
 	GameManager.game_state.pending_event = null
+	GameManager.event_manager._catalog = []
+	GameManager.game_state.last_event_id = "council"
 	print("--- Phase 2: Tick without event (deterministic) ---")
 
 	main._on_next_month()
-	# Some ticks may still trigger an event; clear it so we verify TurnReport works
-	if GameManager.game_state.pending_event != null:
-		GameManager.game_state.pending_event = null
-		event_panel.visible = false
 
-	# TurnReport must be visible after every tick
+	# After tick, no event should have been generated
+	check(GameManager.game_state.pending_event == null, "2.0 No pending event after deterministic tick")
 	check(turn_report.visible, "2.1 TurnReport visible after tick (_on_next_month)")
-	# Event panel should be hidden after we cleared pending event
 	check(not event_panel.visible, "2.2 EventPanel hidden — no event pending")
 	# All CTA buttons disabled while TurnReport is showing
-	# (note: _show_turn_report_via_node does not disable buttons itself;
-	#  the assertion here documents current behaviour)
 	check(next_month_btn.disabled, "2.3 NextMonthButton disabled during TurnReport")
 	check(skirmish_btn.disabled, "2.4 SkirmishButton disabled during TurnReport")
 	check(devine_btn.disabled, "2.5 DevineButton disabled during TurnReport")
@@ -107,24 +107,32 @@ func _ready() -> void:
 	check(skirmish_btn.disabled, "4.4 SkirmishButton disabled before dismiss")
 	check(devine_btn.disabled, "4.5 DevineButton disabled before dismiss")
 
-	# Dismiss TurnReport while event_panel visible → buttons stay disabled
-	# (_on_turn_report_dismissed does NOT check event_panel.visible in current
-	#  integration branch, so buttons get re-enabled. We document current behaviour.)
+	# Dismiss TurnReport while event_panel visible
 	_dismiss_report(turn_report)
 	check(not turn_report.visible, "4.6 TurnReport hidden after CTA dismiss")
+	# Buttons must stay disabled because event_panel is still visible
+	check(next_month_btn.disabled, "4.7 NextMonthButton stays disabled after dismiss (event pending)")
+	check(skirmish_btn.disabled, "4.8 SkirmishButton stays disabled after dismiss (event pending)")
+	check(devine_btn.disabled, "4.9 DevineButton stays disabled after dismiss (event pending)")
 
 	# ──────────────────────────────────────────────────────────────────
 	# Phase 5: Event resolved via _resolve()
 	#   Create a deterministic pending event, show it via Main wiring,
 	#   dismiss TurnReport, call _resolve(), verify buttons re-enable.
+	#   Set year to 906 so Devin button year-gate does NOT mask the result.
 	# ──────────────────────────────────────────────────────────────────
 	print("--- Phase 5: Event resolved via _resolve() ---")
 
-	# Hide event panel and clean state for the fresh test
+	# Hide event panel and reset state for a fresh resolve test
 	event_panel.visible = false
 	next_month_btn.disabled = false
 	skirmish_btn.disabled = false
 	devine_btn.disabled = false
+	# Set year to 906 so Devin button becomes valid after _resolve()
+	GameManager.game_state.year = 906
+	GameManager.game_state.pending_event = null
+	# Re-enable the event catalog so _resolve() works with it
+	GameManager.event_manager._catalog = []
 
 	# Set up a deterministic event with valid choices in GameState
 	var test_event := {
@@ -154,7 +162,7 @@ func _ready() -> void:
 
 	# Re-show TurnReport and dismiss it while event is still pending
 	main.turn_report.show_report({
-		"year": 902, "month": 3,
+		"year": 906, "month": 3,
 		"resources_delta": {},
 		"narration": "Test narration.",
 	})
@@ -162,17 +170,19 @@ func _ready() -> void:
 
 	_dismiss_report(turn_report)
 	check(not turn_report.visible, "5.3 TurnReport hidden after CTA dismiss")
+	# Buttons stay disabled because event_panel is still visible
+	check(next_month_btn.disabled, "5.4 NextMonthButton disabled after dismiss (event pending)")
+	check(skirmish_btn.disabled, "5.5 SkirmishButton disabled after dismiss (event pending)")
+	check(devine_btn.disabled, "5.6 DevineButton disabled after dismiss (event pending)")
 
 	# Actually resolve the event via Main._resolve() — not a manual flag
 	main._resolve("choice_a")
-	check(not event_panel.visible, "5.4 EventPanel hidden after _resolve()")
-	# next_month_btn and skirmish_btn are re-enabled explicitly by _resolve()
-	check(not next_month_btn.disabled, "5.5 NextMonthButton re-enabled after _resolve")
-	check(not skirmish_btn.disabled, "5.6 SkirmishButton re-enabled after _resolve")
-	# devine_btn: _resolve() explicitly enables it, but then calls _refresh_ui()
-	# which re-gates it based on year (year 902 < 906 → disabled).
-	# This is the year gate, not an event-pending issue — the event path is correct.
-	check(devine_btn.disabled, "5.7 DevineButton disabled after _resolve (year 902 < 906 gate — expected)")
+	check(not event_panel.visible, "5.7 EventPanel hidden after _resolve()")
+	# After _resolve(), all three buttons should be re-enabled.
+	# Year 906 means Devin button year-gate (year >= 906) does NOT disable it.
+	check(not next_month_btn.disabled, "5.8 NextMonthButton re-enabled after _resolve")
+	check(not skirmish_btn.disabled, "5.9 SkirmishButton re-enabled after _resolve")
+	check(not devine_btn.disabled, "5.10 DevineButton re-enabled after _resolve (year 906 >= 906 gate)")
 
 	# Clean exit
 	if _failures == 0:
