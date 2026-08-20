@@ -236,21 +236,21 @@ func _compute_cta_text() -> String:
 
 	# 1. Tutorial active (not yet done)
 	if not gs.tutorial_done:
-		return "Krok %d/3 — postupuj podľa tutoriálu" % gs.tutorial_step
+		return "Krok %d/3 — postupuj podľa tutoriálu" % [mini(gs.tutorial_step + 1, 3)]
 
 	# 2. Pending event — player must resolve it first
 	if GameManager.has_pending_event():
 		return "◈  Vyber voľbu v paneli udalostí"
 
-	# 3. Battle active — battle_view visible
-	if battle_view and battle_view.visible:
+	# 3. Battle active — battle_view actions visible (not post-outcome)
+	if battle_view and battle_view.has_method(&"is_in_active_combat") and battle_view.call(&"is_in_active_combat"):
 		return "⚔  Vyber akciu v bitke"
 
 	# 4. Devín scenario recommended (year 906–908, not resolved yet)
 	if gs.devine_resolved == false:
 		var y: int = int(gs.year)
 		if y >= 906 and y <= 908:
-			return "★  Odporúčame: spusti Scénár „Devín 907\" v nástrojoch"
+			return "★  Odporúčame: spusti Scénár „Devín 907“ v nástrojoch"
 
 	# 5. Normal play — primary CTA is Next Month
 	var year: int = int(gs.year)
@@ -393,6 +393,7 @@ func _finish_battle(last_action: String) -> void:
 	_show_battle("Cvičná bitka pri Nitre", _active_battle, "nitra_master_hero")
 	_log_battle_phases(_active_battle)
 	_notify("Cvičná bitka hotová — späť k mesačným ťahom.")
+	_refresh_ui()
 
 
 func _on_devine() -> void:

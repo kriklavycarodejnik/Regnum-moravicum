@@ -145,6 +145,9 @@ func show_actions(visible_flag: bool) -> void:
 	if _actions_row:
 		_actions_row.visible = visible_flag
 
+func is_in_active_combat() -> bool:
+	return _actions_row != null and _actions_row.visible
+
 func hide_battle() -> void:
 	visible = false
 	if _body:
