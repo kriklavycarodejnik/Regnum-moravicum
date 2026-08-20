@@ -189,7 +189,7 @@ func _show_coach_overlay() -> void:
 		ack_btn.pressed.connect(func():
 			gs.tutorial_step = 2
 			_coach_cleanup()
-			_show_coach_overlay()
+			call_deferred("_show_coach_overlay")
 		)
 		btn_row.add_child(ack_btn)
 
@@ -233,7 +233,7 @@ func _coach_on_province_selected(province_id: String) -> void:
 	if gs.tutorial_step == 0 and province_id == "nitra":
 		gs.tutorial_step = 1
 		_coach_cleanup()
-		_show_coach_overlay()
+		call_deferred("_show_coach_overlay")
 
 
 func _coach_style() -> StyleBoxFlat:
@@ -719,7 +719,7 @@ func _refresh_ui() -> void:
 		else:
 			devine_btn.disabled = false
 			if y >= 906 and y <= 908:
-				devine_btn.text = "★ Scénar: Devín 907 (odporúčané)"
+				devine_btn.text = "★ Scénár: Devín 907 (odporúčané)"
 			else:
 				devine_btn.text = "Scénár: Devín 907"
 
