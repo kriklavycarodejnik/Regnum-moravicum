@@ -299,6 +299,23 @@ func _gui_input(event: InputEvent) -> void:
 			province_selected.emit(id2)
 			_update_tooltip(event.position)
 			queue_redraw()
+			accept_event()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Záložný chytač klikov — ak _gui_input nie je zavolaný (napr. event
+	# routing je blokovaný prekrývajúcim sa uzlom), zachytí klik sem.
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var local_pos: Vector2 = event.position - get_global_position()
+		var rect := Rect2(Vector2.ZERO, size)
+		if not rect.has_point(local_pos):
+			return
+		var id := _hit_test(local_pos)
+		if id != "" and id != _selected_id:
+			_selected_id = id
+			province_selected.emit(id)
+			_update_tooltip(event.position)
+			queue_redraw()
 
 
 func _hit_test(pos: Vector2) -> String:
