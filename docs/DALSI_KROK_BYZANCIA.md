@@ -1,8 +1,9 @@
 # Ďalší krok — Byzancia ako frakcia + drobný cleanup guardu
 
-> **Toto je inštrukcia, nie implementácia.** Kód sa nemení bez explicitného go.
-> Nadväzuje na `UPRAVY_PO_P0_IMPLEMENTACII.md` a dve opravné commity
-> `244f2f2` (1.1–2.3) a `564adfa` (1.4 dofix — `ChoiceC` uzol v `Main.tscn`).
+> **Stav implementácie (overené k 21. 8. 2026, commit `9898b1c`):**
+> - `DiplomacyManager.gd:30`: Byzancia je zavedená ako 7. frakcia (`"byzantium": {"name": "Byzantská ríša", "mood": 50.0, "relations": {}}`).
+> - `EventManager.gd:468-470`: `_resolve_faction_id()` správne mapuje aliasy `byzantium`, `byzantskí`, `konštantínopol` na `"byzantium"`.
+> - **Čo z dokumentu ešte platí / zostáva otvorené:** Rozhodnutie o Byzancii (bod 2) už prebehlo a je implementované. Ako platné a otvorené (s nízkou prioritou) zostáva odporúčanie z bodu 3 (čistenie / zjednotenie tvaru guardu v `HungarianWarScenario.gd:85` vs `WarManager.gd:60`). Text nižšie slúži ako archív rozhodnutia.
 
 ---
 
