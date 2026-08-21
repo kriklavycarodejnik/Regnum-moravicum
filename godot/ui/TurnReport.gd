@@ -26,6 +26,8 @@ func _ready() -> void:
 	if theme == null:
 		theme = _ThemeFactory.build()
 	_build()
+	# Reset size so children determine panel height
+	custom_minimum_size = Vector2(600, 0)
 	hide()
 
 

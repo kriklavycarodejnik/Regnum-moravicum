@@ -48,6 +48,7 @@ var _battle_round: int = 0
 var _army_wizard_step: int = 0
 var _army_wizard_overlay_active: bool = false
 var _bg_cycle_assets: Array = ["nitra_master_hero", "devin_master_fortress", "bratislava_master_river", "moravian_court_interior", "regnum_visual_style_master"]
+var _deferred_event: Dictionary = {}
 
 
 func _ready() -> void:
@@ -733,10 +734,10 @@ func _on_next_month() -> void:
 	else:
 		_make_chronicle_entry("Mesiac uplynul v tichu dvorov a polí.", "monthly", GameManager.game_state.year, GameManager.game_state.month, delta_str)
 	_check_ending()
-	# Post-tick notifications
+	# Post-tick notifications — defer event if TurnReport will be shown
 	if GameManager.has_pending_event():
-		_show_event(GameManager.get_pending_event())
-		_notify("Udalosť! Vyber jednu z dvoch volieb.")
+		_deferred_event = GameManager.get_pending_event()
+		_notify("Udalosť čaká po prečítaní správy.")
 	elif gs.year == 906 and gs.month == 1:
 		_show_devin_modal("warning")
 	elif gs.year >= 906 and gs.month >= 6 and not gs.army_wizard_done:
@@ -1175,6 +1176,13 @@ func _on_turn_report_dismissed() -> void:
 	# Hide the TurnReport panel
 	if turn_report:
 		turn_report.hide()
+	# If there's a deferred event from the tick, show it now
+	if not _deferred_event.is_empty():
+		var ev: Dictionary = _deferred_event
+		_deferred_event = {}
+		_show_event(ev)
+		_notify("Udalosť! Vyber jednu z volieb.")
+		return
 	# If event panel is visible, buttons stay disabled until event resolved
 	if event_panel != null and event_panel.visible:
 		return

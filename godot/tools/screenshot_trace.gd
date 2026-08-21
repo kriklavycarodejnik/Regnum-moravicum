@@ -133,12 +133,29 @@ func _a_step_turn_report() -> void:
 	print("--- Step 4/7: TURNREPORT (Ďalší mesiac) ---")
 	if _main_node.next_month_btn != null:
 		_main_node.next_month_btn.pressed.emit()
-		print("  Pressed 'Ďalší mesiac' — TurnReport by mal byť viditeľný")
+		print("  Pressed 'Ďalší mesiac' — čakám na TurnReport")
 	else:
 		printerr("  WARN: next_month_btn missing — calling _on_next_month directly")
 		_main_node._on_next_month()
-	await _wait_frames(4)
-	await _capture_step("04_TURNREPORT")
+
+	# Čakáme max 60 frames, kým TurnReport nie je viditeľný a event_panel je skrytý
+	var timeout := 60
+	while timeout > 0:
+		var tr_visible: bool = _main_node.turn_report != null and _main_node.turn_report.visible
+		var ep_hidden: bool = _main_node.event_panel == null or not _main_node.event_panel.visible
+		if tr_visible and ep_hidden:
+			print("  TurnReport viditeľný (event_panel skrytý) — zachytávam")
+			await _capture_step("04_TURNREPORT")
+			return
+		await Engine.get_main_loop().process_frame
+		timeout -= 1
+
+	printerr("FAIL: TurnReport sa nezobrazil do 60 frames")
+	printerr("  turn_report=%s event_panel=%s" % [
+		str(_main_node.turn_report != null and _main_node.turn_report.visible),
+		str(_main_node.event_panel != null and _main_node.event_panel.visible),
+	])
+	quit(1)
 
 
 func _a_step_event_903() -> void:
@@ -325,30 +342,6 @@ func _dump_ui_state(label: String) -> void:
 		str(ep != null and ep.visible),
 		str(_main_node.next_month_btn != null and _main_node.next_month_btn.disabled),
 	])
-
-
-func _debug_coach_state(label: String) -> void:
-	var gs = _gs()
-	if gs == null:
-		print("  [%s] no game_state" % label)
-		return
-	var overlay = _find_node("CoachOverlay", _main_node)
-	var buttons = _find_node("CoachButtons", _main_node)
-	var tr = _main_node.turn_report
-	print("  [%s] step=%d done=%s overlay=%s buttons=%s turnreport=%s" % [
-		label,
-		int(gs.tutorial_step),
-		str(gs.tutorial_done),
-		str(overlay != null),
-		str(buttons != null),
-		str(tr != null and tr.visible),
-	])
-	var coach_names: Array = []
-	for child in _main_node.get_children():
-		if "Coach" in child.name:
-			coach_names.append(child.name)
-	if not coach_names.is_empty():
-		print("    coach nodes: %s" % str(coach_names))
 
 
 func _find_node(name: String, parent: Node) -> Node:
