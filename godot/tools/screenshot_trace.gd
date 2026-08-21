@@ -36,8 +36,6 @@ static func _resolve_output_dir() -> String:
 
 const CAPTURE_W := 1280
 const CAPTURE_H := 720
-const EVENT_W := 1280
-const EVENT_H := 960  # Higher viewport during event capture so EventPanel + choices fit
 
 var captured_count := 0
 var _main_node = null  # Main.tscn root
@@ -161,14 +159,9 @@ func _a_step_turn_report() -> void:
 func _a_step_event_903() -> void:
 	print("--- Step 5/7: EVENT_903 (pápežské posolstvo s voľbami) ---")
 
-	# STEP A: Temporarily enlarge viewport so EventPanel + choices are fully visible.
-	# At 1280x720 the EventBody + choice buttons overflow because the VBox inside
-	# EventPanel cannot shrink past its content requirements. Enlarging to 960px
-	# guarantees ~240px extra vertical space — enough for any event body + 3 choices.
-	DisplayServer.window_set_size(Vector2i(EVENT_W, EVENT_H))
-	await _wait_frames(2)  # Let layout recalculate
-
-	# STEP B: Hide ChroniclePanel + NotificationFeed for maximum vertical space
+	# STEP A: Hide overlays that eat vertical space (chronicle, notification, selection,
+	# turn report). EventPanel je posledný (ne-expand) child MainColumn, takže obsah nad
+	# ním (MapView min 280 + ChroniclePanel min 70 + chrome) tlačí panel pod 720px viewport.
 	var _chron_vis := false
 	var _chron_node := _find_node("ChroniclePanel", _main_node) if _main_node != null else null
 	if _chron_node != null and is_instance_valid(_chron_node):
@@ -185,7 +178,7 @@ func _a_step_event_903() -> void:
 	if _main_node.turn_report != null and is_instance_valid(_main_node.turn_report):
 		_main_node.turn_report.hide()
 
-	# STEP C: Posun hry do roku 903/01, aby sa vygeneroval historický event
+	# STEP B: Posun hry do roku 903/01, aby sa vygeneroval historický event
 	# hist_papal_legation_903 (Pápežské posolstvo).
 	var gs = _gm().game_state if _gm() != null else null
 	if gs != null:
@@ -215,17 +208,27 @@ func _a_step_event_903() -> void:
 				_main_node._show_event(ev)
 				await _wait_frames(3)
 
-	# STEP C2: Refresh visible UI and assert correct date (903/01) + title
+	# Refresh visible UI and settle layout
 	if _main_node != null and is_instance_valid(_main_node):
 		if _main_node.has_method("_refresh_ui"):
 			_main_node._refresh_ui()
 		await _wait_frames(3)
-		_assert_903_event_state()
+
+	# STEP C: Grow the SOURCE viewport until the event panel AND every visible choice
+	# button fit entirely inside it. At 720px the panel overflows below the screen edge,
+	# so those pixels are lost before _capture_step() resizes — resize can't recover
+	# already-clipped content. Only after the panel is fully inside the framebuffer do we
+	# capture; _capture_step() then deterministically shrinks to exactly 1280x720.
+	await _grow_viewport_to_fit_event(40)
+
+	# STEP D: Assert date + title + geometry (panel/choices fully inside viewport).
+	# quit(1) on any mismatch so a truncated panel fails the capture loudly.
+	_assert_903_event_state()
 
 	_dump_ui_state("05_EVENT_903")
 	await _capture_step("05_EVENT_903")
 
-	# STEP D: Restore layout to 720p for subsequent steps
+	# STEP E: Restore overlays + 720p viewport for subsequent steps
 	if _chron_node != null and is_instance_valid(_chron_node):
 		_chron_node.visible = _chron_vis
 	if _main_node.notification_feed != null and is_instance_valid(_main_node.notification_feed):
@@ -332,6 +335,79 @@ func _assert_903_event_state() -> void:
 		quit(1)
 	print("  OK: Event title matches 'Pápežské posolstvo'")
 
+	# Assert: event panel + every visible choice button are visible, have non-empty text,
+	# and their bottom edge (get_global_rect().end.y) is within the SOURCE viewport.
+	var vs := root.size
+	var ep = _main_node.event_panel
+	if ep == null or not is_instance_valid(ep) or not ep.visible:
+		printerr("  FAIL: event_panel nie je viditeľný")
+		quit(1)
+	var ep_end: float = ep.get_global_rect().end.y
+	print("  event_panel end.y=%.0f (viewport h=%d)" % [ep_end, vs.y])
+	if ep_end > vs.y:
+		printerr("  FAIL: event_panel presahuje viewport (end.y=%.0f > %d)" % [ep_end, vs.y])
+		quit(1)
+
+	# Tento event má presne 2 voľby (A/B) — obe musia byť viditeľné.
+	var a_vis: bool = _main_node.choice_a_btn != null and _main_node.choice_a_btn.visible
+	var b_vis: bool = _main_node.choice_b_btn != null and _main_node.choice_b_btn.visible
+	if not a_vis or not b_vis:
+		printerr("  FAIL: ChoiceA/ChoiceB nie sú viditeľné (A=%s B=%s)" % [str(a_vis), str(b_vis)])
+		quit(1)
+
+	for btn_name in ["choice_a_btn", "choice_b_btn", "choice_c_btn"]:
+		var b = _main_node.get(btn_name)
+		if b == null or not is_instance_valid(b):
+			printerr("  FAIL: chýba %s" % btn_name)
+			quit(1)
+		if not b.visible:
+			continue  # nie je súčasťou tohto eventu (napr. ChoiceC pri 2-voľbovom)
+		var btn_text: String = str(b.text).strip_edges()
+		if btn_text == "":
+			printerr("  FAIL: %s má prázdny text" % btn_name)
+			quit(1)
+		var bend: float = b.get_global_rect().end.y
+		if bend > vs.y:
+			printerr("  FAIL: %s presahuje viewport (end.y=%.0f > %d)" % [btn_name, bend, vs.y])
+			quit(1)
+		print("  OK: %s visible, text='%s', end.y=%.0f" % [btn_name, btn_text, bend])
+
+
+func _event_visual_bottom() -> float:
+	"""Vráti najnižší spodný okraj event panela + viditeľných volieb (0.0 ak panel chýba)."""
+	var bottom := 0.0
+	if _main_node == null or not is_instance_valid(_main_node):
+		return 0.0
+	if _main_node.event_panel != null and is_instance_valid(_main_node.event_panel) and _main_node.event_panel.visible:
+		bottom = _main_node.event_panel.get_global_rect().end.y
+	for btn_name in ["choice_a_btn", "choice_b_btn", "choice_c_btn"]:
+		var b = _main_node.get(btn_name)
+		if b != null and is_instance_valid(b) and b.visible:
+			bottom = maxf(bottom, b.get_global_rect().end.y)
+	return bottom
+
+
+func _grow_viewport_to_fit_event(margin: int) -> void:
+	"""Zväčší SOURCE viewport, kým event panel + všetky voľby nie sú celé vo viewporte.
+
+	EventPanel je posledný ne-expand child MainColumn, takže pri príliš nízkom viewporte
+	je odrezaný pod spodným okrajom (get_global_rect().end.y > viewport). Meriame prirodzený
+	spodný okraj, kým je panel odrezaný, a naraz zväčšíme viewport na tento okraj + margin.
+	Po zväčšení sa panel usadí na spodnom okraji a celý sa zmestí.
+	"""
+	for _i in range(8):
+		await _wait_frames(2)
+		var bottom := _event_visual_bottom()
+		if bottom <= 0.0:
+			return  # žiadny event panel
+		var vs := root.size
+		if bottom <= vs.y:
+			return  # už sa zmestí
+		var new_h := int(bottom) + margin
+		print("  Growing viewport %dx%d -> %dx%d (panel bottom %.0f)" % [vs.x, vs.y, CAPTURE_W, new_h, bottom])
+		DisplayServer.window_set_size(Vector2i(CAPTURE_W, new_h))
+	await _wait_frames(2)
+
 
 func _wait_frames(n: int) -> void:
 	for i in range(n):
@@ -393,6 +469,17 @@ func _dump_ui_state(label: String) -> void:
 		str(ep != null and ep.visible),
 		str(_main_node.next_month_btn != null and _main_node.next_month_btn.disabled),
 	])
+	# Geometria event panela + volieb (diagnostika orezania)
+	var vs := root.size
+	print("  [%s] viewport=%dx%d" % [label, vs.x, vs.y])
+	if ep != null and is_instance_valid(ep) and ep.visible:
+		var r: Rect2 = ep.get_global_rect()
+		print("  [%s] event_panel rect=%s (end.y=%.0f, inside=%s)" % [label, r, r.end.y, str(r.end.y <= vs.y)])
+	for btn_name in ["choice_a_btn", "choice_b_btn", "choice_c_btn"]:
+		var b = _main_node.get(btn_name)
+		if b != null and is_instance_valid(b) and b.visible:
+			var br: Rect2 = b.get_global_rect()
+			print("  [%s] %s rect=%s (end.y=%.0f, inside=%s)" % [label, btn_name, br, br.end.y, str(br.end.y <= vs.y)])
 
 
 func _find_node(name: String, parent: Node) -> Node:
