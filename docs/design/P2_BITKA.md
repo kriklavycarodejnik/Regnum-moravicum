@@ -16,21 +16,21 @@ Fázová bitka nie je nová stavba. Je hotová a zapojená len na jednom mieste:
 
 ### Kritérium
 
-Len **eventy typu `military`** a len tie voľby, ktoré majú nové pole `"battle"` v choice dict-e.
+Len **eventy typu `military`** a len tie voľby, ktoré majú nové pole `\"battle\"` v choice dict-e.
 
 ### Rozhodnutie
 
 | Event | Typ | Triggeruje phased battle | Zdôvodnenie |
 |---|---|---|---|
-| `rand_border_raid` | military | Áno — voľba `chase` (`battle: {enemy_army: "border_raiders"}`) | Hráč aktívne vyháňa jazdu — taktické rozhodnutie dáva zmysel |
+| `rand_border_raid` | military | Áno — voľba `chase` (`battle: {enemy_army: \"border_raiders\"}`) | Hráč aktívne vyháňa jazdu — taktické rozhodnutie dáva zmysel |
 | `rand_border_raid` | military | Nie — voľba `fortify` | Pasívna obrana, žiadny boj |
-| `bogata_uprising_917` | military | Áno — voľba `crush` (`battle: {enemy_army: "bogata_rebels"}`) | Kráľovské vojsko potláča vzburu |
+| `bogata_uprising_917` | military | Áno — voľba `crush` (`battle: {enemy_army: \"bogata_rebels\"}`) | Kráľovské vojsko potláča vzburu |
 | `bogata_uprising_917` | military | Nie — voľba `negotiate` | Diplomatické riešenie, žiadny boj |
-| **Devín 907** | kanon | **Nie** | Zostáva na `HungarianWarScenario.resolve_devine_battle()`. Invariant §4.1: `winner=="attacker"`, max 1× za run, dôsledky −30 prestíž / −20 lojalita Devína / +30 mood Maďarov, event RNG má vlastný seed. Toto NEOTVÁRAJ. |
+| **Devín 907** | kanon | **Nie** | Zostáva na `HungarianWarScenario.resolve_devine_battle()`. Invariant §4.1: `winner==\"attacker\"`, max 1× za run, dôsledky −30 prestíž / −20 lojalita Devína / +30 mood Maďarov, event RNG má vlastný seed. Toto NEOTVÁRAJ. |
 
 ### Akceptačné kritérium 1
 
-`events_catalog.json` obsahuje pre `rand_border_raid.chase` a `bogata_uprising_917.crush` nové pole `"battle": {"enemy_army": "<id>"}`. Žiadny iný choice dict v katalógu nemá pole `battle`. Devín 907 nie je v events_catalog (je v HungarianWarScenario).
+`events_catalog.json` obsahuje pre `rand_border_raid.chase` a `bogata_uprising_917.crush` nové pole `\"battle\": {\"enemy_army\": \"<id>\"}`. Žiadny iný choice dict v katalógu nemá pole `battle`. Devín 907 nie je v events_catalog (je v HungarianWarScenario).
 
 ---
 
@@ -39,9 +39,9 @@ Len **eventy typu `military`** a len tie voľby, ktoré majú nové pole `"battl
 ### 2.1 Hráčova armáda (attacker)
 
 Z `GameState.armies`. Hľadá sa prvá armáda, ktorá spĺňa:
-- `faction_id == "moravia"`
+- `faction_id == \"moravia\"`
 - `province_id` == provincia eventu (napr. `gemer` pre `rand_border_raid`)
-- `status != "disbanded"`
+- `status != \"disbanded\"`
 
 Ak existuje viacero, berie sa prvá podľa abecedného poradia kľúčov (deterministické).
 
@@ -62,12 +62,12 @@ Táto armáda **nie je** uložená do `GameState.armies`. Straty fallback armád
 
 ### 2.2 Nepriateľská armáda (defender)
 
-Z `choice.battle.enemy_army` v event katalógu. Pre každý `enemy_army` id je definovaný záznam v novom `data/enemy_armies.json`:
+Z `choice.battle.enemy_army` v event katalógu. Pre každý `enemy_army` id je definovaný záznam v novom `data/enemy_armies.json`. `faction_id` používa kanonické ID `"madari"` (BattleFormulas.gd:20 ho používa pre jazdecký buff):
 
 ```json
 {
     "border_raiders": {
-        "faction_id": "madari",    # kanonické ID — BattleFormulas.gd:20 ho používa pre jazdecký buff (\"madari\")
+        "faction_id": "madari",
         "size": 300,
         "morale": 65.0,
         "composition": {"infantry": 0.2, "cavalry": 0.7, "archers": 0.1},
@@ -98,7 +98,7 @@ Z nového poľa `terrain` v province JSON. Každá provincia dostane:
 
 **Povolené hodnoty:** `field`, `forest`, `fortress`, `river`, `hill` (zozhod s `BattleConfig.TERRAIN_MODIFIERS`).
 
-**Predvolená hodnota:** `"field"` (ak pole chýba).
+**Predvolená hodnota:** `\"field\"` (ak pole chýba).
 
 **Mapovanie provincií:**
 
@@ -131,16 +131,20 @@ Pre každú provinciu v `data/provinces/*.json` existuje pole `terrain` s jednou
 
 `choice.effect` (gold, prestige) sa **neaplikuje** priamo v `resolve_choice()`, ale až po skončení bitky — modifikovaný podľa výsledku:
 
-| Výsledok | gold multiplikátor | prestige multiplikátor |
+| Výsledok | gold multiplikátor | prestige |
 |---|---|---|
-| Víťazstvo (attacker) | 1.0× | 1.0× |
+| Víťazstvo (victory) | 1.0× | 1.0× |
+| Rout obrancu (rout_defender) | 1.0× | 1.5× |
 | Remíza (stalemate) | 0.5× | −1 (absolútna penalizácia) |
-| Prehra (defender) | 0.0× | −2 (absolútna penalizácia) |
-| Rout (defender rout) | 0.0× | −5 (absolútna penalizácia) |
+| Prehra (defeat) | 0.0× | −2 (absolútna penalizácia) |
+| Rout útočníka (rout_attacker) | 0.0× | −5 (absolútna penalizácia) |
 
 **Príklad:** `rand_border_raid.chase` má `effect: {gold: -10, prestige: 2}`.
 - Víťazstvo: gold −10, prestige +2
+- Rout obrancu: gold −10, prestige +3 (2 × 1.5× → `floori(2 * 1.5) = 3`)
 - Prehra: gold 0, prestige −2
+
+Všetky resource delty sa zaokrúhľujú nadol (`floori()`) a clampujú na `[−1000, 1000]` pomocou `clampi(floori(value), −1000, 1000)`. Prestige penalizácia je absolútna (nie multiplikatívna).
 
 ### 3.2 Lojalita župy (`zupaLoyalty`)
 
@@ -149,15 +153,18 @@ Aplikuje sa vždy (aj pri prehre) — ale **iba ak** event ju definuje. Multipli
 | Výsledok | zupaLoyalty multiplikátor |
 |---|---|
 | Víťazstvo | 1.0× |
+| Rout obrancu | 1.0× |
 | Remíza | 0.5× |
 | Prehra | 0.0× |
-| Rout (defender) | 0.0× |
-| Rout (attacker) | −1.0× (obrátený efekt) |
+| Rout útočníka | −1.0× (obrátený efekt) |
+
+Všetky loyalty delty sa zaokrúhľujú nadol (`floori()`) a clampujú na `[0, 100]` pomocou `clampf(floori(hodnota), 0.0, 100.0)`.
 
 **Príklad:** `rand_border_raid.chase` má `zupaLoyalty: {gemer: 5}`.
-- Víťazstvo: gemer +5
-- Prehra: gemer 0
-- Rout útočníka: gemer −5
+- Víťazstvo: gemer +5 (`floori(1.0 × 5) = 5`)
+- Remíza: gemer +2 (`floori(0.5 × 5) = 2`)
+- Prehra: gemer 0 (`floori(0.0 × 5) = 0`)
+- Rout útočníka: gemer −5 (`floori(−1.0 × 5) = −5`)
 
 ### 3.3 Nálada frakcie (`moodChanges`)
 
@@ -173,13 +180,14 @@ Používa výhradne existujúci mechanizmus `EventManager._lookup_and_apply_mood
 
 `_lookup_and_apply_mood()` interpretuje `anger` ako `mood -= anger * 0.3` (EventManager.gd:458-459). Výsledok je clamped na `[0.0, 100.0]`.
 
-**Neexistuje žiadne samostatné pole `hungary.anger` v GameState.** GameState uchováva `factions["hungary"]["mood"]` (float 0–100). `moodChanges` je dočasný dict v choice, nie perzistentné pole. Všetky mood dôsledky bitky sú aplikované cez jediný `_lookup_and_apply_mood({...})` volanie po `_finish_battle()`, s jediným delta podľa výsledku.
+**Neexistuje žiadne samostatné pole `hungary.anger` v GameState.** GameState uchováva `factions[\"hungary\"][\"mood\"]` (float 0–100). `moodChanges` je dočasný dict v choice, nie perzistentné pole. Všetky mood dôsledky bitky sú aplikované cez jediné `_lookup_and_apply_mood({...})` volanie po `_finish_battle()`, s jediným delta podľa výsledku.
 
 Mood delta pred aplikáciou `_lookup_and_apply_mood()` — použije sa jediná hodnota `anger` podľa výsledku (nie násobok pôvodných moodChanges):
 
 | Výsledok | `anger` hodnota odoslaná do `moodChanges` | Výsledný mood delta (po `anger * 0.3`) |
 |---|---|---|
 | Víťazstvo | `anger: +8` | mood −2.4 |
+| Rout obrancu | `anger: +12` | mood −3.6 |
 | Remíza | `anger: +4` | mood −1.2 |
 | Prehra | `anger: −8` | mood +2.4 |
 | Rout útočníka | `anger: −16` | mood +4.8 |
@@ -190,7 +198,7 @@ Clamping je implicitný v `_lookup_and_apply_mood()` — výsledok mood je vždy
 
 **Ako BattleManager modifikuje armády počas bitky:**
 
-`BattleManager.resolve_phase_round()` (BattleManager.gd:72-92) inkrementálne upravuje `_active_battle["attacker"]["size"]`, `["defender"]["size"]`, `["attacker"]["morale"]`, `["defender"]["morale"]` priamo v battle dict-e po každej fáze. Po `resolve_decision()` (BattleManager.gd:95-107) je finálny stav armád v `_active_battle` autoritatívny.
+`BattleManager.resolve_phase_round()` (BattleManager.gd:72-92) inkrementálne upravuje `_active_battle[\"attacker\"][\"size\"]`, `[\"defender\"][\"size\"]`, `[\"attacker\"][\"morale\"]`, `[\"defender\"][\"morale\"]` priamo v battle dict-e po každej fáze. Po `resolve_decision()` (BattleManager.gd:95-107) je finálny stav armád v `_active_battle` autoritatívny.
 
 **Polia `phase_logs`, ktoré sa sčítavajú:**
 
@@ -200,21 +208,21 @@ Každý `phase_log` obsahuje:
 - `attacker_morale_change` (float) — zmena morálky útočníka
 - `defender_morale_change` (float) — zmena morálky obrancu
 
-Len `attack` a `counterattack` fázy (phase 1 a 2) obsahujú tieto polia. `decision` fáza (log s `"phase": "decision"`) obsahuje iba `{"phase": "decision", "winner": winner}` — žiadne loss/morale polia. Neexistujú žiadne iné polia na sčítanie.
+Len `attack` a `counterattack` fázy (phase 1 a 2) obsahujú tieto polia. `decision` fáza (log s `\"phase\": \"decision\"`) obsahuje iba `{\"phase\": \"decision\", \"winner\": winner}` — žiadne loss/morale polia. Neexistujú žiadne iné polia na sčítanie.
 
 **Aplikácia na GameState:**
 
 Z `resolve_phased_battle_choice()` — metóda dostane v `outcome` dict-e `army_id`, `fallback` flag a `battle` (celý `_active_battle`). Postup:
 
-1. `final_size = int(outcome["battle"]["attacker"]["size"])`
-2. `final_morale = float(outcome["battle"]["attacker"]["morale"])`
+1. `final_size = int(outcome[\"battle\"][\"attacker\"][\"size\"])`
+2. `final_morale = float(outcome[\"battle\"][\"attacker\"][\"morale\"])`
 
-Ak **nie je fallback** (`fallback == false` a `army_id != ""`):
+Ak **nie je fallback** (`fallback == false` a `army_id != \"\"`):
 - `GameState.armies[army_id].size = maxi(0, final_size)` (int, zaokrúhlené nadol)
 - `GameState.armies[army_id].morale = clampf(final_morale, 0.0, 100.0)` (float)
-- Ak `final_size <= 0`: zavolá `ArmyManager.disband_army(army_id)`. Táto metóda (ArmyManager.gd:113-122) nastaví záznamu `status = "disbanded"` a následne **odstráni** kľúč z `game_state.armies`. Po zavolaní záznam neexistuje — žiaden `status == "disbanded"` záznam v dict-e nezostane.
+- Ak `final_size <= 0`: zavolá `ArmyManager.disband_army(army_id)`. Táto metóda (ArmyManager.gd:113-122) nastaví záznamu `status = \"disbanded\"` a následne **odstráni** kľúč z `game_state.armies`. Po zavolaní záznam neexistuje — žiaden `status == \"disbanded\"` záznam v dict-e nezostane.
 
-Ak **je fallback** (`fallback == true` alebo `army_id == ""`):
+Ak **je fallback** (`fallback == true` alebo `army_id == \"\"`):
 - Straty sa **neaplikujú** na GameState. Armáda nemá perzistentné `army_id`. Hráč vidí straty v `phase_logs`, ale perzistentné armády nie sú dotknuté.
 
 **Overenie pomocou phase_logs** (voliteľné, pre debugging):
@@ -229,18 +237,18 @@ Tento súčet sa v normálnom toku nepoužíva — `resolve_phase_round()` už i
 
 ### 3.5 Prehľad dôsledkov
 
-Dôsledky v tabuľke nižšie ukazujú konečnú hodnotu po aplikácii outcome matice z §3.1–3.3 na `choice.effect`. Mood dôsledky sú uvedené v §3.3, nie v tejto tabuľke — aplikujú sa vždy cez jediné `moodChanges` volanie.
+Dôsledky v tabuľke nižšie ukazujú konečnú hodnotu po aplikácii outcome matice z §3.1–3.3 na `choice.effect`. Mood dôsledky sú uvedené v §3.3, nie v tejto tabuľke — aplikujú sa vždy cez jediné `moodChanges` volanie. Všetky loyalty delty používajú `floori()` zaokrúhlenie nadol (pozri §3.2).
 
-| Event | Voľba | Víťazstvo | Prehra | Rout (attacker) | Remíza |
-|---|---|---|---|---|---|
-| rand_border_raid | chase | gold −10, prestige +2, gemer +5 | gold 0, prestige −2, gemer 0 | gold 0, prestige −5, gemer −5 | gold −5, prestige −1, gemer +2 |
-| rand_border_raid | fortify | (textová, bez bitky) gold −15, prestige −1, gemer +8 | — | — | — |
-| bogata_uprising_917 | crush | gold −40, prestige +4, uzhorod −30 | gold 0, prestige −2, uzhorod 0 | gold 0, prestige −5, uzhorod +30 | gold −20, prestige −1, uzhorod −15 |
-| bogata_uprising_917 | negotiate | (textová, bez bitky) prestige −2, uzhorod +10 | — | — | — |
+| Event | Voľba | Víťazstvo | Rout obrancu | Remíza | Prehra | Rout útočníka |
+|---|---|---|---|---|---|---|
+| rand_border_raid | chase | gold −10, prestige +2, gemer +5 | gold −10, prestige +3, gemer +5 | gold −5, prestige −1, gemer +2 | gold 0, prestige −2, gemer 0 | gold 0, prestige −5, gemer −5 |
+| rand_border_raid | fortify | (textová, bez bitky) gold −15, prestige −1, gemer +8 | — | — | — | — |
+| bogata_uprising_917 | crush | gold −40, prestige +4, uzhorod −30 | gold −40, prestige +6, uzhorod −30 | gold −20, prestige −1, uzhorod −15 | gold 0, prestige −2, uzhorod 0 | gold 0, prestige −5, uzhorod +30 |
+| bogata_uprising_917 | negotiate | (textová, bez bitky) prestige −2, uzhorod +10 | — | — | — | — |
 
 ### Akceptačné kritérium 3
 
-Headless test: po bitke `rand_border_raid.chase` s vynúteným víťazstvom (armáda 2000 vs 300) je `game_state.resources.prestige == 52`, `game_state.provinces["gemer"]["loyalty"] == 73.0`, `game_state.factions["hungary"]["mood"] == 47.6` (pokles o `8*0.3=2.4`). Po prehranej bitke (armáda 50 vs 300) je prestige == 48, gemer.loyalty == 68.0 (nezmenené), hungary.mood == 52.4 (nárast o 2.4). `pending_event == null` po aplikácii. `event_cooldowns` obsahuje `"rand_border_raid"`.
+Headless test: po bitke `rand_border_raid.chase` s vynúteným víťazstvom (armáda 2000 vs 300) je `game_state.resources.prestige == 52`, `game_state.provinces[\"gemer\"][\"loyalty\"] == 73.0` (68 + `floori(1.0 × 5)` = 73), `game_state.factions[\"hungary\"][\"mood\"] == 47.6` (pokles o `8*0.3=2.4`). Po prehranej bitke (armáda 50 vs 300) je prestige == 48, gemer.loyalty == 68.0 (nezmenené), hungary.mood == 52.4 (nárast o 2.4). `pending_event == null` po aplikácii. `event_cooldowns` obsahuje `\"rand_border_raid\"`.
 
 ---
 
@@ -284,7 +292,7 @@ Pre battle voľbu toto **nesmie** platiť — efekty sa musia aplikovať až po 
 
 #### EventManager.resolve_choice() — zmena
 
-Ak má vybraný `choice_dict` pole `"battle"`, `resolve_choice()` **nesmie** aplikovať resource efekty, zupaLoyalty, moodChanges, ani vymazať `pending_event`. Namiesto toho vráti:
+Ak má vybraný `choice_dict` pole `\"battle\"`, `resolve_choice()` **nesmie** aplikovať resource efekty, zupaLoyalty, moodChanges, ani vymazať `pending_event`. Namiesto toho vráti:
 
 ```gdscript
 {
@@ -315,7 +323,7 @@ Nový signál/metóda:
 ```gdscript
 # Volá sa z Main.gd._finish_battle() po dokončení bitky — PRÁVE RAZ
 func resolve_phased_battle_choice(choice: Dictionary, outcome: Dictionary) -> Dictionary:
-    # outcome obsahuje: battle (celý _active_battle), result (victory|defeat|...),
+    # outcome obsahuje: battle (celý _active_battle), result (victory|stalemate|defeat|rout_attacker|rout_defender),
     #                   army_id, province_id, fallback, event_id
     var result = outcome.get("result", "defeat")
     
@@ -332,22 +340,48 @@ Táto metóda je volaná z `Main.gd._finish_battle()` — nie z EventManageru.
 
 #### Main.gd — nový tok
 
+Existujúce `_on_choice_a()` / `_on_choice_b()` / `_on_choice_c()` delegujú na `_resolve()` (Main.gd:985-997). Zmena nastáva v `_resolve()`: po `GameManager.resolve_event_choice(choice_id)` sa skontroluje `triggers_battle` flag.
+
 ```gdscript
+# Existujúce _on_choice_a/b/c (nezmenené):
 func _on_choice_a() -> void:
-    var choice_id = "chase"  # alebo podľa UI
-    var result = GameManager.resolve_event_choice(choice_id)
+    _resolve(str(choice_a_btn.get_meta("choice_id", "")))
+
+func _on_choice_b() -> void:
+    _resolve(str(choice_b_btn.get_meta("choice_id", "")))
+
+func _on_choice_c() -> void:
+    _resolve(str(choice_c_btn.get_meta("choice_id", "")))
+
+# Zmena v _resolve() — battle intercept:
+func _resolve(choice_id: String) -> void:
+    var result: Dictionary = GameManager.resolve_event_choice(choice_id)
     
     if result.get("triggers_battle", false):
-        # Spustiť phased battle
+        # Battle voľba — presmerovať do fázovej bitky namiesto normálneho toku
         _start_phased_battle_from_event(result)
-    else:
-        # Normálny tok (textové riešenie)
-        _on_choice_resolved(result)
+        return  # event_panel ostáva otvorený, pending_event nie je vymazaný
+    
+    # Normálny tok (textové riešenie) — existujúci kód:
+    event_panel.visible = false
+    if event_art:
+        event_art.visible = false
+    next_month_btn.disabled = false
+    skirmish_btn.disabled = false
+    devine_btn.disabled = false
+    _refresh_ui()
+    if result.get("ok", false):
+        if result.has("chronicle"):
+            _append_chronicle(str(result["chronicle"]))
+        _notify("Voľba prijatá. Môžeš ísť „Ďalší mesiac“.")
+    if selection_art_id != "":
+        _set_hero_art(selection_art_id, "")
 
 func _start_phased_battle_from_event(result: Dictionary) -> void:
     var choice = result["choice"]
     var event_id = result["event_id"]
     var province_id = _extract_province_from_choice(choice)  # z zupaLoyalty kľúčov
+    var pending = GameManager.get_pending_event()
     
     # Hráčova armáda
     var player_army = _find_player_army(province_id)  # z GameState.armies
@@ -361,7 +395,7 @@ func _start_phased_battle_from_event(result: Dictionary) -> void:
     # Terén
     var terrain = GameManager.game_state.provinces.get(province_id, {}).get("terrain", "field")
     
-    # Uložiť kontext pre _finish_battle()
+    # Uložiť kontext pre _finish_battle() — vrátane event_title a event_art_id
     _pending_battle_choice = {
         "choice": choice,
         "event_id": event_id,
@@ -369,7 +403,9 @@ func _start_phased_battle_from_event(result: Dictionary) -> void:
         "army_id": player_army.get("id", ""),  # "" = fallback
         "province_id": province_id,
         "fallback": player_army.get("id", "").begins_with("_temp_"),
-        "applied": false  # idempotentný guard
+        "applied": false,  # idempotentný guard
+        "event_title": pending["title"] if pending else "Bitka",
+        "event_art_id": pending.get("art_id", "") if pending else ""
     }
     
     # Spustiť phased battle
@@ -379,11 +415,8 @@ func _start_phased_battle_from_event(result: Dictionary) -> void:
     skirmish_btn.disabled = true
     battle_view.call("show_actions", true)
     battle_view.visible = true
-    # Nastaviť nadpis a art z eventu
-    var pending = GameManager.get_pending_event()
-    var event_title = pending["title"] if pending else "Bitka"
-    var event_art_id = pending.get("art_id", "") if pending else ""
-    _set_hero_art(event_art_id, event_title)
+    # Nastaviť nadpis a art z eventu (z _pending_battle_choice)
+    _set_hero_art(_pending_battle_choice["event_art_id"], _pending_battle_choice["event_title"])
 
 # V _finish_battle() pribudne:
 func _finish_battle(last_action: String) -> void:
@@ -412,7 +445,10 @@ func _finish_battle(last_action: String) -> void:
     
     next_month_btn.disabled = false
     battle_view.call("show_actions", false)
-    _show_battle(event_title, _active_battle, event_art_id)
+    # event_title a event_art_id čítame z _pending_battle_choice (storage, nie lokálna premenná)
+    var bc_title = _pending_battle_choice.get("event_title", "Bitka") if _pending_battle_choice != null else "Bitka"
+    var bc_art_id = _pending_battle_choice.get("event_art_id", "") if _pending_battle_choice != null else ""
+    _show_battle(bc_title, _active_battle, bc_art_id)
     _log_battle_phases(_active_battle)
     _refresh_ui()
 
@@ -420,15 +456,15 @@ func _classify_outcome(battle: Dictionary) -> String:
     var winner = battle.get("winner", "")
     var routed = battle.get("routed", "")
     if routed == "attacker":
-        return "rout_attacker"
+        return "rout_attacker"      # útočník uteká — najhorší výsledok pre hráča
     elif routed == "defender":
-        return "rout_defender"
+        return "rout_defender"      # obranca uteká — najlepší výsledok pre hráča
     elif winner == "attacker":
-        return "victory"
-    elif battle.get("result") == "stalemate":
-        return "stalemate"
+        return "victory"            # útočník vyhral
+    elif winner == "defender":
+        return "defeat"             # obranca vyhral = prehra pre hráča
     else:
-        return "defeat"
+        return "stalemate"          # nerozhodne (default, ak nie je winner ani routed)
 ```
 
 ### 5.3 Sekvenčný diagram stavových prechodov
@@ -436,7 +472,9 @@ func _classify_outcome(battle: Dictionary) -> String:
 ```
 HRÁČ KLIKNE choice "chase"
     ↓
-Main.gd: _on_choice_a() volá GameManager.resolve_event_choice("chase")
+Main.gd: _on_choice_a() → _resolve("chase")
+    ↓
+GameManager.resolve_event_choice("chase")
     ↓
 EventManager.resolve_choice("chase")
     ↓ choice má pole "battle"
@@ -446,10 +484,14 @@ Návrat {triggers_battle: true, choice: {...}, pending_event: ..., event_id: "ra
     ↓ efekty NIE SÚ aplikované
     ↓ cooldown NIE JE nastavený
     ↓
-Main.gd: _start_phased_battle_from_event(result)
-    ↓ _pending_battle_choice = {choice, event_id, choice_id, army_id, province_id, fallback, applied: false}
+Main.gd: _resolve() — triggers_battle == true → _start_phased_battle_from_event(result)
+    ↓ return (normálny tok sa nevykoná)
+    ↓
+_start_phased_battle_from_event()
+    ↓ _pending_battle_choice = {choice, event_id, choice_id, army_id, province_id,
+    |                          fallback, applied: false, event_title, event_art_id}
     ↓ call BattleManager.begin_phased_battle()
-    ↓ zobrazí BattleView s event title a art
+    ↓ zobrazí BattleView s event title a art (z _pending_battle_choice)
     ↓
 HRÁČ VYBERIE TAKTIKU (kolo 1 → attack) → BattleManager.resolve_phase_round()
     ↓ fáza 1: attack — attacker_losses/defender_losses uložené do phase_logs
@@ -474,12 +516,12 @@ GameManager.resolve_phased_battle_choice(choice, outcome)
     ↓
     _pending_battle_choice["applied"] = true  # idempotentný guard
     ↓
-Main.gd: _append_chronicle(), _refresh_ui()
+Main.gd: _append_chronicle(), _show_battle(), _refresh_ui()
 ```
 
 ### Akceptačné kritérium 5
 
-Po výbere `chase` v `rand_border_raid` evente nie sú `game_state.resources`, `game_state.provinces["gemer"]["loyalty"]` ani `game_state.factions["hungary"]["mood"]` modifikované **pred** začiatkom bitky. Po dokončení bitky (cez `_finish_battle()`) sú modifikované podľa výsledku — **práve raz**. Ak `_finish_battle()` dostane druhý signál (napr. cez retreat v druhom ťahu), `_pending_battle_choice["applied"] == true` zabráni opätovnej aplikácii efektov. Ak hráč neklikne žiadnu taktiku a event ostane v `pending_event`, pri ďalšom ťahu `_on_next_month()` znovu zobrazí ten istý event (lebo `pending_event` nebol vymazaný).
+Po výbere `chase` v `rand_border_raid` evente nie sú `game_state.resources`, `game_state.provinces[\"gemer\"][\"loyalty\"]` ani `game_state.factions[\"hungary\"][\"mood\"]` modifikované **pred** začiatkom bitky. Po dokončení bitky (cez `_finish_battle()`) sú modifikované podľa výsledku — **práve raz**. Ak `_finish_battle()` dostane druhý signál (napr. cez retreat v druhom ťahu), `_pending_battle_choice[\"applied\"] == true` zabráni opätovnej aplikácii efektov. Ak hráč neklikne žiadnu taktiku a event ostane v `pending_event`, pri ďalšom ťahu `_on_next_month()` znovu zobrazí ten istý event (lebo `pending_event` nebol vymazaný).
 
 ---
 
@@ -493,7 +535,7 @@ Po výbere `chase` v `rand_border_raid` evente nie sú `game_state.resources`, `
 
 + pole `"battle"` v choice dict:
 
-```json
+```jsonc
 // rand_border_raid.chase (cca riadok 400)
 {
     "id": "chase",
@@ -514,12 +556,16 @@ Po výbere `chase` v `rand_border_raid` evente nie sú `game_state.resources`, `
 }
 ```
 
+Bloky vyššie sú v **jsonc** syntaxi (JSON s komentármi). Pri ukladaní do `data/events_catalog.json` je potrebné komentáre odstrániť — validátor súboru musí akceptovať štandardný JSON. Implementátor použije `JSON.parse()` na načítanie; komentáre sa odstránia manuálne alebo cez nástroj.
+
 ### 6.3 `data/enemy_armies.json` (nový súbor)
+
+Validný JSON (žiadne komentáre):
 
 ```json
 {
     "border_raiders": {
-        "faction_id": "madari",  # "madari" je kanonické ID — BattleFormulas.gd:20 ho používa pre jazdecký buff
+        "faction_id": "madari",
         "size": 300,
         "morale": 65.0,
         "composition": {"infantry": 0.2, "cavalry": 0.7, "archers": 0.1},
@@ -535,6 +581,8 @@ Po výbere `chase` v `rand_border_raid` evente nie sú `game_state.resources`, `
 }
 ```
 
+Poznámka: `"madari"` je kanonické ID — BattleFormulas.gd:20 ho používa pre jazdecký buff (`["hungarian", "madari"]`). `"moravia"` je kanonické ID pre domáce rebelské vojsko.
+
 ### 6.4 Žiadne zmeny v GameState
 
 `GameState.gd` ostáva nezmenený. Nepribúda žiadne nové pole. Všetky potrebné údaje už existujú (`armies`, `provinces`, `factions`, `resources`, `pending_event`, `event_cooldowns`).
@@ -545,10 +593,28 @@ Po výbere `chase` v `rand_border_raid` evente nie sú `game_state.resources`, `
 
 Všetky testy používajú headless Godot test s deterministicky nastaveným `game_state` a explicitne vynútenými výsledkami bitky pomocou fiktívnych (obrovských/nulových) armád. Žiadny test nespúšťa `process_events()` náhodne — `pending_event` je nastavený priamo v kóde.
 
-### Pomocné funkcie (zdieľané pre všetky testy)
+### Pomocné funkcie a setup (zdieľané pre všetky testy)
 
 ```gdscript
-# Vytvorenie deterministic choice dict ako keby ho vrátil events_catalog
+# Setup: deterministický GameState a BattleManager
+var gs = GameManager.game_state
+gs.year = 905
+gs.month = 6
+gs.resources = {"gold": 1000, "food": 100, "wood": 100, "stone": 100, "iron": 100, "prestige": 50}
+gs.provinces = {
+    "gemer": {"id": "gemer", "name": "Gemer", "terrain": "hill", "loyalty": 68.0},
+    "uzhorod": {"id": "uzhorod", "name": "Užhorod", "terrain": "field", "loyalty": 50.0}
+}
+gs.factions = {"hungary": {"mood": 50.0, "relations": {}}, "moravia": {"mood": 50.0, "relations": {}}}
+gs.armies = {}
+gs.event_cooldowns = {}
+gs.pending_event = null
+
+var bm = GameManager.battle_manager
+bm.rng = RandomNumberGenerator.new()
+bm.rng.seed = 42  # deterministický seed
+
+# Helper — vytvorenie choice dict ako keby ho vrátil events_catalog
 func _make_chase_choice() -> Dictionary:
     return {
         "id": "chase",
@@ -580,7 +646,7 @@ func _make_enemy_army(id: String) -> Dictionary:
     return {}
 
 func _terrain_for(province_id: String) -> String:
-    return game_state.provinces.get(province_id, {}).get("terrain", "field")
+    return gs.provinces.get(province_id, {}).get("terrain", "field")
 
 func _simulate_phases(battle: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
     # Phase 1: attack
@@ -605,22 +671,25 @@ func _simulate_phases(battle: Dictionary, rng: RandomNumberGenerator) -> Diction
 **Postup:**
 
 ```gdscript
-# 1. Nastaviť startovný stav
-var gs = game_state
+# 1. Setup (používa zdieľaný setup vyššie)
 gs.year = 905
 gs.month = 6
 gs.resources = {"gold": 1000, "food": 100, "wood": 100, "stone": 100, "iron": 100, "prestige": 50}
 gs.provinces["gemer"]["loyalty"] = 68.0
 gs.provinces["gemer"]["terrain"] = "hill"
 gs.factions["hungary"]["mood"] = 50.0
+bm.rng.seed = 42
 
 # 2. Nastaviť pending_event — aby existoval pre GameManager.get_pending_event()
-gs.pending_event = {"id": "rand_border_raid", "title": "Nájazd na hranicu Gemera",
+gs.pending_event = {
+    "id": "rand_border_raid",
+    "title": "Nájazd na hranicu Gemera",
     "text": "Rýchla jazdecká družina vtrhla cez južné priesmyky do Gemera...",
     "art_id": "event_border_raid",
-    "choices": {"chase": _make_chase_choice(), "fortify": {"id": "fortify", "text": "...", "effect": {}}}}
+    "choices": {"chase": _make_chase_choice(), "fortify": {"id": "fortify", "text": "...", "effect": {}}}
+}
 
-# 3. Vytvoriť hráčovu armádu — VEĽKÁ, aby sme vynútili víťazstvo (deterministické)
+# 3. Vytvoriť hráčovu armádu — VEĽKÁ, aby sme vynútili víťazstvo (2000 vs 300 je deterministické)
 gs.armies["moravia_levy_1"] = {
     "id": "moravia_levy_1", "faction_id": "moravia", "province_id": "gemer",
     "size": 2000, "morale": 90.0,
@@ -629,7 +698,6 @@ gs.armies["moravia_levy_1"] = {
 }
 
 # 4. Spustiť phased battle
-var bm = GameManager.battle_manager
 var enemy = _make_enemy_army("border_raiders")
 var terrain = _terrain_for("gemer")  # "hill"
 var battle = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
@@ -637,10 +705,13 @@ var battle = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
 # 5. Simulovať obe kolá a rozhodnutie
 battle = _simulate_phases(battle, bm.rng)
 
-# 6. Overiť, že útočník vyhral (vôd 2000 vs 300 by mal vždy vyhrať)
-assert(battle["winner"] == "attacker")
+# 6. Overiť, že útočník vyhral (2000 vs 300 by mal vždy vyhrať)
+assert(battle["winner"] == "attacker", "Attacker should win with 2000 vs 300")
 
-# 7. Aplikovať efekty cez resolve_phased_battle_choice
+# 7. Uložiť phase_logs pre deterministický test
+var phase_logs_snapshot = battle["phase_logs"].duplicate(true)
+
+# 8. Aplikovať efekty cez resolve_phased_battle_choice
 var choice = _make_chase_choice()
 var outcome = {
     "battle": battle,
@@ -652,13 +723,19 @@ var outcome = {
 }
 GameManager.resolve_phased_battle_choice(choice, outcome)
 
-# 8. Overiť dôsledky
-assert(gs.resources["prestige"] == 52)          # 50 + 2 (1.0×)
-assert(gs.resources["gold"] == 990)             # 1000 − 10 (1.0×)
-assert(gs.provinces["gemer"]["loyalty"] == 73.0)  # 68 + 5 (1.0×)
-assert(gs.factions["hungary"]["mood"] == 47.6)  # 50 − 2.4 (anger 8×0.3)
-assert(gs.pending_event == null)                # vymazaný po aplikácii
+# 9. Overiť dôsledky
+assert(gs.resources["prestige"] == 52)              # 50 + 2 (1.0×)
+assert(gs.resources["gold"] == 990)                 # 1000 − 10 (1.0×)
+assert(gs.provinces["gemer"]["loyalty"] == 73.0)    # 68 + floori(1.0 × 5) = 73
+assert(gs.factions["hungary"]["mood"] == 47.6)      # 50 − 2.4 (anger 8×0.3)
+assert(gs.pending_event == null)                    # vymazaný po aplikácii
 assert(gs.event_cooldowns.has("rand_border_raid"))  # cooldown nastavený
+
+# 10. Overenie determinizmu: opakovať s rovnakým seedom — rovnaké phase_logs
+var gs2 = GameManager.game_state  # alebo nový fresh GameState
+# (V samostatnom teste by sa vytvoril fresh GameState a zopakoval by sa setup.
+#  Pre stručnosť tu uvádzame aspoň assert že phase_logs nie sú prázdne.)
+assert(phase_logs_snapshot.size() >= 2, "Expected at least 2 phase logs (attack + counterattack)")
 ```
 
 **Očakávaný výstup:** Hráč (alebo test) môže povedať: "V roku 905, v Gemeri, moja milícia porazila nájazdníkov, Gemer mi zostal verný a získal som 2 prestíž."
@@ -674,17 +751,24 @@ assert(gs.event_cooldowns.has("rand_border_raid"))  # cooldown nastavený
 **Postup:**
 
 ```gdscript
-# 1. Nastaviť startovný stav
-var gs = game_state
+# 1. Setup
 gs.year = 905
 gs.month = 6
 gs.resources = {"gold": 1000, "food": 100, "wood": 100, "stone": 100, "iron": 100, "prestige": 50}
 gs.provinces["gemer"]["loyalty"] = 68.0
 gs.provinces["gemer"]["terrain"] = "field"
 gs.factions["hungary"]["mood"] = 50.0
-gs.pending_event = {"id": "rand_border_raid", "title": "Nájazd na hranicu Gemera", ...}
+gs.armies = {}
+bm.rng.seed = 42
+gs.pending_event = {
+    "id": "rand_border_raid",
+    "title": "Nájazd na hranicu Gemera",
+    "text": "Rýchla jazdecká družina vtrhla cez južné priesmyky do Gemera...",
+    "art_id": "event_border_raid",
+    "choices": {"chase": _make_chase_choice(), "fortify": {"id": "fortify", "text": "...", "effect": {}}}
+}
 
-# 2. Vytvoriť SLABÚ hráčovu armádu — aby sme vynútili prehru
+# 2. Vytvoriť SLABÚ hráčovu armádu — aby sme vynútili prehru (50 vs 300)
 gs.armies["moravia_levy_1"] = {
     "id": "moravia_levy_1", "faction_id": "moravia", "province_id": "gemer",
     "size": 50, "morale": 30.0,   # extrémne slabá
@@ -693,7 +777,6 @@ gs.armies["moravia_levy_1"] = {
 }
 
 # 3. Bitka — s veľkým enemy
-var bm = GameManager.battle_manager
 var enemy = _make_enemy_army("border_raiders")  # 300 vojakov
 var terrain = _terrain_for("gemer")  # "field"
 var battle = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
@@ -701,8 +784,8 @@ var battle = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
 # 4. Simulovať
 battle = _simulate_phases(battle, bm.rng)
 
-# 5. Overiť prehru
-assert(battle["winner"] == "defender")
+# 5. Overiť prehru (50 vs 300 by mal obranca vyhrať)
+assert(battle["winner"] == "defender", "Defender should win with 300 vs 50")
 
 # 6. Aplikovať defeat efekty
 var choice = _make_chase_choice()
@@ -717,13 +800,14 @@ var outcome = {
 GameManager.resolve_phased_battle_choice(choice, outcome)
 
 # 7. Overiť dôsledky
-assert(gs.resources["prestige"] == 48)          # 50 − 2 (absolútna penalizácia)
-assert(gs.resources["gold"] == 1000)            # 1000 − 0 (0.0×)
-assert(gs.provinces["gemer"]["loyalty"] == 68.0)  # 68 + 0 (0.0×)
-assert(gs.factions["hungary"]["mood"] == 52.4)  # 50 + 2.4 (anger −8 → mood += 2.4)
+assert(gs.resources["prestige"] == 48)              # 50 − 2 (absolútna penalizácia)
+assert(gs.resources["gold"] == 1000)                # 1000 − 0 (0.0×)
+assert(gs.provinces["gemer"]["loyalty"] == 68.0)    # 68 + 0 (0.0×)
+assert(gs.factions["hungary"]["mood"] == 52.4)      # 50 + 2.4 (anger −8 → mood += 2.4)
 # Armáda utrpela straty
 var final_size = gs.armies.get("moravia_levy_1", {}).get("size", 0)
-assert(final_size < 50)  # reálne straty
+assert(final_size < 50, "Army should have suffered losses")
+assert(final_size >= 0, "Army size should not be negative")
 ```
 
 **Očakávaný výstup:** Hráč vie povedať: "Prehra ma stála 2 prestíž, Maďari sú odvážnejší a moja armáda je zdecimovaná."
@@ -740,6 +824,32 @@ assert(final_size < 50)  # reálne straty
 
 ```gdscript
 # Headless test: overenie events_catalog.json kontraktu
+# Helpery na vyhľadávanie v events_catalog:
+var catalog_raw = load_json("res://data/events_catalog.json")
+var catalog = catalog_raw["events"] if catalog_raw.has("events") else catalog_raw
+
+func find_choice_by_id(event_id: String, choice_id: String) -> Dictionary:
+    for event in catalog:
+        if event.get("id") == event_id:
+            var choices = event.get("choices", {})
+            if choices.has(choice_id):
+                return choices[choice_id]
+    return {}
+
+func find_event_by_id(event_id: String) -> Dictionary:
+    for event in catalog:
+        if event.get("id") == event_id:
+            return event
+    return {}
+
+func filter_by_type(catalog_data, type_str: String) -> Array:
+    var result = []
+    for event in catalog_data:
+        if event.get("type") == type_str:
+            result.append(event)
+    return result
+
+# Test 3 — asserty
 var chase_choice = find_choice_by_id("rand_border_raid", "chase")
 assert(chase_choice.has("battle"))
 assert(chase_choice["battle"]["enemy_army"] == "border_raiders")
@@ -772,7 +882,10 @@ assert("prenasledovanie" in chase_choice["text"].to_lower() or "jazdu" in chase_
 
 ```gdscript
 # 1. Prečítať event body z katalógu — overiť unikátnosť
-var military_events = filter_by_type(catalog, "military")
+var catalog_raw = load_json("res://data/events_catalog.json")
+var catalog_events = catalog_raw["events"] if catalog_raw.has("events") else catalog_raw
+
+var military_events = filter_by_type(catalog_events, "military")
 var bodies = military_events.map(func(e): return e.get("body", e.get("text", "")))
 assert(bodies.size() == bodies.uniq().size(), "Military event bodies must be unique")
 
@@ -789,7 +902,6 @@ assert("Užskej" in uprising["body"] or "uzhorod" in uprising["body"].to_lower()
 # 4. Overiť terény provincií
 assert(gs.provinces["gemer"]["terrain"] in ["hill", "field"])  # aspoň jeden z povolených
 assert(gs.provinces["uzhorod"]["terrain"] == "field")
-assert(gs.provinces["devin"]["terrain"] == "fortress")
 assert(gs.provinces["spis"]["terrain"] == "forest")
 
 # 5. Overiť, že BattleFormulas používa správny buff pre madari na field
@@ -806,26 +918,80 @@ assert(abs(factor - 1.40) < 0.001)
 
 ---
 
-### Test 5: Tempo — ťah 3 ≠ ťah 8
+### Test 5: Tempo a determinizmus
 
-**Cieľ:** Overiť, že na začiatku hry (bez armád) sa používa fallback a straty nie sú perzistentné, zatiaľ čo neskôr (s armádou) sa straty aplikujú na reálnu armádu.
+**Cieľ:** Overiť, že na začiatku hry (bez armád) sa používa fallback a straty nie sú perzistentné, zatiaľ čo neskôr (s armádou) sa straty aplikujú na reálnu armádu. Zároveň overiť determinizmus: dva behy s rovnakým seedom a rovnakými voľbami dajú rovnaký výsledok a rovnaké `phase_logs`.
 
-**Postup (dva scenáre v jednom teste):**
+**Postup (dva scenáre a determinizmus v jednom teste):**
 
 ```gdscript
+# ── DETERMINIZMUS: overenie že seed poskytuje rovnaký výsledok ──
+# Beh 1
+gs.armies = {}
+gs.resources["prestige"] = 50
+gs.factions["hungary"]["mood"] = 50.0
+gs.pending_event = {
+    "id": "rand_border_raid",
+    "title": "Nájazd na hranicu Gemera",
+    "text": "Rýchla jazdecká družina vtrhla cez južné priesmyky do Gemera...",
+    "art_id": "event_border_raid",
+    "choices": {"chase": _make_chase_choice(), "fortify": {"id": "fortify", "text": "...", "effect": {}}}
+}
+bm.rng.seed = 12345
+
+gs.armies["moravia_levy_1"] = {
+    "id": "moravia_levy_1", "faction_id": "moravia", "province_id": "gemer",
+    "size": 1500, "morale": 85.0,
+    "composition": {"infantry": 0.7, "cavalry": 0.2, "archers": 0.1},
+    "commander": {"skill": 5}, "status": "active"
+}
+
+var enemy = _make_enemy_army("border_raiders")
+var terrain = _terrain_for("gemer")
+var battle_1 = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
+battle_1 = _simulate_phases(battle_1, bm.rng)
+
+# Beh 2 — nový RandomNumberGenerator s rovnakým seedom
+var bm2 = BattleManager.new()
+bm2.rng = RandomNumberGenerator.new()
+bm2.rng.seed = 12345
+gs.armies["moravia_levy_1"]["size"] = 1500
+gs.armies["moravia_levy_1"]["morale"] = 85.0
+
+var battle_2 = bm2.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
+battle_2 = _simulate_phases(battle_2, bm2.rng)
+
+# Overenie determinizmu: rovnaký winner a routed
+assert(battle_1["winner"] == battle_2["winner"], "Determinism: winner must match across runs")
+assert(battle_1.get("routed", "") == battle_2.get("routed", ""), "Determinism: routed must match")
+
+# Overenie rovnakých phase_logs
+assert(battle_1["phase_logs"].size() == battle_2["phase_logs"].size(), "Determinism: phase_logs count must match")
+for i in range(battle_1["phase_logs"].size()):
+    var log1 = battle_1["phase_logs"][i]
+    var log2 = battle_2["phase_logs"][i]
+    assert(log1.get("attacker_losses", 0) == log2.get("attacker_losses", 0), "Determinism: attacker_losses phase %d" % i)
+    assert(log1.get("defender_losses", 0) == log2.get("defender_losses", 0), "Determinism: defender_losses phase %d" % i)
+    assert(log1.get("phase", "") == log2.get("phase", ""), "Determinism: phase name must match at index %d" % i)
+
 # ── SCENÁR A: ťah 3 (bez perzistentných armád) ──
-var gs = game_state
 gs.year = 903
 gs.month = 1
 gs.armies = {}  # žiadne armády
 gs.resources = {"gold": 1000, "food": 100, "wood": 100, "stone": 100, "iron": 100, "prestige": 50}
 gs.provinces["gemer"] = {"id": "gemer", "name": "Gemer", "terrain": "hill", "loyalty": 68.0}
 gs.factions["hungary"]["mood"] = 50.0
-gs.pending_event = {"id": "rand_border_raid", "title": "...", ...}
+gs.pending_event = {
+    "id": "rand_border_raid",
+    "title": "Nájazd na hranicu Gemera",
+    "text": "Rýchla jazdecká družina vtrhla cez južné priesmyky do Gemera...",
+    "art_id": "event_border_raid",
+    "choices": {"chase": _make_chase_choice(), "fortify": {"id": "fortify", "text": "...", "effect": {}}}
+}
+bm.rng.seed = 42
 
-var bm = GameManager.battle_manager
-var enemy = _make_enemy_army("border_raiders")
-var terrain = _terrain_for("gemer")  # "hill"
+enemy = _make_enemy_army("border_raiders")
+terrain = _terrain_for("gemer")  # "hill"
 
 # Fallback armáda (z Main.gd _build_fallback_army)
 var fallback = {"id": "_temp_gemer_10836", "faction_id": "moravia",
@@ -833,24 +999,24 @@ var fallback = {"id": "_temp_gemer_10836", "faction_id": "moravia",
     "composition": {"infantry": 0.7, "cavalry": 0.2, "archers": 0.1},
     "commander": {"skill": 3}}
 
-var battle = bm.begin_phased_battle(fallback, enemy, terrain)
-battle = _simulate_phases(battle, bm.rng)
+var battle_a = bm.begin_phased_battle(fallback, enemy, terrain)
+battle_a = _simulate_phases(battle_a, bm.rng)
 
-# Fallback je slabý — očakávame prehru útočníka
-# Aplikovať defeat efekty s fallback=true
+# Fallback je slabý (400 vs 300 s hill terénom) — overíme že ide do prehry/remízy
+# (nezávisí od konkrétneho výsledku, ale overíme fallback správanie)
 var choice = _make_chase_choice()
-var outcome = {
-    "battle": battle,
-    "result": "defeat",
-    "army_id": "",        # fallback nemá perzistentné ID
+var outcome_a = {
+    "battle": battle_a,
+    "result": "defeat",  # fallback 400 vs 300 na hill — očakávame prehru
+    "army_id": "",
     "province_id": "gemer",
     "fallback": true,
     "event_id": "rand_border_raid"
 }
-GameManager.resolve_phased_battle_choice(choice, outcome)
+GameManager.resolve_phased_battle_choice(choice, outcome_a)
 
-assert(gs.armies.size() == 0)          # fallback nepridal armádu
-assert(gs.resources["prestige"] == 48)  # 50 − 2 za prehru (absolútna penalizácia)
+assert(gs.armies.size() == 0)                    # fallback nepridal armádu
+assert(gs.resources["prestige"] == 48)            # 50 − 2 za prehru
 assert(gs.provinces["gemer"]["loyalty"] == 68.0)  # zupaLoyalty 0.0× pri prehre
 
 # ── SCENÁR B: ťah 8 (s reálnou armádou) ──
@@ -864,34 +1030,39 @@ gs.armies["moravia_levy_1"] = {
 }
 gs.resources["prestige"] = 50
 gs.factions["hungary"]["mood"] = 50.0
+gs.pending_event = {
+    "id": "rand_border_raid",
+    "title": "Nájazd na hranicu Gemera",
+    "text": "Rýchla jazdecká družina vtrhla cez južné priesmyky do Gemera...",
+    "art_id": "event_border_raid",
+    "choices": {"chase": _make_chase_choice(), "fortify": {"id": "fortify", "text": "...", "effect": {}}}
+}
+bm.rng.seed = 42
 
 var original_size = gs.armies["moravia_levy_1"]["size"]  # 1500
 var original_morale = gs.armies["moravia_levy_1"]["morale"]  # 85.0
 
-battle = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
-battle = _simulate_phases(battle, bm.rng)
+enemy = _make_enemy_army("border_raiders")
+var battle_b = bm.begin_phased_battle(gs.armies["moravia_levy_1"], enemy, terrain)
+battle_b = _simulate_phases(battle_b, bm.rng)
 
-# S 1500 vojakmi by mal útočník vyhrať (deterministicky vďaka veľkosti)
-# Ale kontrolujeme aj prehru — aspoň overíme, že straty sa aplikujú
-if battle["winner"] == "attacker":
-    outcome = {"battle": battle, "result": "victory", "army_id": "moravia_levy_1",
-        "province_id": "gemer", "fallback": false, "event_id": "rand_border_raid"}
-    GameManager.resolve_phased_battle_choice(_make_chase_choice(), outcome)
-    assert(gs.resources["prestige"] >= 50)  # 50 + nejaké (minimálne 50, max 52)
-else:
-    outcome = {"battle": battle, "result": "defeat", "army_id": "moravia_levy_1",
-        "province_id": "gemer", "fallback": false, "event_id": "rand_border_raid"}
-    GameManager.resolve_phased_battle_choice(_make_chase_choice(), outcome)
+# S 1500 vojakmi by mal útočník vyhrať (deterministické vďaka veľkosti a seedu 42)
+assert(battle_b["winner"] == "attacker", "With 1500 vs 300 and seed 42, attacker should win")
+
+var outcome_b = {"battle": battle_b, "result": "victory", "army_id": "moravia_levy_1",
+    "province_id": "gemer", "fallback": false, "event_id": "rand_border_raid"}
+GameManager.resolve_phased_battle_choice(_make_chase_choice(), outcome_b)
 
 # Overenie, že reálna armáda utrpela straty
 var final_size = gs.armies.get("moravia_levy_1", {}).get("size", 0)
-assert(final_size < original_size)  # reálne straty
-assert(gs.armies.has("moravia_levy_1"))  # stále existuje (size > 0)
+assert(final_size < original_size, "Real army must have suffered losses")
+assert(final_size > 0, "Real army should still exist (size > 0)")
+assert(gs.armies.has("moravia_levy_1"))  # stále existuje
 ```
 
-**Očakávaný výstup:** Ťah 3 → fallback 400 vojakov, prehra, žiadne perzistentné straty, prestíž −2. Ťah 8 → reálna armáda 1500 vojakov, straty sa aplikujú na `moravia_levy_1`, armáda stále existuje.
+**Očakávaný výstup:** Ťah 3 → fallback 400 vojakov, prehra, žiadne perzistentné straty, prestíž −2. Ťah 8 → reálna armáda 1500 vojakov, straty sa aplikujú na `moravia_levy_1`, armáda stále existuje. Dva behy s rovnakým seedom dajú identický výsledok a identické `phase_logs`.
 
-**Overenie bez autora:** Spustenie headless testu s dvoma scenármi. Všetky asserty prejdú.
+**Overenie bez autora:** Spustenie headless testu s dvoma scenármi a deterministickým seedom. Všetky asserty prejdú.
 
 ---
 
@@ -899,23 +1070,23 @@ assert(gs.armies.has("moravia_levy_1"))  # stále existuje (size > 0)
 
 ### EventManager.gd
 
-- `resolve_choice()`: pred aplikáciou efektov skontrolovať `choice_dict.has("battle")`. Ak áno, vrátiť `{triggers_battle: true, choice: choice_dict, event_id: ..., pending_event: ...}` bez aplikácie resource/zupaLoyalty/moodChanges efektov, bez vymazania `pending_event` a bez nastavenia cooldownu.
+- `resolve_choice()`: pred aplikáciou efektov skontrolovať `choice_dict.has(\"battle\")`. Ak áno, vrátiť `{triggers_battle: true, choice: choice_dict, event_id: ..., pending_event: ...}` bez aplikácie resource/zupaLoyalty/moodChanges efektov, bez vymazania `pending_event` a bez nastavenia cooldownu.
 
 ### GameManager.gd
 
 - Nová metóda `resolve_phased_battle_choice(choice: Dictionary, outcome: Dictionary) -> Dictionary`.
-- `outcome` dict obsahuje: `battle` (celý `_active_battle`), `result` (victory|defeat|rout_attacker|stalemate), `army_id`, `province_id`, `fallback` (bool), `event_id`.
+- `outcome` dict obsahuje: `battle` (celý `_active_battle`), `result` (victory|stalemate|defeat|rout_attacker|rout_defender), `army_id`, `province_id`, `fallback` (bool), `event_id`.
 - Táto metóda implementuje outcome maticu z §3: modifikuje resource/zupaLoyalty/moodChanges podľa `result`, aplikuje armádne straty (len ak `fallback == false`), nastaví cooldown na `event_id`, vymaže `pending_event`, vráti chronicle text.
 
 ### Main.gd
 
-- `_on_choice_a()` / `_on_choice_b()`: ak `result.triggers_battle == true`, zavolať `_start_phased_battle_from_event(result)` namiesto normálneho toku.
-- Nová metóda `_start_phased_battle_from_event(result)` — extrahuje provinciu (`_extract_province_from_choice`), armádu (`_find_player_army` alebo `_build_fallback_army`), enemy (`_load_enemy_army`), terén (z province). Uloží `_pending_battle_choice` ako dict s poliami: `choice`, `event_id`, `choice_id`, `army_id`, `province_id`, `fallback` (bool), `applied` (false).
+- `_resolve(choice_id)`: ak `result.triggers_battle == true`, zavolať `_start_phased_battle_from_event(result)` a `return` (preskočiť normálny tok).
+- Nová metóda `_start_phased_battle_from_event(result)` — extrahuje provinciu (`_extract_province_from_choice`), armádu (`_find_player_army` alebo `_build_fallback_army`), enemy (`_load_enemy_army`), terén (z province). Uloží `_pending_battle_choice` ako dict s poliami: `choice`, `event_id`, `choice_id`, `army_id`, `province_id`, `fallback` (bool), `applied` (false), `event_title`, `event_art_id`.
 - Nové premenné: `_pending_battle_choice` (Dictionary|Null, null ak nie je aktívna bitka z eventu).
-- `_finish_battle()`: ak `_pending_battle_choice != null && _pending_battle_choice["applied"] == false`, zavolať `resolve_phased_battle_choice(_pending_battle_choice["choice"], outcome)` a chronicle. Potom nastaviť `_pending_battle_choice["applied"] = true`.
+- `_finish_battle()`: ak `_pending_battle_choice != null && _pending_battle_choice[\"applied\"] == false`, zavolať `resolve_phased_battle_choice(_pending_battle_choice[\"choice\"], outcome)` a chronicle. Potom nastaviť `_pending_battle_choice[\"applied\"] = true`. event_title a event_art_id čítať z `_pending_battle_choice` (nie z lokálnej premennej).
 - Nová metóda `_classify_outcome(battle) -> String` (victory/stalemate/defeat/rout_attacker/rout_defender) — pozri pseudokód v §5.2.
-- Nová metóda `_find_player_army(province_id) -> Dictionary` — hľadá v `GameState.armies` prvú armádu s `faction_id == "moravia"`, `province_id` zhodným, `status != "disbanded"`.
-- Nová metóda `_build_fallback_army(province_id) -> Dictionary` — vráti dočasnú armádu so `size: 400, morale: 60.0` a `id: "_temp_<province>_<timestamp>"`.
+- Nová metóda `_find_player_army(province_id) -> Dictionary` — hľadá v `GameState.armies` prvú armádu s `faction_id == \"moravia\"`, `province_id` zhodným, `status != \"disbanded\"`.
+- Nová metóda `_build_fallback_army(province_id) -> Dictionary` — vráti dočasnú armádu so `size: 400, morale: 60.0` a `id: \"_temp_<province>_<timestamp>\"`.
 - Nová metóda `_load_enemy_army(enemy_id) -> Dictionary` — číta `data/enemy_armies.json`.
 - Nová metóda `_extract_province_from_choice(choice) -> String` — zoberie prvý kľúč z `zupaLoyalty` (ak existuje), inak hľadá v `battle` alebo vracia prázdny string.
 
@@ -933,6 +1104,6 @@ assert(gs.armies.has("moravia_levy_1"))  # stále existuje (size > 0)
 
 Tieto otázky sú mimo scope P2. Ak sa objavia počas implementácie, vytvor samostatnú kartu.
 
-- **Ako sa správa BattleView, ak hráč klikne Ústup?** Retreat je už v action_buttons (Main.gd batuje `retreat` do `_finish_battle`). Dnes `retreat` spustí `resolve_decision` s `attacker_action="retreat"` — funguje, ale retreat v prvom ťahu by mal byť "boj bez boja" (vysoké straty, -morale). Toto je už implementované v BattleManager (RETREAT_LOSSES, RETREAT_MORALE_PENALTY).
-- **Aké art_id sa používa pre battle eventy?** `rand_border_raid` má `art_id: "event_border_raid"`, `bogata_uprising_917` má `"event_border_raid"`. Môže byť potrebný nový art.
+- **Ako sa správa BattleView, ak hráč klikne Ústup?** Retreat je už v action_buttons (Main.gd batuje `retreat` do `_finish_battle`). Dnes `retreat` spustí `resolve_decision` s `attacker_action=\"retreat\"` — funguje, ale retreat v prvom ťahu by mal byť \"boj bez boja\" (vysoké straty, -morale). Toto je už implementované v BattleManager (RETREAT_LOSSES, RETREAT_MORALE_PENALTY).
+- **Aké art_id sa používa pre battle eventy?** `rand_border_raid` má `art_id: \"event_border_raid\"`, `bogata_uprising_917` má `\"event_border_raid\"`. Môže byť potrebný nový art.
 - **Má byť event `pending_event` vymazaný, ak hráč počas bitky zatvorí hru?** Áno — pending_event ostáva až do `_finish_battle()`. Pri reload-e sa event znovu zobrazí.
