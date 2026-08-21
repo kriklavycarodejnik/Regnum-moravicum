@@ -1,8 +1,7 @@
 # Screenshot Trace Tool
 
 Nástroj na vizuálnu QA hry Regnum Moravicum. Spustí hru v okennom režime
-(display-backed), odohrá celú 10-minútovú trasu a po každom kroku uloží PNG
-screenshot.
+(display-backed), odohrá celú trasu a po každom kroku uloží PNG screenshot.
 
 ## Rýchle spustenie (jeden príkaz)
 
@@ -22,17 +21,17 @@ predchádzajúcu sadu (názvy sú stabilné, bez časovej pečiatky).
 - Okno je automaticky minimalizované (`WINDOW_MODE_MINIMIZED`), aplikácia sa
   nedostáva do popredia.
 
-## Čo testuje (7 krokov — celá trasa)
+## Čo testuje (7 krokov — integračný gate)
 
 | # | Súbor | Stav hry | Čo kontrolovať |
 |---|-------|----------|----------------|
 | 1 | `01_MENU.png` | Hlavné menu | Pozadie, erb, tlačidlá „Nová hra“, „Načítať“, „Koniec“ |
 | 2 | `02_BRIEFING.png` | Poslanie po „Nová hra“ | Portrét Mojmíra II., text poslania, tlačidlo „Rozumiem — vstúpiť do ríše“ |
-| 3 | `03_COACH_1_3.png` | Coach 1/3 | Overlay „Klikni na Nitru“, mapa so šípkou na Nitru |
-| 4 | `04_COACH_2_3.png` | Coach 2/3 | Overlay „Tvoje poslanie…“, tlačidlo „Rozumiem“ |
-| 5 | `05_COACH_3_3.png` | Coach 3/3 | Overlay „Stlač Ďalší mesiac“, šípka na tlačidlo dole |
-| 6 | `06_TURNREPORT.png` | Po „Ďalší mesiac“ | Karta mesačnej správy (zmeny zdrojov, narácia), tlačidlo „Pokračovať“ |
-| 7 | `07_MAPA_PO_TAHU.png` | Mapa po zatvorení správy a udalosti | Mapa, župy, story line, bočný panel (HeroArt, armády, diplomacia) — žiadne popupy |
+| 3 | `03_KLIK_NA_NITRO.png` | Klik na Nitru (panel výberu vyplnený) | HeroArt, názvy žúp, vyplnený panel so zdrojmi a ilustráciou |
+| 4 | `04_TURNREPORT.png` | Mesačná správa po „Ďalší mesiac“ | Karta mesačnej správy (zmeny zdrojov, narácia), threat clock |
+| 5 | `05_EVENT_903.png` | Event 903/01 Pápežské posolstvo | Titul, telo eventu, **všetky 3 voľby (A/B/C) plne viditeľné**, event art |
+| 6 | `06_MAPA_906.png` | Mapa v roku 906 s threat markermi | Threat markery na župách, threat clock, clean map view |
+| 7 | `07_DEVIN_MODAL.png` | Devín prepare modal 907/01 | Devín špeciálny modal, text varovania, tlačidlo „Pripraviť obranu“ |
 
 ## Ako rýchlo prejsť screenshoty
 
@@ -53,21 +52,24 @@ predchádzajúcu sadu (názvy sú stabilné, bez časovej pečiatky).
    ```bash
    ls -la godot/tools/screenshots/
    ```
-   Každý PNG musí byť 1280×720 a „rozumná“ veľkosť — čisto čierny frame má
-   pár KB, plný render stovky KB. Ak sú všetky súbory ~1–5 KB, capture bežal
-   bez framebufferu (pravdepodobne `--headless`).
+   Každý PNG musí byť 1280×720 (výnimka: 05_EVENT_903 môže byť 1280×960 —
+   bol zachytený pri dočasne zväčšenom okne, aby sa voľby zmestili).
+   „Rozumná“ veľkosť — čisto čierny frame má pár KB, plný render stovky KB.
+   Ak sú všetky súbory ~1–5 KB, capture bežal bez framebufferu
+   (pravdepodobne `--headless`).
 
 ## Ako to funguje
 
 Skript `extends SceneTree` (nahrádza default MainLoop):
 
 1. Načíta `MainMenu.tscn` → screenshot `01_MENU`.
-2. Zavolá `GameManager.reset()`, načíta `Briefing.tscn` → `02_BRIEFING`.
-3. Načíta `Main.tscn` (coach krok 1/3) → `03_COACH_1_3`.
-4. Vyberie Nitru + posunie coach na 2/3 → `04_COACH_2_3`.
-5. Posunie coach na 3/3 → `05_COACH_3_3`.
-6. Klikne „Ďalší mesiac“ → TurnReport (+ udalosť Korunovácia) → `06_TURNREPORT`.
-7. Dismissne TurnReport, vyrieši udalosť (voľba A) → mapa → `07_MAPA_PO_TAHU`.
+2. Načíta `Briefing.tscn` → `02_BRIEFING`.
+3. Načíta `Main.tscn`, vyberie Nitru → `03_KLIK_NA_NITRO`.
+4. Klikne „Ďalší mesiac“ → TurnReport → `04_TURNREPORT`.
+5. Posunie rok na 903/01, dočasne zväčší okno na 1280×960, skryje
+   ChroniclePanel a NotificationFeed, vyvolá event → `05_EVENT_903`.
+6. Vyrieši event, posunie rok na 906/01 → `06_MAPA_906`.
+7. Posunie rok na 907/01, otvorí Devín modal → `07_DEVIN_MODAL`.
 
 Architektúra: `_capture_step()` → `root.get_texture().get_image().save_png()`.
 
@@ -79,9 +81,13 @@ Architektúra: `_capture_step()` → `root.get_texture().get_image().save_png()`
 - Ak sa capture nedá spustiť z agenta (napr. SSH bez displeja), spustite
   `bash tools/capture.sh` ručne na stroji s displejom — je to jediný príkaz,
   ktorý človek potrebuje.
+- Krok 5 dočasne zväčšuje okno na 1280×960 (približne o 240px viac na výšku).
+  Po capture sa okno vráti na 1280×720. Výsledný PNG bude mať 1280×960 —
+  to je zámer, aby boli eventové voľby plne viditeľné. Pre ostatné kroky
+  je výstup 1280×720.
 
 ## QA pravidlo (povinné pre P1 karty)
 
 P1 karta sa neuzavrie bez sady screenshotov z tohto nástroja. Po každej P1
-zmene spusti `bash tools/capture.sh` a pripoj/over 7 PNG (aspoň 6) pokrývajúcich
-celú trasu menu → nová hra → coach → ďalší mesiac → TurnReport.
+zmene spusti `bash tools/capture.sh` a pripoj/over 7 PNG pokrývajúcich
+celú trasu menu → nová hra → coach → ďalší mesiac → event → mapa → Devín.
