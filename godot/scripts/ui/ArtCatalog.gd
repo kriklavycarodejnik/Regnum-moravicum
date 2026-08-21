@@ -64,3 +64,12 @@ func province_art_id(province_id: String) -> String:
 			return "moravian_court_interior"
 		_:
 			return ""
+
+
+func safe_texture(art_id: String, fallback_id: String = "") -> Texture2D:
+	var tex := texture(art_id)
+	if tex != null:
+		return tex
+	if fallback_id != "":
+		return texture(fallback_id)
+	return null

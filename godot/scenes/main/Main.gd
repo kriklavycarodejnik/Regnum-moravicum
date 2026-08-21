@@ -8,7 +8,8 @@ const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 @onready var status_bar: HBoxContainer = $UI/StatusBarRow/StatusBar
 @onready var religion_axis: HBoxContainer = $UI/StatusBarRow/ReligionAxis
 @onready var map_view: Control = $UI/Body/MainColumn/MapView
-@onready var chronicle_label: RichTextLabel = $UI/Body/MainColumn/ChroniclePanel/Chronicle
+@onready var chronicle_scroll: ScrollContainer = $UI/Body/MainColumn/ChroniclePanel/ChronicleScroll
+@onready var chronicle_list: VBoxContainer = $UI/Body/MainColumn/ChroniclePanel/ChronicleScroll/ChronicleList
 @onready var next_month_btn: Button = $UI/PrimaryRow/NextMonthButton
 @onready var skirmish_btn: Button = $UI/ToolsRow/SkirmishButton
 @onready var devine_btn: Button = $UI/ToolsRow/DevineButton
@@ -31,6 +32,7 @@ const _Translations = preload("res://scripts/ui/BattleViewTranslations.gd")
 @onready var objectives_panel: Node = $UI/ObjectivesPanel
 @onready var threat_clock: Node = $UI/ThreatClockRow/ThreatClock
 @onready var event_art: TextureRect = $UI/Body/MainColumn/EventPanel/EventVBox/EventArt
+@onready var event_art_placeholder: Label = $UI/Body/MainColumn/EventPanel/EventVBox/EventArtPlaceholder
 @onready var hero_art: TextureRect = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroArt
 @onready var hero_caption: Label = $UI/Body/SidePanel/HeroPanel/HeroBox/HeroCaption
 @onready var ruler_art: TextureRect = $UI/Body/SidePanel/RulerRow/RulerArt
@@ -45,6 +47,7 @@ var _active_battle: Dictionary = {}
 var _battle_round: int = 0
 var _army_wizard_step: int = 0
 var _army_wizard_overlay_active: bool = false
+var _bg_cycle_assets: Array = ["nitra_master_hero", "devin_master_fortress", "bratislava_master_river", "moravian_court_interior", "regnum_visual_style_master"]
 
 
 func _ready() -> void:
@@ -80,8 +83,8 @@ func _ready() -> void:
 	if event_art:
 		event_art.visible = false
 	_refresh_ui()
-	_append_chronicle("Rok 902. Mojmír II. zasadá na trón Veľkej Moravy. Kronika sa otvára.")
-	_append_chronicle("Tvoj cieľ: udržať dynastiu a aspoň jednu župu do roku 1000.")
+	_make_chronicle_entry("Mojmír II. zasadá na trón Veľkej Moravy. Kronika sa otvára.", "succession", 902, 1)
+	_make_chronicle_entry("Tvoj cieľ: udržať dynastiu a aspoň jednu župu do roku 1000.", "generic")
 	if not GameManager.game_state.tutorial_done:
 		# Connect coach advancement before normal handlers
 		if map_view and map_view.has_signal("province_selected") and not map_view.province_selected.is_connected(_coach_on_province_selected):
@@ -548,10 +551,27 @@ func _apply_regnum_theme() -> void:
 func _setup_background_art() -> void:
 	if bg_art == null:
 		return
-	# BackgroundArt is hidden — the map's _draw() provides its own illustrated
-	# backdrop. An extra TextureRect behind everything creates visual noise
-	# (interior images bleeding through panel gaps and under map text).
-	bg_art.visible = false
+	# Show BackgroundArt with modulation — the map's _draw() provides its own
+	# backdrop overlay, but this art adds depth behind panels.
+	bg_art.visible = true
+	bg_art.modulate = Color(1, 1, 1, 0.18)
+	# Start with default art
+	_rotate_background()
+
+
+func _update_background(art_id: String) -> void:
+	if bg_art == null or art_id == "":
+		return
+	var tex: Texture2D = ArtCatalog.safe_texture(art_id)
+	if tex != null:
+		bg_art.texture = tex
+		bg_art.visible = true
+
+
+func _rotate_background() -> void:
+	# Cycle through hero assets every 10 turns
+	var idx: int = (_months_played / 10) % _bg_cycle_assets.size()
+	_update_background(_bg_cycle_assets[idx])
 
 
 func _setup_default_hero() -> void:
@@ -683,6 +703,8 @@ func _on_next_month() -> void:
 	var res_before: Dictionary = GameManager.game_state.resources.duplicate(true)
 	var report: Dictionary = GameManager.process_next_month()
 	_months_played += 1
+	if _months_played % 10 == 0:
+		_rotate_background()
 	_refresh_ui()
 	# Δ resources
 	var deltas: Array = []
@@ -704,17 +726,12 @@ func _on_next_month() -> void:
 	var delta_str: String = ""
 	if not deltas.is_empty():
 		delta_str = " Δ: %s" % ", ".join(deltas)
+	# Chronicle entry with icon from report type
+	var chronicle_type: String = str(report.get("chronicle_type", "monthly"))
 	if report.has("chronicle") and str(report["chronicle"]) != "":
-		_append_chronicle("[%d/%02d] %s%s" % [
-			report.get("year", 0),
-			report.get("month", 0),
-			report["chronicle"],
-			delta_str
-		])
+		_make_chronicle_entry(report["chronicle"], chronicle_type, report.get("year", 0), report.get("month", 0), delta_str)
 	else:
-		_append_chronicle("[%d/%02d] Mesiac uplynul v tichu dvorov a polí.%s" % [
-			GameManager.game_state.year, GameManager.game_state.month, delta_str
-		])
+		_make_chronicle_entry("Mesiac uplynul v tichu dvorov a polí.", "monthly", GameManager.game_state.year, GameManager.game_state.month, delta_str)
 	_check_ending()
 	# Post-tick notifications
 	if GameManager.has_pending_event():
@@ -831,11 +848,11 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 		else:
 			phase_label = "neznáma fáza"
 		if phase in ["attack", "counterattack"]:
-			_append_chronicle("  · %s: Ú-%d O-%d" % [
+			_make_chronicle_entry(" · %s: Ú-%d O-%d" % [
 				phase_label,
 				int(log.get("attacker_losses", 0)),
 				int(log.get("defender_losses", 0)),
-			])
+			], "battle")
 		elif phase == "decision":
 			var winner_sk: String = str(log.get("winner", "?"))
 			if winner_sk == "attacker":
@@ -844,7 +861,7 @@ func _log_battle_phases(outcome: Dictionary) -> void:
 				winner_sk = "obranca"
 			else:
 				winner_sk = "neznámy výsledok"
-			_append_chronicle("  · výsledok: %s" % winner_sk)
+			_make_chronicle_entry(" · výsledok: %s" % winner_sk, "battle")
 
 
 func _on_province_selected(province_id: String) -> void:
@@ -868,6 +885,8 @@ func _on_province_selected(province_id: String) -> void:
 		art_id = "mojmir_dynasty_emblem"
 	selection_art_id = art_id
 	_set_hero_art(art_id, "%s · tvoja ríša" % name_sk)
+	# Background art matches selected province
+	_update_background(art_id)
 
 
 func _show_event(ev: Variant) -> void:
@@ -884,10 +903,17 @@ func _show_event(ev: Variant) -> void:
 	if art_id == "":
 		art_id = _get_event_fallback_art(norm)
 	if art_id != "":
-		var tex: Texture2D = ArtCatalog.texture(art_id)
+		var tex: Texture2D = ArtCatalog.safe_texture(art_id)
 		if tex != null and event_art:
 			event_art.texture = tex
 			event_art.visible = true
+			if event_art_placeholder:
+				event_art_placeholder.visible = false
+		else:
+			if event_art:
+				event_art.visible = false
+			if event_art_placeholder:
+				event_art_placeholder.visible = true
 		_set_hero_art(art_id, str(norm.get("title", "Udalosť")))
 	elif event_art:
 		event_art.visible = false
@@ -1022,11 +1048,92 @@ func _refresh_ui() -> void:
 				devine_btn.text = "Scénár: Devín 907"
 
 
+# ─── Chronicle — štruktúrovaný zoznam ───
+
+const CHRONICLE_ICONS := {
+	"event": "icon_scroll_64",
+	"war": "icon_sword_64",
+	"battle": "icon_sword_64",
+	"diplomacy": "icon_eagle_64",
+	"economy": "icon_shield_64",
+	"armies": "icon_shield_64",
+	"succession": "icon_cross_latin_64",
+	"religion": "icon_cross_latin_64",
+	"victory": "icon_victory_64",
+	"defeat": "icon_defeat_64",
+	"monthly": "icon_bell_64",
+	"generic": "icon_scroll_64",
+}
+
+const MAX_CHRONICLE_ENTRIES := 50
+
+
+func _make_chronicle_entry(text: String, entry_type: String, year: int = 0, month: int = 0, suffix: String = "") -> void:
+	if chronicle_list == null:
+		return
+	# Derive current date when callers omit year/month
+	if year == 0 and month == 0:
+		var gs = GameManager.game_state if GameManager != null else null
+		if gs != null:
+			year = gs.year
+			month = gs.month
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# Icon
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(20, 20)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var icon_id: String = CHRONICLE_ICONS.get(entry_type, "icon_scroll_64")
+	var icon_tex: Texture2D = ArtCatalog.safe_texture(icon_id)
+	if icon_tex != null:
+		icon.texture = icon_tex
+		icon.modulate = Color(0.85, 0.75, 0.55, 0.9)
+	row.add_child(icon)
+
+	# Date label
+	var date_str: String = ""
+	if year > 0 and month > 0:
+		date_str = "%d/%02d" % [year, month]
+	elif year > 0:
+		date_str = "Rok %d" % year
+	if date_str != "":
+		var date_label := Label.new()
+		date_label.text = date_str
+		date_label.add_theme_font_size_override("font_size", 10)
+		date_label.add_theme_color_override("font_color", Color(0.7, 0.6, 0.4, 0.8))
+		date_label.custom_minimum_size = Vector2(50, 0)
+		date_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		row.add_child(date_label)
+
+	# Text label
+	var text_label := Label.new()
+	text_label.text = text + suffix
+	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_label.add_theme_font_size_override("font_size", 12)
+	row.add_child(text_label)
+
+	chronicle_list.add_child(row)
+
+	# Trim if over max
+	while chronicle_list.get_child_count() > MAX_CHRONICLE_ENTRIES:
+		var old := chronicle_list.get_child(0)
+		chronicle_list.remove_child(old)
+		old.queue_free()
+
+	# Auto scroll to bottom
+	await get_tree().process_frame
+	if is_instance_valid(chronicle_scroll):
+		chronicle_scroll.scroll_vertical = chronicle_scroll.get_v_scroll_bar().max_value
+
+
 func _append_chronicle(text: String) -> void:
-	if chronicle_label:
-		chronicle_label.append_text(text + "\n")
-	# Chronicle-only: do NOT push to NotificationFeed,
-	# so text appears only once in the scrollable log.
+	# Backward-compat wrapper: creates a generic entry
+	_make_chronicle_entry(text, "generic")
 
 
 func _notify(text: String) -> void:
