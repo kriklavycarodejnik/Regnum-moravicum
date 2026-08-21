@@ -4,7 +4,7 @@
 > - **Nález 1 (VYRIEŠENÉ):** `GameManager.gd:123-142` — implementovaná podpora pre `TYPE_ARRAY` aj `TYPE_DICTIONARY` v `get_pending_event()`. Voľby sa správne načítavajú z katalógu.
 > - **Nález 2 (VYRIEŠENÉ):** `EventManager.gd:139-140` — `_try_historical_event()` explicitne preskakuje eventy s `req_year == 0` (`if req_year == 0: continue`), zabraňuje tak nežiaducemu zablokovaniu behu na náhodných eventoch.
 > - **Nález 3 (VYRIEŠENÉ):** `MainMenu.gd:47` — `_on_new()` volá `GameManager.reset()` pred prepnutím scény do Briefingu.
-> - **Čo z dokumentu ešte platí / zostáva otvorené:** Všetky 3 kritické bugy sú kompletne opravené v codebase. Dokument slúži ako historická referencia review a popisu fixov.
+> - **Čo z dokumentu ešte platí / zostáva otvorené:** Všetky 3 kritické bugy sú kompletne opravené v codebase (`GameManager.gd:123-146`, `EventManager.gd:130-150`, `MainMenu.gd:46-49`). Dokument slúži ako historická referencia review a popisu fixov.
 
 **Pôvod:** automatizovaný review `@chatgpt-codex-connector[bot]` na
 [PR #6](https://github.com/kriklavycarodejnik/Regnum-moravicum/pull/6),
