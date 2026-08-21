@@ -127,7 +127,14 @@ func _apply_devine_consequences() -> void:
 	if provinces.has(PROVINCE_DEVIN):
 		var province: Dictionary = provinces[PROVINCE_DEVIN]
 		province["loyalty"] = float(province.get("loyalty", 50)) - 20.0
+		# Prosperity delta: Devín -20 (vizuálna progresia, §2.2)
+		province["prosperity"] = clampf(float(province.get("prosperity", 40)) - 20.0, 0.0, 100.0)
 		provinces[PROVINCE_DEVIN] = province
+	# Bratislava prosperity delta: -10 (sused Devína, §2.2)
+	if provinces.has("bratislava"):
+		var bratislava: Dictionary = provinces["bratislava"]
+		bratislava["prosperity"] = clampf(float(bratislava.get("prosperity", 60)) - 10.0, 0.0, 100.0)
+		provinces["bratislava"] = bratislava
 	game_state.provinces = provinces
 
 	var factions: Dictionary = game_state.factions

@@ -326,9 +326,19 @@ func _draw() -> void:
 				marker_tex = _settlement_small if _settlement_small != null else _settlement_medium
 
 			var fill := _faction_color(owner)
-			fill = fill.lightened(0.08)
+			# Vizuálna progresia (§2.3): prosperity ovplyvňuje svetlosť fillu
+			if prosperity >= 70:
+				fill = fill.lightened(0.15)
+			elif prosperity < 30:
+				fill = fill.darkened(0.40)
 			fill.a = 0.92
 			draw_colored_polygon(poly, fill)
+
+			# Devastation tint po Devíne 907 (§2.3): Devín a Bratislava dostanú červenkastý tint
+			var gm2 := get_node_or_null("/root/GameManager")
+			if gm2 != null and gm2.game_state != null and gm2.game_state.devine_resolved and (pid == "devin" or pid == "bratislava"):
+				var dev_tint := Color(0.25, 0.05, 0.05, 0.25)
+				draw_colored_polygon(poly, dev_tint)
 			# Border: same faction color but darker — visually separates neighboring provinces
 			var closed_poly2 := PackedVector2Array(poly)
 			closed_poly2.append(poly[0])
@@ -402,7 +412,7 @@ func _draw() -> void:
 			draw_line(line_start, label_anchor, Color(C.PARCHMENT.r, C.PARCHMENT.g, C.PARCHMENT.b, 0.25), 0.8, true)
 
 	# Hint strip at bottom (drawn once, outside the province loop)
-	var hint := "Klikni na župu · zlatý kruh = výber · farba okraja = lojalita"
+	var hint := "Klikni na župu · zlatý = výber · okruh = lojalita · bledosť = prosperita"
 
 	# --- Threat markery nálady frakcií (P1 kontrakt §4.2) ---
 	_draw_faction_mood_markers(w, h, font)
