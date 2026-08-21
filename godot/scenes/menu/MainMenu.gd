@@ -4,6 +4,8 @@ extends Control
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
 const _Colors = preload("res://assets/theme/colors.gd")
 
+const LOADING_SCENE := "res://scenes/loading/Loading.tscn"
+
 @onready var new_btn: Button = $Center/Panel/VBox/NewButton
 @onready var load_btn: Button = $Center/Panel/VBox/LoadButton
 @onready var quit_btn: Button = $Center/Panel/VBox/QuitButton
@@ -45,8 +47,13 @@ func _ready() -> void:
 
 func _on_new() -> void:
 	GameManager.reset()
-	# Briefing pred mapou
-	get_tree().change_scene_to_file("res://scenes/briefing/Briefing.tscn")
+	# Loading screen pred Briefing
+	var loading = load(LOADING_SCENE).instantiate()
+	if loading.has_method("set_target"):
+		loading.set_target("res://scenes/briefing/Briefing.tscn")
+	get_tree().root.add_child(loading)
+	get_tree().current_scene = loading
+	queue_free()
 
 
 func _on_load() -> void:
@@ -54,7 +61,13 @@ func _on_load() -> void:
 	if gm and gm.has_method("load_save"):
 		var ok: bool = gm.load_save()
 		if ok:
-			get_tree().change_scene_to_file("res://scenes/main/Main.tscn")
+			# Loading screen pred Main
+			var loading = load(LOADING_SCENE).instantiate()
+			if loading.has_method("set_target"):
+				loading.set_target("res://scenes/main/Main.tscn")
+			get_tree().root.add_child(loading)
+			get_tree().current_scene = loading
+			queue_free()
 		else:
 			status_label.text = "Načítanie zlyhalo — žiadny save alebo chyba."
 	else:

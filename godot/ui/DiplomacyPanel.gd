@@ -19,13 +19,13 @@ var pact_btn: Button
 
 const FACTION_ART := {
 	"moravia": "mojmir_dynasty_emblem",
-	"hungary": "hungary_emblem",
-	"franks": "franks_emblem",
-	"frankia": "franks_emblem",
-	"bavaria": "bavaria_emblem",
-	"poland": "poland_emblem",
-	"bohemia": "bohemia_emblem",
-	"byzantium": "byzantium_emblem",
+	"hungary": "emblem_hungary",
+	"franks": "emblem_franks",
+	"frankia": "emblem_franks",
+	"bavaria": "emblem_bavaria",
+	"poland": "emblem_poland",
+	"bohemia": "emblem_bohemia",
+	"byzantium": "emblem_byzantium",
 }
 
 

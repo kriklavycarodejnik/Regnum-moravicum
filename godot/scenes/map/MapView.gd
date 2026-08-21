@@ -417,6 +417,9 @@ func _draw() -> void:
 	# --- Threat markery nálady frakcií (P1 kontrakt §4.2) ---
 	_draw_faction_mood_markers(w, h, font)
 
+	# --- Compass (top-right corner) ---
+	_draw_compass(w, h, font)
+
 	var hfs := 11
 	var hs := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs)
 	draw_rect(Rect2(8, h - 26, hs.x + 16, 20), Color(0.08, 0.06, 0.04, 0.72), true)
@@ -542,6 +545,38 @@ func _show_mood_tooltip(faction: String, mouse_pos: Vector2) -> void:
 		_tooltip_container.position.x = size.x - br.x - 4
 	if _tooltip_container.position.y + br.y > size.y:
 		_tooltip_container.position.y = size.y - br.y - 4
+
+
+func _draw_compass(w: float, h: float, font: Font) -> void:
+	# Simple compass in top-right corner
+	var cx: float = w - 55.0
+	var cy: float = 50.0
+	var r: float = 22.0
+	var gold := Color(0.85, 0.72, 0.32, 0.70)
+	var faded := Color(0.85, 0.72, 0.32, 0.35)
+
+	# Outer circle
+	draw_circle(Vector2(cx, cy), r, Color(0.08, 0.06, 0.04, 0.60))
+	draw_circle(Vector2(cx, cy), r, gold, false, 1.5)
+
+	# Cross lines (cardinal directions)
+	draw_line(Vector2(cx, cy - r), Vector2(cx, cy + r), faded, 1.0)
+	draw_line(Vector2(cx - r, cy), Vector2(cx + r, cy), faded, 1.0)
+
+	# Direction markers
+	var north: String = "S"
+	var east: String = "V"
+	var south: String = "J"
+	var west: String = "Z"
+	var lbl_size: int = 9
+	# North (top) — highlighted
+	draw_string(font, Vector2(cx - 4, cy - r + 12), north, HORIZONTAL_ALIGNMENT_LEFT, -1, lbl_size, Color(0.95, 0.3, 0.2, 0.85))
+	# South (bottom)
+	draw_string(font, Vector2(cx - 4, cy + r + 3), south, HORIZONTAL_ALIGNMENT_LEFT, -1, lbl_size, gold)
+	# West (left)
+	draw_string(font, Vector2(cx - r - 6, cy + 4), west, HORIZONTAL_ALIGNMENT_LEFT, -1, lbl_size, gold)
+	# East (right)
+	draw_string(font, Vector2(cx + r - 2, cy + 4), east, HORIZONTAL_ALIGNMENT_LEFT, -1, lbl_size, gold)
 
 
 func _province_polygon(pid: String, cx: float, cy: float, r: float) -> PackedVector2Array:
