@@ -33,8 +33,13 @@ func _ready() -> void:
 					bg.modulate = Color(1, 1, 1, 0.25)
 					break
 
-	# Start deferred transition to target scene
-	call_deferred("_do_transition")
+	# Keep loading screen visible at least 0.5 s before transition
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = 0.5
+	timer.timeout.connect(_do_transition)
+	add_child(timer)
+	timer.start()
 
 
 func set_target(scene_path: String) -> void:

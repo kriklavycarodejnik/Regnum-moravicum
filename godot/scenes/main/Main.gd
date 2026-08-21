@@ -1071,6 +1071,12 @@ const MAX_CHRONICLE_ENTRIES := 50
 func _make_chronicle_entry(text: String, entry_type: String, year: int = 0, month: int = 0, suffix: String = "") -> void:
 	if chronicle_list == null:
 		return
+	# Derive current date when callers omit year/month
+	if year == 0 and month == 0:
+		var gs = GameManager.game_state if GameManager != null else null
+		if gs != null:
+			year = gs.year
+			month = gs.month
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
