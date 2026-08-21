@@ -215,6 +215,13 @@ func _a_step_event_903() -> void:
 				_main_node._show_event(ev)
 				await _wait_frames(3)
 
+	# STEP C2: Refresh visible UI and assert correct date (903/01) + title
+	if _main_node != null and is_instance_valid(_main_node):
+		if _main_node.has_method("_refresh_ui"):
+			_main_node._refresh_ui()
+		await _wait_frames(3)
+		_assert_903_event_state()
+
 	_dump_ui_state("05_EVENT_903")
 	await _capture_step("05_EVENT_903")
 
@@ -288,6 +295,44 @@ func _advance_coach(step: int) -> void:
 # ─── Helpery ───
 
 
+func _assert_903_event_state() -> void:
+	"""Refresh UI and assert 903/01 date + Pápežské posolstvo title."""
+	if _main_node == null or not is_instance_valid(_main_node):
+		printerr("  FAIL: _main_node is null — cannot assert event state")
+		quit(1)
+
+	# Assert: status bar shows 903/01
+	var sb = _main_node.status_bar
+	if sb == null:
+		printerr("  FAIL: status_bar is null in _main_node")
+		quit(1)
+	var yl = _find_node("YearLabel", sb)
+	if yl == null or not (yl is Label):
+		printerr("  FAIL: YearLabel not found in status_bar")
+		quit(1)
+	var date_text: String = yl.text
+	print("  StatusBar date: '%s'" % date_text)
+	if date_text.find("903") == -1:
+		printerr("  FAIL: StatusBar date '%s' chýba '903'" % date_text)
+		quit(1)
+	if date_text.find("mesiac 1") == -1 and date_text.find("1") == -1:
+		printerr("  FAIL: StatusBar date '%s' chýba mesiac 1" % date_text)
+		quit(1)
+	print("  OK: StatusBar date matches 903/01")
+
+	# Assert: event title shows "Pápežské posolstvo"
+	var et = _main_node.event_title
+	if et == null:
+		printerr("  FAIL: event_title is null in _main_node")
+		quit(1)
+	var title_text: String = et.text
+	print("  Event title: '%s'" % title_text)
+	if title_text.find("Pápež") == -1:
+		printerr("  FAIL: Event title is '%s', expected obsahovať 'Pápežské posolstvo'" % title_text)
+		quit(1)
+	print("  OK: Event title matches 'Pápežské posolstvo'")
+
+
 func _wait_frames(n: int) -> void:
 	for i in range(n):
 		await Engine.get_main_loop().process_frame
@@ -318,6 +363,12 @@ func _capture_step(label: String) -> void:
 	if img == null:
 		printerr("  WARN: get_image null for '%s'" % label)
 		return
+
+	# Resize to canonical 1280x720 if captured at different dimensions
+	# (e.g. 05_EVENT_903 is captured at 1280x960 to fit all choices)
+	if img.get_width() != CAPTURE_W or img.get_height() != CAPTURE_H:
+		print("  Resizing %dx%d -> %dx%d for '%s'" % [img.get_width(), img.get_height(), CAPTURE_W, CAPTURE_H, label])
+		img.resize(CAPTURE_W, CAPTURE_H, Image.INTERPOLATE_LANCZOS)
 
 	var filename := "%s.png" % label
 	var full_path := OUTPUT_DIR + filename
