@@ -1061,7 +1061,7 @@ const CHRONICLE_ICONS := {
 	"religion": "icon_cross_latin_64",
 	"victory": "icon_victory_64",
 	"defeat": "icon_defeat_64",
-	"monthly": "icon_bell_64",
+	"monthly": "icon_scroll_64",
 	"generic": "icon_scroll_64",
 }
 
