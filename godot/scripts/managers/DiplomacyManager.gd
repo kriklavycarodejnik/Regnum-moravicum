@@ -164,7 +164,21 @@ func set_treaty(faction_id: String, treaty: String, enabled: bool = true) -> Dic
 	rel[treaty] = enabled
 	f["relations"] = rel
 	if enabled:
-		f["mood"] = clampf(float(f.get("mood", 50.0)) + 6.0, 0.0, 100.0)
+		var mood_delta: float = 6.0
+		# Bonus lookup: sg_b1 (Devínska posádka) — NAP s Maďarmi +15
+		if faction_id == "hungary" and treaty == "nap":
+			var sg: Dictionary = game_state.side_goals if typeof(game_state.side_goals) == TYPE_DICTIONARY else {}
+			if sg.get("sg_b1", false):
+				mood_delta = 15.0
+		# Bonus lookup: sg_d1 (Sto rokov Mojmíra) — trade +8 mood +3 prestige
+		if treaty == "trade":
+			var sg: Dictionary = game_state.side_goals if typeof(game_state.side_goals) == TYPE_DICTIONARY else {}
+			if sg.get("sg_d1", false):
+				mood_delta = 8.0
+				var res: Dictionary = game_state.resources
+				res["prestige"] = int(res.get("prestige", 0)) + 3
+				game_state.resources = res
+		f["mood"] = clampf(float(f.get("mood", 50.0)) + mood_delta, 0.0, 100.0)
 	game_state.factions[faction_id] = f
 	var labels: Dictionary = {
 		"nap": "neútočná zmluva",

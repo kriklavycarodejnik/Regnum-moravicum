@@ -1,6 +1,7 @@
 # ui/ObjectivesPanel.gd
 # Dynamické ciele + "čo robiť teraz" — horizontálny kompaktný panel NAD mapou.
-# Obsahuje testovateľnú statickú compute_beats() metódu pre beaty A1–D1.
+# Obsahuje testovateľnú statickú compute_beats() metódu pre beaty A1–D1
+# a compute_side_goals() pre vedľajšie ciele s podmienkou a odmenou.
 extends PanelContainer
 
 const _ThemeFactory = preload("res://assets/theme/regnum_theme_factory.gd")
@@ -101,7 +102,35 @@ func refresh() -> void:
 	var beat := compute_beats(s, gold, owned, prestige)
 
 	_phase_label.text = "%s · %s" % [beat.phase_name, beat.phase_hint]
-	_goals_label.text = " • " + "\n • ".join(beat.goals)
+
+	# Beat goals (plain text)
+	var beat_text: String = " • " + "\n • ".join(beat.goals)
+
+	# Side-goals (BBCode)
+	var side_goals_arr: Array = compute_side_goals(s)
+	var side_text: String = ""
+	for sg in side_goals_arr:
+		if typeof(sg) != TYPE_DICTIONARY:
+			continue
+		var done: bool = sg.get("done", false)
+		var label: String = str(sg.get("label", ""))
+		var progress_text: String = str(sg.get("progress_text", ""))
+		var reward_text: String = str(sg.get("reward_text", ""))
+		if side_text == "":
+			side_text = "\nVedľajšie ciele:\n"
+		else:
+			side_text += "\n"
+		if done:
+			side_text += "✓ " + label + " — hotový (" + reward_text + ")"
+		else:
+			side_text += "• " + label + ": " + progress_text + " — odmena: " + reward_text
+
+	# Combine beat goals + side-goals
+	if side_text != "":
+		_goals_label.text = beat_text + side_text
+	else:
+		_goals_label.text = beat_text
+
 	_next_label.text = beat.next_step
 	_state_label.text = "%d/%02d · Morava: %d žúp · zlato %d · jedlo %d" % [year, month, owned, gold, food]
 
@@ -244,6 +273,226 @@ static func compute_beats(s, gold: int = -1, owned: int = -1, prestige: int = -1
 		"goals": goals,
 		"next_step": next_step,
 	}
+
+
+# ─── Side-goals ─────────────────────────────────────────────────────
+# Volané z refresh() popri compute_beats().
+# Vracia Array of Dictionary s id/beat/label/progress_text/done/reward_text/active.
+# Pri splnení zapíše side_goals[id] = true do game_state (one-shot).
+# ─────────────────────────────────────────────────────────────────────
+static func compute_side_goals(s) -> Array:
+	var year: int = int(s.year)
+	var month: int = int(s.month)
+	var gold: int = int(s.resources.get("gold", 0))
+	var prestige: int = int(s.resources.get("prestige", 0))
+	var devine_resolved: bool = s.devine_resolved
+	var side_goals_done: Dictionary = s.side_goals if typeof(s.side_goals) == TYPE_DICTIONARY else {}
+	var out: Array = []
+
+	var sg_a1_done: bool = side_goals_done.get("sg_a1", false)
+	var sg_a2_done: bool = side_goals_done.get("sg_a2", false)
+	var sg_a3_done: bool = side_goals_done.get("sg_a3", false)
+	var sg_b1_done: bool = side_goals_done.get("sg_b1", false)
+	var sg_b2_done: bool = side_goals_done.get("sg_b2", false)
+	var sg_c1_done: bool = side_goals_done.get("sg_c1", false)
+	var sg_c2_done: bool = side_goals_done.get("sg_c2", false)
+	var sg_d1_done: bool = side_goals_done.get("sg_d1", false)
+	var sg_d2_done: bool = side_goals_done.get("sg_d2", false)
+
+	# ── Fáza I — Konsolidácia (902–906) ──
+
+	# SG-A1: Zlatá rezerva Mojmíra
+	if year < 906:
+		var a1_done_now: bool = gold >= 1200
+		if a1_done_now and not sg_a1_done and not s.side_goals.has("sg_a1"):
+			s.side_goals["sg_a1"] = true
+		out.append({
+			"id": "sg_a1",
+			"beat": "A2",
+			"label": "Zlatá rezerva Mojmíra",
+			"progress_text": "Pokladnica: %d/1200 zlatých" % [gold],
+			"done": sg_a1_done or a1_done_now,
+			"reward_text": "ťažká jazda zadarmo",
+			"active": not sg_a1_done,
+		})
+
+	# SG-A2: Byzantský dvor
+	if year < 907 and month >= 2:
+		var byz_mood: float = _get_faction_mood(s, "byzantium")
+		var a2_done_now: bool = byz_mood >= 60.0
+		if a2_done_now and not sg_a2_done and not s.side_goals.has("sg_a2"):
+			s.side_goals["sg_a2"] = true
+		out.append({
+			"id": "sg_a2",
+			"beat": "A3–A4",
+			"label": "Byzantský dvor",
+			"progress_text": "Byzancia: %.0f/60" % [maxf(byz_mood, 0.0)],
+			"done": sg_a2_done or a2_done_now,
+			"reward_text": "+5 prestíže zo sobáša",
+			"active": not sg_a2_done,
+		})
+
+	# SG-A3: Pohraničná stráž
+	if year < 906 and gold >= 800:
+		var border_count: int = _count_border_armies_static(s)
+		var a3_done_now: bool = border_count >= 1
+		if a3_done_now and not sg_a3_done and not s.side_goals.has("sg_a3"):
+			s.side_goals["sg_a3"] = true
+		out.append({
+			"id": "sg_a3",
+			"beat": "A3",
+			"label": "Pohraničná stráž",
+			"progress_text": "%d/1 armáda na východnej hranici" % [border_count],
+			"done": sg_a3_done or a3_done_now,
+			"reward_text": "správy o Maďaroch +5 lojalita Zemplín",
+			"active": not sg_a3_done,
+		})
+
+	# ── Fáza II — Kríza (907) ──
+
+	# SG-B1: Devínska posádka
+	if year == 907 and not devine_resolved:
+		var wizard_done: bool = s.army_wizard_done
+		var b1_done_now: bool = wizard_done
+		if b1_done_now and not sg_b1_done and not s.side_goals.has("sg_b1"):
+			s.side_goals["sg_b1"] = true
+		out.append({
+			"id": "sg_b1",
+			"beat": "B1",
+			"label": "Devínska posádka",
+			"progress_text": "Wizard: %s" % ("hotový ✓" if wizard_done else "nedokončený"),
+			"done": sg_b1_done or b1_done_now,
+			"reward_text": "NAP s Maďarmi +15 namiesto +6",
+			"active": not sg_b1_done,
+		})
+
+	# SG-B2: Záchrana Devína
+	if devine_resolved and year < 910:
+		var devin_loyalty: float = float((s.provinces.get("devin", {})).get("loyalty", 40.0))
+		var b2_done_now: bool = devin_loyalty >= 35.0
+		if b2_done_now and not sg_b2_done and not s.side_goals.has("sg_b2"):
+			s.side_goals["sg_b2"] = true
+		out.append({
+			"id": "sg_b2",
+			"beat": "B2",
+			"label": "Záchrana Devína",
+			"progress_text": "Devín lojalita: %.0f/35" % [devin_loyalty],
+			"done": sg_b2_done or b2_done_now,
+			"reward_text": "Devín zotavenie 2× rýchlejšie",
+			"active": not sg_b2_done,
+		})
+
+	# ── Fáza III — Prežitie (908–959) ──
+
+	# SG-C1: Užhorod stojí
+	if year >= 915 and year < 920:
+		var uzh_loyalty: float = float((s.provinces.get("uzhorod", {})).get("loyalty", 60.0))
+		var c1_done_now: bool = uzh_loyalty >= 40.0
+		if c1_done_now and not sg_c1_done and not s.side_goals.has("sg_c1"):
+			s.side_goals["sg_c1"] = true
+		out.append({
+			"id": "sg_c1",
+			"beat": "C2",
+			"label": "Užhorod stojí",
+			"progress_text": "Užhorod: %.0f/40" % [uzh_loyalty],
+			"done": sg_c1_done or c1_done_now,
+			"reward_text": "+10 lojalita Užhorod po Bogata chain",
+			"active": not sg_c1_done,
+		})
+
+	# SG-C2: Kresťanská ríša
+	if year >= 920 and year < 960:
+		var christian_count: int = _count_christian_provinces_static(s)
+		var c2_done_now: bool = christian_count >= 6
+		if c2_done_now and not sg_c2_done and not s.side_goals.has("sg_c2"):
+			s.side_goals["sg_c2"] = true
+		out.append({
+			"id": "sg_c2",
+			"beat": "C3",
+			"label": "Kresťanská ríša",
+			"progress_text": "%d/6 žúp s kresťanskou vierou (religion >= 55)" % [christian_count],
+			"done": sg_c2_done or c2_done_now,
+			"reward_text": "Byzantský sobáš +3 religion Morava",
+			"active": not sg_c2_done,
+		})
+
+	# ── Fáza IV — Cesta k 1000 (960+) ──
+
+	# SG-D1: Sto rokov Mojmíra
+	if year >= 960:
+		var d1_done_now: bool = prestige >= 80
+		if d1_done_now and not sg_d1_done and not s.side_goals.has("sg_d1"):
+			s.side_goals["sg_d1"] = true
+		out.append({
+			"id": "sg_d1",
+			"beat": "D1",
+			"label": "Sto rokov Mojmíra",
+			"progress_text": "Prestíž: %d/80" % [prestige],
+			"done": sg_d1_done or d1_done_now,
+			"reward_text": "Obchodná zmluva +3 prestíž, +8 mood",
+			"active": not sg_d1_done,
+		})
+
+		# SG-D2: Posledná dynastia
+		var dynasty_count: int = _count_living_dynasty_static(s)
+		var d2_done_now: bool = dynasty_count >= 3
+		if d2_done_now and not sg_d2_done and not s.side_goals.has("sg_d2"):
+			s.side_goals["sg_d2"] = true
+		out.append({
+			"id": "sg_d2",
+			"beat": "D1",
+			"label": "Posledná dynastia",
+			"progress_text": "%d/3 žijúci Mojmírovci" % [dynasty_count],
+			"done": sg_d2_done or d2_done_now,
+			"reward_text": "Rada županov: Rozšíriť dynastiu",
+			"active": not sg_d2_done,
+		})
+
+	return out
+
+
+# Helper: spočíta moravské armády v zemplín/uzhorod
+static func _count_border_armies_static(s) -> int:
+	var armies: Dictionary = s.armies if typeof(s.armies) == TYPE_DICTIONARY else {}
+	var count: int = 0
+	for aid in armies:
+		var a = armies[aid]
+		if typeof(a) != TYPE_DICTIONARY:
+			continue
+		if str(a.get("faction_id", a.get("owner", ""))) != "moravia":
+			continue
+		var pid: String = str(a.get("province_id", ""))
+		if pid == "zemplin" or pid == "uzhorod":
+			count += 1
+	return count
+
+
+# Helper: spočíta provinces s religion >= 55
+static func _count_christian_provinces_static(s) -> int:
+	var provs: Dictionary = s.provinces if typeof(s.provinces) == TYPE_DICTIONARY else {}
+	var count: int = 0
+	for pid in provs:
+		var p = provs[pid]
+		if typeof(p) != TYPE_DICTIONARY:
+			continue
+		var rel = p.get("religion", 50)
+		var rel_val: int = int(rel) if typeof(rel) == TYPE_INT or typeof(rel) == TYPE_FLOAT else 50
+		if rel_val >= 55:
+			count += 1
+	return count
+
+
+# Helper: spočíta žijúcich Mojmírovcov
+static func _count_living_dynasty_static(s) -> int:
+	var nobles: Dictionary = s.nobles if typeof(s.nobles) == TYPE_DICTIONARY else {}
+	var count: int = 0
+	for nid in nobles:
+		var n = nobles[nid]
+		if typeof(n) != TYPE_DICTIONARY:
+			continue
+		if not n.get("dead", false):
+			count += 1
+	return count
 
 
 # ─── Statické pomocné funkcie (volané z compute_beats) ───

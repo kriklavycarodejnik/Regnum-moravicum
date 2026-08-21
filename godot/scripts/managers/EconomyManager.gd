@@ -37,7 +37,13 @@ func process_economy() -> Dictionary:
 		if str(province.get("owner_faction", "")) != "moravia":
 			continue
 		var prosperity: float = float(province.get("prosperity", 50.0))
-		prosperity = clampf(prosperity + 0.5, 0.0, 100.0)
+		var growth: float = 0.5
+		# SG-B2 bonus: Devín zotavenie 2× rýchlejšie
+		if province_id == "devin" and game_state != null:
+			var sg: Dictionary = game_state.side_goals if typeof(game_state.side_goals) == TYPE_DICTIONARY else {}
+			if sg.get("sg_b2", false):
+				growth = 1.0
+		prosperity = clampf(prosperity + growth, 0.0, 100.0)
 		province["prosperity"] = prosperity
 		report["prosperity_growth"][province_id] = prosperity
 		var p_factor: float = prosperity / 100.0

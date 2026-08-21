@@ -58,6 +58,12 @@ func _init_armies() -> void:
 				"composition": {"infantry": 0.3, "cavalry": 0.6, "archers": 0.1},
 				"default_size": 800,
 				"max_size": 3000
+			},
+			"moravia_cavalry": {
+				"type": "feudal",
+				"composition": {"infantry": 0.3, "cavalry": 0.6, "archers": 0.1},
+				"default_size": 300,
+				"max_size": 1000
 			}
 		}
 		game_state.army_templates = army_templates
@@ -104,10 +110,22 @@ func create_army(
 		"supply": 100.0
 	}
 
+	# SG-A1 bonus: ťažká jazda zadarmo (len pre moravia_cavalry template)
+	var cost: int = ARMY_TYPES.get(army_type, {}).get("cost", 0)
+	if template_id == "moravia_cavalry" and game_state != null:
+		var sg: Dictionary = game_state.side_goals if typeof(game_state.side_goals) == TYPE_DICTIONARY else {}
+		if sg.get("sg_a1", false):
+			cost = 0
+	var resources: Dictionary = game_state.resources
+	if int(resources.get("gold", 0)) < cost:
+		return {"ok": false, "error": "nedostatok zlata", "cost": cost}
+	resources["gold"] = int(resources.get("gold", 0)) - cost
+	game_state.resources = resources
+
 	var armies: Dictionary = game_state.armies
 	armies[army_id] = army
 	game_state.armies = armies
-	return {"ok": true, "army": army}
+	return {"ok": true, "army": army, "cost": cost}
 
 
 func disband_army(army_id: String) -> Dictionary:

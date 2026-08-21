@@ -312,6 +312,28 @@ func resolve_choice(choice_id: String) -> Dictionary:
 		for k in zl_dict.keys():
 			province_ids.append(str(k))
 
+	# ─── Side-goal bonus lookup (P1 PROGRESIA §1.6) ───
+	var sg: Dictionary = game_state.side_goals if typeof(game_state.side_goals) == TYPE_DICTIONARY else {}
+	if eid == "byz_bride_proposal_906" and choice_id == "accept":
+		if sg.get("sg_a2", false):
+			effect["prestige"] = int(effect.get("prestige", 0)) + 5
+		if sg.get("sg_c2", false):
+			_religion_shift_province("morava", 3)
+	if eid == "hist_magyar_reports_902" and choice_id == "scouts":
+		if sg.get("sg_a3", false):
+			var zl = effect.get("zupaLoyalty", {})
+			if typeof(zl) != TYPE_DICTIONARY:
+				zl = {}
+			zl["zemplin"] = int(zl.get("zemplin", 0)) + 5
+			effect["zupaLoyalty"] = zl
+	if eid == "hist_bogata_conspiracy_915" and choice_id == "watch":
+		if sg.get("sg_c1", false):
+			var zl = effect.get("zupaLoyalty", {})
+			if typeof(zl) != TYPE_DICTIONARY:
+				zl = {}
+			zl["uzhorod"] = int(zl.get("uzhorod", 0)) + 10
+			effect["zupaLoyalty"] = zl
+
 	var faction_ids: Array = []
 	if choice_dict.has("moodChanges") and typeof(choice_dict["moodChanges"]) == TYPE_DICTIONARY:
 		var mc_dict: Dictionary = choice_dict["moodChanges"]
@@ -370,73 +392,100 @@ func _religion_shift(delta: int) -> void:
 	game_state.provinces = provs
 
 
+# Shift religion for a single province (sg_c2 bonus)
+func _religion_shift_province(province_id: String, delta: int) -> void:
+	var provs: Dictionary = game_state.provinces
+	if not provs.has(province_id):
+		return
+	var p = provs[province_id]
+	if typeof(p) != TYPE_DICTIONARY:
+		return
+	var rel_v = p.get("religion", 50)
+	var rel: int = 50
+	if typeof(rel_v) == TYPE_INT or typeof(rel_v) == TYPE_FLOAT:
+		rel = int(clampf(float(rel_v) + float(delta), 0.0, 100.0))
+	p["religion"] = rel
+	game_state.provinces[province_id] = p
+
+
 func _build_council_event() -> Dictionary:
 	var council_desc: String = "Županka zo Spiša namieta, že kniežacie dary prúdia len do Nitry a pohraničie ostáva napospas osudu. Kniežacia rada žiada rozhodnutie, kam nasmerovať pozornosť dvoru a prostriedky ríše. Nespokojnosť zhromaždených veľmožov môže prerásť do otvoreného odporu, ak knieža nezaujme jasný postoj."
+	var choices: Dictionary = {
+		"gifts": {
+			"id": "gifts",
+			"text": "Odmeniť verných županov darmi",
+			"effect": {
+				"gold": -400,
+				"prestige": 8
+			},
+			"zupaLoyalty": {
+				"bratislava": 5,
+				"devin": 5,
+				"gemer": 5,
+				"hont": 5,
+				"morava": 5,
+				"nitra": 5,
+				"novohrad": 5,
+				"spis": 5,
+				"tekov": 5,
+				"trencin": 5,
+				"uzhorod": 5,
+				"zemplin": 5
+			}
+		},
+		"fortify": {
+			"id": "fortify",
+			"text": "Investovať do opevnení pohraničných žúp",
+			"effect": {
+				"gold": -100,
+				"prestige": -4
+			},
+			"zupaLoyalty": {
+				"gemer": 10,
+				"novohrad": 10,
+				"uzhorod": 10,
+				"zemplin": 10
+			}
+		},
+		"taxes": {
+			"id": "taxes",
+			"text": "Odmietnuť žiadosti a zvýšiť dane",
+			"effect": {
+				"gold": 200
+			},
+			"zupaLoyalty": {
+				"bratislava": -15,
+				"devin": -15,
+				"gemer": -15,
+				"hont": -15,
+				"morava": -15,
+				"nitra": -15,
+				"novohrad": -15,
+				"spis": -15,
+				"tekov": -15,
+				"trencin": -15,
+				"uzhorod": -15,
+				"zemplin": -15
+			}
+		}
+	}
+	# SG-D2 bonus: extra choice ak je dynastia silná
+	if game_state != null:
+		var sg_done: Dictionary = game_state.side_goals if typeof(game_state.side_goals) == TYPE_DICTIONARY else {}
+		if sg_done.get("sg_d2", false):
+			choices["extend_dynasty"] = {
+				"id": "extend_dynasty",
+				"text": "Rozšíriť dynastiu — poslať synov na východ",
+				"effect": {"gold": -50, "prestige": 2},
+				"zupaLoyalty": {"uzhorod": 5, "zemplin": 5}
+			}
 	return {
 		"id": "council",
 		"title": "Rada županov",
 		"text": council_desc,
 		"body": council_desc,
 		"art_id": "event_council_of_zhupans",
-		"choices": {
-			"gifts": {
-				"id": "gifts",
-				"text": "Odmeniť verných županov darmi",
-				"effect": {
-					"gold": -400,
-					"prestige": 8
-				},
-				"zupaLoyalty": {
-					"bratislava": 5,
-					"devin": 5,
-					"gemer": 5,
-					"hont": 5,
-					"morava": 5,
-					"nitra": 5,
-					"novohrad": 5,
-					"spis": 5,
-					"tekov": 5,
-					"trencin": 5,
-					"uzhorod": 5,
-					"zemplin": 5
-				}
-			},
-			"fortify": {
-				"id": "fortify",
-				"text": "Investovať do opevnení pohraničných žúp",
-				"effect": {
-					"gold": -100,
-					"prestige": -4
-				},
-				"zupaLoyalty": {
-					"gemer": 10,
-					"novohrad": 10,
-					"uzhorod": 10,
-					"zemplin": 10
-				}
-			},
-			"taxes": {
-				"id": "taxes",
-				"text": "Odmietnuť žiadosti a zvýšiť dane",
-				"effect": {
-					"gold": 200
-				},
-				"zupaLoyalty": {
-					"bratislava": -15,
-					"devin": -15,
-					"gemer": -15,
-					"hont": -15,
-					"morava": -15,
-					"nitra": -15,
-					"novohrad": -15,
-					"spis": -15,
-					"tekov": -15,
-					"trencin": -15,
-					"uzhorod": -15,
-					"zemplin": -15
-				}
-			}
-		}
+		"choices": choices,
 	}
 
 
