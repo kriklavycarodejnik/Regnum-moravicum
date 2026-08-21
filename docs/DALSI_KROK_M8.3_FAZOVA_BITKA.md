@@ -5,7 +5,7 @@
 > - `BattleManager.gd:110-120`: implementovaná pomocná metóda `pick_ai_action()`.
 > - `Main.gd:737-779`: integrované volanie fázovej bitky pre Skirmish (`_on_skirmish()`, `_on_battle_action()`, `_finish_battle()`).
 > - `BattleView.gd:70-86, 128-145, 156-159`: implementované akčné tlačidlá (`_actions_row`, `show_actions()`) a vykresľovanie `phase_logs`.
-> - **Čo z dokumentu ešte platí / zostáva otvorené:** Fázová bitka je plne funkčná pre Skirmish (`Main.gd:737-779`, `BattleView.gd:70-86, 128-145, 156-159`). Otvorené zostáva len jej prípadné širšie nasadenie mimo cvičnej bitky (riešené samostatnou kartou). Sekcie 0, 1 a pôvodné návrhy nižšie slúžia ako dokumentácia a história rozhodnutí.
+> - **Čo z dokumentu ešte platí / zostáva otvorené:** Fázová bitka je plne funkčná pre Skirmish (`BattleView.gd:70-86, 128-145, 156-159`), pričom aktuálny flow v `Main.gd:737-779` je napojený výhradne na `_on_skirmish()`, takže jej prípadné širšie nasadenie mimo cvičnej bitky zostáva otvorené (riešené samostatnou kartou). Sekcie 0, 1 a pôvodné návrhy nižšie slúžia ako dokumentácia a história rozhodnutí.
 
 ---
 
