@@ -7,5 +7,6 @@ func _run():
 	test_suite.add_test("res://test/m4/test_succession_manager.gd")
 	test_suite.add_test("res://test/m4/test_religion_manager.gd")
 	test_suite.add_test("res://test/m4/test_victory_manager.gd")
+	test_suite.add_test("res://test/m4/test_succession_seniority.gd")
 	test_suite.run()
 	print("M4 test run completed")
