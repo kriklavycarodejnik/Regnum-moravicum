@@ -4,6 +4,22 @@ Karta D1. Implementujú C3 (`rm-core`, condition matcher) a C4 (`rm-godot`,
 následky). Tento špec je záväzný pre obe; čísla v ňom sa nesmú meniť bez
 návrhu na zmenu (karta, nie komentár).
 
+## Ako čítať tento špec
+
+Špec zámerne oddeľuje to, čo je na tip-commite tejto vetvy (8457347), od
+toho, čo prinesú až karty C3/C4:
+
+- **[stav]** — overené v kóde na tip-commite; overiteľné vyhľadaním.
+- **[predpis — C3]** — na tip-commite neexistuje; implementuje karta
+  condition matchera; po implementácii overujú akceptačné kritériá.
+- **[predpis — C4]** — na tip-commite neexistuje; implementuje karta
+  následkov; po implementácii overujú akceptačné kritériá.
+
+Značka je pri nadpise sekcie alebo pri odseku, ktorého sa týka. Čísla majú
+zdroj uvedený vždy: buď „stav: cesta v kóde", alebo „design decision tohoto
+špecu" (§X). Špec teda nemožno čítať ako popis aktuálneho správania hry —
+ako popis aktuálneho stavu platia len riadky so značkou **[stav]**.
+
 ## Invarianty (záväzné, z `NAVRH_HERNY_ZAZITOK.md` §4.1 a §15.6)
 
 | | |
@@ -47,9 +63,10 @@ to zakazuje. Nálada je dnes dekorácia: nič ju nečíta.
 
 ---
 
-## 1. Prahové pásma nálady (záväzné pre celú hru)
+## 1. Prahové pásma nálady (záväzné pre celú hru) [predpis — C3 + C4]
 
 Jedna sada prahov všade — matcher, UI, ciele. Žiadne druhé pásmo inde.
+Dnes má UI pásma iné (35/65, pozri AK1) — táto tabuľka je ich zjednotenie.
 
 | Pásmo | Nálada | Význam |
 |---|---|---|
@@ -65,13 +82,28 @@ Porovnania sú inklusívne: `min` = `mood >= min`, `max` = `mood <= max`.
 
 ### Akceptačné kritérium 1
 
-V kóde ani v dátách sa nevyskytuje iná definícia diplomatických pásiem než
-25/75 (vyhľadaním `35.0`/`65.0` v DiplomacyPanel.gd sa nenájde nič;
-condition matcher v C3 používa tie isté čísla v textoch varovaní).
+**Aktuálny stav (overené na tip-commite 8457347):** v `DiplomacyPanel.gd:122`
+sa dnes nachádzajú hodnoty `mood < 35.0` a `mood > 65.0`. Vyhľadaním
+`35.0`/`65.0` v `godot/` sa nájdu práve dve zhody: `DiplomacyPanel.gd:122`
+(diplomatické pásma) a `ReligionAxis.gd:99` (náboženská os pre „pagan",
+s diplomaciou nesúvisí). Ďalšie dve čísla blízke pásam nie sú pásma a C4 ich
+nemení (sú mimo zoznamu súborov v §9): `MapView.gd:13` používa
+`THREAT_MOOD_THRESHOLD := 25.0` (prah markera hrozby na mape — už dnes sedí
+s novým nepriateľským pásmom 0–24,99) a `Main.gd:680` používa
+`worst_mood < 35` (včasné varovanie v lište — zostáva 35; varuje v chladnom
+pásme predtým, než nálada spadne do nepriateľského).
+
+**Po implementácii C4 (predpis):** pásma v `DiplomacyPanel.gd:122` sa
+nahradia za 25/75 podľa §1. Po tejto zmene sa vyhľadaním `35.0`/`65.0`
+v diplomacii už nenájde nič relevantné — condition matcher v C3 používa
+tie isté čísla v textoch varovaní.
 
 ---
 
-## 2. Kanál A — nálada vstupuje do podmienok eventov (C3)
+## 2. Kanál A — nálada vstupuje do podmienok eventov (C3) [predpis — C3]
+
+Nič z tejto sekcie dnes v kóde neexistuje: EventManager.gd:137-181 číta
+v podmienkach eventov **len** `year`, `month`, `yearMin` (stav, overené).
 
 ### 2.1 Syntax nových podmienok (kontrakt pre `events_catalog.json`)
 
@@ -215,7 +247,7 @@ s Byzanciou), odmietnuť = byzantium −3 nálady (strata spojenca).
 
 ---
 
-## 3. Kanál B — nálada vstupuje do hrozieb
+## 3. Kanál B — nálada vstupuje do hrozieb [§3.1 predpis — C4; §3.2 stav]
 
 **Devín 907 sa nemení.** HungarianWarScenario, `winner == "attacker"`,
 dôsledky −30/−20/+30, vlastný seed — nedotýkať sa. Mení sa okolie pred 907.
@@ -224,7 +256,7 @@ dôsledky −30/−20/+30, vlastný seed — nedotýkať sa. Mení sa okolie pre
 
 | hungary.mood | Čo sa deje | Kde to hráč vidí vopred |
 |---|---|---|
-| ≥ 45 | Nájazdy sa neťahajú (`rand_border_raid` zamknutý podmienkou) | panel Diplomacia: efektový riadok (§5) |
+| ≥ 45 | Nájazdy sa neťahajú (`rand_border_raid` zamknutý podmienkou) | panel Diplomacia: efektový riadok (§6.3) |
 | 25–44,99 | `rand_border_raid` aktívny (cooldown 15, weight 12 — bez zmien) | ThreatClock sublabel: „Maďari sú nepokojní — južná hranica nie je bezpečná." (farba `C.WARNING`) |
 | 0–24,99 | Nájazdy aktívne **plus** ultimátum `dip_magyar_envoy_tribute` (cooldown 24, weight 8) | ThreatClock sublabel: „Maďarský hnev rastie — čakaj posolstvo alebo nájazd." (farba `C.MORAVIA_CRIMSON`) |
 
@@ -233,15 +265,17 @@ tri a všetky číselné: (a) mood Maďarov v paneli Diplomacia, (b) sublabel
 ThreatClocku pod odpočtom „Do Maďarov: N mesiacov", (c) ultimátum samotné —
 ak príde, píše sa v ňom, čo nasleduje, keď pokladnica neodpovie.
 
-ThreatClock.gd: v vetve `y < 907` (riadok 58) prepisuje `_sublabel.text`
-podľa `hungary.mood` **pred** štandardným textom „Priprav sa na krízu 907" —
-t.j. sublabel má teraz tri stavy, nie jeden.
+**[predpis — C4]** ThreatClock.gd: implementácia v vetve `y < 907` (riadok
+58) prepíše `_sublabel.text` podľa `hungary.mood` **pred** štandardným
+textom „Priprav sa na krízu 907". Dnes má sublabel jediný stav („Priprav
+sa na krízu 907", ThreatClock.gd:70); po C4 má tri stavy.
 
 ### 3.2 Čo sa po Devíne nemení
 
-`winner == "attacker"` zvýši hungary.mood o +30 (existujúci dôsledok). Ak to
-hry ukončí krízu, nálada sa môže dostať nad 45 a nájazdy ustania — to je
-žiaduci stav po kánonickej prehre, nie zmena kánonu.
+`winner == "attacker"` zvýši hungary.mood o +30 (existujúci dôsledok,
+HungarianWarScenario.gd:143). Ak hra po Devíne pokračuje, nálada sa môže
+dostať nad 45 a nájazdy ustania — to je žiaduci stav po kánonickej prehre,
+nie zmena kánonu.
 
 ### Akceptačné kritérium 3
 
@@ -257,7 +291,7 @@ hry ukončí krízu, nálada sa môže dostať nad 45 a nájazdy ustania — to 
 
 ---
 
-## 4. Kanál C — splniteľný diplomatický cieľ (ObjectivesPanel)
+## 4. Kanál C — splniteľný diplomatický cieľ (ObjectivesPanel) [predpis — C4]
 
 Existujúci `_diplomacy_side_goal_static` je varovanie („frakcia X má náladu
 Y"). Pribúda **cieľ s dátumom, progresom a odmenou**.
@@ -317,10 +351,16 @@ Diplomacia cez `relations`).
 
 ---
 
-## 5. Ceny akcií — tabuľka (mení DiplomacyManager)
+## 5. Ceny akcií — tabuľka (mení DiplomacyManager) [predpis — C4]
 
 Žiadna akcia nesmie byť jednoznačne najlepšia; každá platí aspoň v jednej
-mene. Zmluvy dnes stoja 0 zlata — to je odmena bez ceny a končí.
+mene. Zmluvy dnes stoja 0 zlata — to je odmena bez ceny a končí (stav:
+DiplomacyManager.gd:152-180, `set_treaty` nemá gold guard).
+
+Všetky ceny a prahy v tabuľke sú **design decisions tohoto špecu** — dnešný
+kód ich neobsahuje. Overený dnešný stav: dar −50 zlata/+10 nálady, hrozba
+−8 nálady (30 % šanca len −3), zmluva zadarmo/+6 nálady
+(DiplomacyManager.gd:106-180).
 
 | Akcia | Cena | Efekt | Riziko / podmienka |
 |---|---|---|---|
@@ -363,9 +403,11 @@ Detaily implementácie:
 
 ---
 
-## 6. Ako sa hráč dozvie, že to funguje — viditeľnosť mimo panela
+## 6. Ako sa hráč dozvie, že to funguje — viditeľnosť mimo panela [predpis — C4]
 
 Samotný panel nestačí. Následok musí byť vidno aj tam, kde hráč trávi ťahy.
+Nič z tejto sekcie dnes v kóde neexistuje (overené vyhľadaním
+`trade_income`/`threshold_crossed`/`trade_routes` v `godot/`: žiadna zhoda).
 
 ### 6.1 ThreatClock sublabel (kanál hrozby)
 
@@ -381,9 +423,10 @@ prekročení prahu 25 smerom nadol alebo 75 smerom nahor zapíše do reportu:
 report["threshold_crossed"] = {"faction_id": fid, "crossed": "below_25"}  # alebo "above_75"
 ```
 
-`NarrationManager._generate_diplomacy_text()` (NarrationManager.gd:163)
-číta `threshold_crossed` **pred** dnešnou vetvou podľa kľúča v
-`mood_changes` a vráti vetu:
+`NarrationManager._generate_diplomacy_text()` — funkcia dnes existuje
+(NarrationManager.gd:163) a číta **len** `mood_changes`; po C4 číta
+`threshold_crossed` **pred** dnešnou vetvou podľa kľúča v `mood_changes`
+a vráti vetu:
 
 | frakcia / smer | veta (záväzné znenie) |
 |---|---|
@@ -412,6 +455,11 @@ presne to, čo podmienky v katalógu, nič navyše:
 Žiadna frakcia nesmie mať riadok, ktorý sľubuje efekt neexistujúci
 v katalógu alebo v kóde.
 
+Zdroj čísel v riadkoch: 45/25 = podmienky §2.2/§2.3 (nájazdy, tribút);
+40/75/60 = podmienky §2.2/§2.3 (sobáš, cisársky dar); 50 = prah vojenského
+paktu §5. Všetko design decisions tohoto špecu — efektový riadok ani tieto
+efekty na tip-commite neexistujú; riadok opisuje správanie, ktoré C4 pridá.
+
 ### Akceptačné kritérium 6
 
 - Hungary.mood klesne driftom pod 25 → v tom istom ťahu TurnReport obsahuje
@@ -422,10 +470,11 @@ v katalógu alebo v kóde.
 
 ---
 
-## 7. Save/load
+## 7. Save/load [stav + predpis — C4]
 
-- `factions` (mood + relations) sa už dnes serializuje — nemeniť.
-- Nové `diplomacy_goals` vstupuje do `to_dict()`/`from_dict()` (§4.2).
+- **[stav]** `factions` (mood + relations) sa už dnes serializuje — nemeniť
+  (GameState.gd:49 v `to_dict()`, GameState.gd:82 v `from_dict()`).
+- **[predpis — C4]** Nové `diplomacy_goals` vstupuje do `to_dict()`/`from_dict()` (§4.2).
 - Po loade musí `process_diplomacy()` naďalej pripisovať obchodný príjem
   (číta `relations` z načítaného stavu — žiadna ďalšia práca).
 - Starý save bez `diplomacy_goals` sa načíta s `{}` (from_dict default).
@@ -441,7 +490,7 @@ prestíž nezvýši.
 
 ---
 
-## 8. Headless scenár (overenie bez autora)
+## 8. Headless scenár (overenie bez autora) [predpis — testy píšu C3/C4]
 
 ```text
 # S = seedovaný GameState (902/1), E = EventManager, D = DiplomacyManager
