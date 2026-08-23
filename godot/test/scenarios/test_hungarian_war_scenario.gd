@@ -40,18 +40,17 @@ func test_devine_battle_determinism():
 	assert_that(r1["phase_logs"].size()).is_equal(r2["phase_logs"].size())
 
 
-func test_devine_battle_rewards():
-	# Force Moravian victory
-	var armies: Dictionary = scenario.create_initial_armies()
-	armies["hungarian_main"]["morale"] = 10.0  # Force rout
-	var outcome: Dictionary = scenario.resolve_devine_battle()
-
-	assert_that(outcome["winner"]).is_equal("defender")
-	assert_that(outcome.has("rewards_applied")).is_true()
-	var rewards: Dictionary = outcome["rewards_applied"]
-	assert_that(rewards["prestige"]).is_equal(5)
-	assert_that(rewards["gold"]).is_equal(1000)
-	assert_that(rewards["loyalty_bonus"]).is_equal(10)
+func test_devine_battle_consequences():
+	var initial_prestige = int(game_state.resources.get("prestige", 0))
+	var initial_loyalty = float(game_state.provinces.get("devin", {}).get("loyalty", 50.0))
+	var initial_mood = float(game_state.factions.get("hungary", {}).get("mood", 20.0))
+	
+	var outcome = scenario.resolve_devine_battle()
+	
+	assert_that(outcome["winner"]).is_equal("attacker")
+	assert_that(game_state.resources["prestige"]).is_equal(initial_prestige - 30)
+	assert_that(game_state.provinces["devin"]["loyalty"]).is_equal(initial_loyalty - 20.0)
+	assert_that(game_state.factions["hungary"]["mood"]).is_equal(initial_mood + 30.0)
 
 
 func test_devine_battle_river_morale():
@@ -72,4 +71,4 @@ func test_devine_battle_occupation():
 
 	assert_that(outcome["winner"]).is_equal("attacker")
 	assert_that(outcome["occupation_applied"]).is_true()
-	assert_that(game_state.provinces["bratislava"]["occupier_faction"]).is_equal("madari")
+	assert_that(game_state.provinces["devin"]["occupier_faction"]).is_equal("hungary")
