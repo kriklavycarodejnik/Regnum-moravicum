@@ -43,6 +43,145 @@ func _load_catalog() -> void:
 		_catalog = data
 
 
+# ── P2 Condition matcher ────────────────────────────────────────────
+
+# Known condition keys that _evaluate_conditions handles.
+# Any other key in conditions triggers a warning AND fails the event.
+var _known_condition_keys: Array = [
+	"year", "month", "yearMin", "yearMax",
+	"moodMin", "moodMax",
+	"prestige_min", "prestige_max",
+	"province_loyalty",
+	"flag", "not_flag",
+]
+
+
+func _has_unknown_conditions(conds: Dictionary) -> bool:
+	"""Return true if any key in conds is not in _known_condition_keys."""
+	if typeof(conds) != TYPE_DICTIONARY:
+		return false
+	for key in conds:
+		if _known_condition_keys.find(key) < 0:
+			push_warning("EventManager: unknown condition '%s' — event will NOT fire" % key)
+			return true
+	return false
+
+
+func _evaluate_conditions(conds: Dictionary) -> bool:
+	"""Returns true if ALL conditions are satisfied (event should trigger).
+	Evaluates: moodMin, moodMax, prestige_min, prestige_max,
+	            province_loyalty, flag, not_flag.
+	Returns true only when every condition passes; logs warnings on failure.
+	"""
+	if typeof(conds) != TYPE_DICTIONARY:
+		return true
+	# Unknown keys → warn + deny (never silently pass).
+	if _has_unknown_conditions(conds):
+		return false
+	var warnings: Array = []
+
+	# --- faction mood gates ---
+	if _consume_faction_mood(conds, "moodMin", warnings) == false:
+		return false
+	if _consume_faction_mood(conds, "moodMax", warnings) == false:
+		return false
+
+	# --- prestige gates ---
+	for gate in ["prestige_min", "prestige_max"]:
+		if conds.has(gate):
+			var threshold: float = float(conds[gate])
+			var actual: int = int(game_state.resources.get("prestige", 0))
+			match gate:
+				"prestige_min":
+					if actual < threshold:
+						warnings.append("prestige=%d < %d required by %s" % [actual, threshold, gate])
+						return false
+				"prestige_max":
+					if actual > threshold:
+						warnings.append("prestige=%d > %d required by %s" % [actual, threshold, gate])
+						return false
+
+	# --- province loyalty gates (min check) ---
+	if conds.has("province_loyalty"):
+		var pl_dict: Dictionary = conds["province_loyalty"]
+		if typeof(pl_dict) == TYPE_DICTIONARY:
+			for prov_id in pl_dict:
+				var threshold: float = float(pl_dict[prov_id])
+				var prov_data: Dictionary = game_state.provinces.get(prov_id, {})
+				if typeof(prov_data) != TYPE_DICTIONARY:
+					warnings.append("province '%s' not found in GameState.provinces for loyalty check (%s)" % [prov_id, str(threshold)])
+					return false
+				var actual_loyalty: float = float(prov_data.get("loyalty", 50))
+				if actual_loyalty < threshold:
+					warnings.append("%s loyalty=%.1f < %.1f required" % [prov_id, actual_loyalty, threshold])
+					return false
+
+	# --- flag gates (exact match on GameState.flags dict) ---
+	if conds.has("flag"):
+		var fl: Dictionary = conds["flag"]
+		if typeof(fl) == TYPE_DICTIONARY:
+			for flag_name in fl:
+				var expected_val: Variant = fl[flag_name]
+				var actual_val: Variant = game_state.flags.get(flag_name)
+				if actual_val != expected_val:
+					warnings.append("flag '%s'=%s does not match value %s" % [flag_name, str(actual_val), str(expected_val)])
+					return false
+		else:
+			warnings.append("unknown condition 'flag': expected dictionary, got %s" % typeof(fl))
+			return false
+
+	# --- not_flag gates (negation: block when flag equals value) ---
+	if conds.has("not_flag"):
+		var nfl: Dictionary = conds["not_flag"]
+		if typeof(nfl) == TYPE_DICTIONARY:
+			for flag_name in nfl:
+				var negated_val: Variant = nfl[flag_name]
+				var actual_val: Variant = game_state.flags.get(flag_name)
+				if actual_val == negated_val:
+					warnings.append("not_flag '%s'=%s is currently set" % [flag_name, str(actual_val)])
+					return false
+		else:
+			warnings.append("unknown condition 'not_flag': expected dictionary, got %s" % typeof(nfl))
+			return false
+
+	# Log collected warnings
+	for w in warnings:
+		push_warning("EventManager: condition failed — %s" % w)
+
+	return true
+
+
+func _consume_faction_mood(conds: Dictionary, gate_key: String, warnings: Array) -> bool:
+	"""Evaluate moodMin or moodMax gates from conditions dict."""
+	if conds.has(gate_key) == false:
+		return true
+	var gate_dict: Variant = conds[gate_key]
+	if typeof(gate_dict) != TYPE_DICTIONARY:
+		warnings.append("condition '%s': expected dictionary {faction: threshold}, got %s" % [gate_key, typeof(gate_dict)])
+		return false
+
+	for fid in gate_dict:
+		var threshold: float = float(gate_dict[fid])
+		var actual: float = 50.0  # safe default when game_state.factions is empty
+		if game_state and typeof(game_state.factions) == TYPE_DICTIONARY and game_state.factions.has(fid):
+			var f = game_state.factions[fid]
+			if typeof(f) == TYPE_DICTIONARY:
+				actual = float(f.get("mood", 50))
+		match gate_key:
+			"moodMin":
+				if actual < threshold:
+					warnings.append("%s.mood=%.1f < moodMin threshold %.1f" % [fid, actual, threshold])
+					return false
+			"moodMax":
+				if actual > threshold:
+					warnings.append("%s.mood=%.1f > moodMax threshold %.1f" % [fid, actual, threshold])
+					return false
+	return true
+
+
+# ── End P2 condition matcher ────────────────────────────────────────
+
+
 func process_events() -> Dictionary:
 	if not _loaded:
 		_load_catalog()
@@ -97,10 +236,7 @@ func process_events() -> Dictionary:
 	return {"type": "event", "id": "", "title": "", "text": "", "body": "", "art_id": "", "choices": []}
 
 
-# No-immediate-repeat guard: zaznamená id naposledy vybraného eventu.
-# Volá sa len pri výbere NOVÉHO eventu (chain/historical/random/council),
-# nie pri opätovnom vrátení už čakajúceho pending_event.
-# P1 kontrakt §1.6 — guard je záväzný, pozri _try_random_event().
+# No-immediate-repeat guard
 func _record_last_event(report: Dictionary) -> void:
 	var eid: String = str(report.get("id", ""))
 	if eid != "":
@@ -135,13 +271,24 @@ func _try_historical_event() -> Dictionary:
 			continue
 		var eid: String = str(cat.get("id", ""))
 		var conds = cat.get("conditions", {})
-		var req_year: int = int(conds.get("year", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
+		if typeof(conds) != TYPE_DICTIONARY:
+			continue
+
+		# Block on unknown condition keys — never silently pass.
+		if _has_unknown_conditions(conds):
+			continue
+
+		# Evaluate all known condition types; skip if any fail.
+		if !_evaluate_conditions(conds):
+			continue  # skip; event can retry later if conditions change
+
+		var req_year: int = int(conds.get("year", 0))
 		if req_year == 0:
 			continue
 		if y != req_year:
 			continue
-		# Month check: if month is specified (> 0), it must match the current month
-		var req_month: int = int(conds.get("month", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
+		# Month check: if month is specified (> 0), it must match current month
+		var req_month: int = int(conds.get("month", 0))
 		if req_month > 0 and m != req_month:
 			continue
 		if bool(cat.get("once", false)) and game_state.triggered_events.has(eid):
@@ -171,17 +318,28 @@ func _try_random_event() -> Dictionary:
 			continue
 		var eid: String = str(cat.get("id", ""))
 		var conds = cat.get("conditions", {})
-		var ymin: int = int(conds.get("yearMin", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
+		if typeof(conds) != TYPE_DICTIONARY:
+			continue
+
+		# Block on unknown condition keys — never silently pass.
+		if _has_unknown_conditions(conds):
+			continue
+
+		# Evaluate all known condition types; skip if any fail.
+		if !_evaluate_conditions(conds):
+			continue
+
+		var ymin: int = int(conds.get("yearMin", 0))
 		if ymin > 0 and game_state.year < ymin:
 			continue
-		# P1 kontrakt §1.2: ak je zadaný presný rok (year > 0), musí sedieť.
-		# Bez tohto checku byz_bride_proposal_906 (year=906, once=true) prelieza
-		# do random poolu už v roku 903. Random pool = len 4 rand_* eventy (§1.3).
-		var req_year: int = int(conds.get("year", 0)) if typeof(conds) == TYPE_DICTIONARY else 0
+		var ymax: int = int(conds.get("yearMax", 0))
+		if ymax > 0 and game_state.year > ymax:
+			continue
+		# P1 kontrakt §1.2: exact year must match
+		var req_year: int = int(conds.get("year", 0))
 		if req_year > 0 and game_state.year != req_year:
 			continue
-		# P1 kontrakt §1.8: once:true event, ktorý sa už odohral, sa nesmie
-		# vytiahnuť znova. historical scan to kontroluje (riadok 145), random nie.
+		# P1 kontrakt §1.8: once:true already-fired events excluded
 		if bool(cat.get("once", false)) and game_state.triggered_events.has(eid):
 			continue
 		var cooldown: int = int(cat.get("cooldownTicks", 0))
@@ -190,14 +348,7 @@ func _try_random_event() -> Dictionary:
 			var last: int = int(cooldowns.get(eid, 0))
 			if game_state.year * 12 + game_state.month < last + cooldown:
 				continue
-		# No-immediate-repeat guard (P1 kontrakt §1.6 — záväzný, nie dočasný):
-		# naposledy odohraný event sa nesmie vytiahnuť hneď nasledujúci ťah.
-		# Cooldown (event_cooldowns, 24/15/20/20 tickov) sa zapisuje až
-		# v resolve_choice() — čiže pokrýva len už *vyriešené* eventy.
-		# Tento guard pokrýva okno medzi *výberom* a *vyriešením*: ak hráč
-		# event rozlíši odmietne / zatvorí bez voľby, pending_event sa
-		# neresetuje na cooldown, no last_event_id áno. Bez tohto guardu
-		# by sa ten istý event mohol vytiahnuť dva ťahy po sebe. Ostáva.
+		# No-immediate-repeat guard (P1 kontrakt §1.6)
 		if eid == game_state.last_event_id and eid != "":
 			continue
 		var w: int = int(cat.get("weight", 1))
@@ -334,8 +485,7 @@ func resolve_choice(choice_id: String) -> Dictionary:
 	if not has_next:
 		game_state.pending_event = null
 	else:
-		# For chain events, mark we resolved this choice
-		pass
+		pass  # For chain events, mark we resolved this choice
 
 	game_state.resources = resources
 
@@ -382,58 +532,27 @@ func _build_council_event() -> Dictionary:
 			"gifts": {
 				"id": "gifts",
 				"text": "Odmeniť verných županov darmi",
-				"effect": {
-					"gold": -400,
-					"prestige": 8
-				},
+				"effect": {"gold": -400, "prestige": 8},
 				"zupaLoyalty": {
-					"bratislava": 5,
-					"devin": 5,
-					"gemer": 5,
-					"hont": 5,
-					"morava": 5,
-					"nitra": 5,
-					"novohrad": 5,
-					"spis": 5,
-					"tekov": 5,
-					"trencin": 5,
-					"uzhorod": 5,
-					"zemplin": 5
+					"bratislava": 5, "devin": 5, "gemer": 5, "hont": 5,
+					"moravia": 5, "nitra": 5, "novohrad": 5, "spis": 5,
+					"tekov": 5, "trencin": 5, "uzhorod": 5, "zemplin": 5
 				}
 			},
 			"fortify": {
 				"id": "fortify",
 				"text": "Investovať do opevnení pohraničných žúp",
-				"effect": {
-					"gold": -100,
-					"prestige": -4
-				},
-				"zupaLoyalty": {
-					"gemer": 10,
-					"novohrad": 10,
-					"uzhorod": 10,
-					"zemplin": 10
-				}
+				"effect": {"gold": -100, "prestige": -4},
+				"zupaLoyalty": {"gemer": 10, "novohrad": 10, "uzhorod": 10, "zemplin": 10}
 			},
 			"taxes": {
 				"id": "taxes",
 				"text": "Odmietnuť žiadosti a zvýšiť dane",
-				"effect": {
-					"gold": 200
-				},
+				"effect": {"gold": 200},
 				"zupaLoyalty": {
-					"bratislava": -15,
-					"devin": -15,
-					"gemer": -15,
-					"hont": -15,
-					"morava": -15,
-					"nitra": -15,
-					"novohrad": -15,
-					"spis": -15,
-					"tekov": -15,
-					"trencin": -15,
-					"uzhorod": -15,
-					"zemplin": -15
+					"bratislava": -15, "devin": -15, "gemer": -15, "hont": -15,
+					"morava": -15, "nitra": -15, "novohrad": -15, "spis": -15,
+					"tekov": -15, "trencin": -15, "uzhorod": -15, "zemplin": -15
 				}
 			}
 		}
@@ -481,3 +600,8 @@ func _resolve_faction_id(name_or_id: String) -> String:
 	if lower in ["bohemia", "čechy"]:
 		return "bohemia"
 	return ""
+
+
+# Public API: evaluate_conditions without consuming anything — for testing.
+func evaluate_conditions_for_test(conds: Dictionary) -> bool:
+	return _evaluate_conditions(conds)

@@ -38,6 +38,7 @@ var last_event_id: String = ""
 var tutorial_step: int = 0
 var tutorial_done: bool = false
 var army_wizard_done: bool = false
+var flags: Dictionary = {}
 
 
 func to_dict() -> Dictionary:
@@ -63,6 +64,7 @@ func to_dict() -> Dictionary:
 		"tutorial_step": tutorial_step,
 		"tutorial_done": tutorial_done,
 		"army_wizard_done": army_wizard_done,
+		"flags": flags.duplicate(true),
 	}
 
 
@@ -113,6 +115,9 @@ func from_dict(data: Dictionary) -> void:
 	tutorial_step = int(data.get("tutorial_step", 0))
 	tutorial_done = bool(data.get("tutorial_done", false))
 	army_wizard_done = bool(data.get("army_wizard_done", false))
+	flags = data.get("flags", {}) as Dictionary
+	if flags == null:
+		flags = {}
 
 
 func _merge_resources(loaded) -> Dictionary:
